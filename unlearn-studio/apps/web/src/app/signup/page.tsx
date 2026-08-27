@@ -3,21 +3,37 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
+import { useAuth } from "@/lib/auth-helpers";
 
 export default function SignupPage() {
   const router = useRouter();
+  const { register, isAuthenticated, isLoading: authLoading } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    router.push("/dashboard");
+    return null;
+  }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    router.push("/dashboard");
+
+    const result = await register(name, email, password);
+
+    if (result.error) {
+      setError(result.error);
+      setLoading(false);
+    }
+    // Success: router.push("/dashboard") is called inside useAuth.register
   };
 
   const passwordChecks = [
@@ -25,6 +41,11 @@ export default function SignupPage() {
     { label: "Contains a number", met: /\d/.test(password) },
     { label: "Contains uppercase", met: /[A-Z]/.test(password) },
   ];
+
+  const isFormValid =
+    name.length > 0 &&
+    email.length > 0 &&
+    passwordChecks.every((c) => c.met);
 
   return (
     <div className="min-h-screen flex">
@@ -67,6 +88,7 @@ export default function SignupPage() {
       {/* Right panel — form */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
+          {/* Mobile logo */}
           <Link href="/" className="flex items-center gap-3 mb-12 lg:hidden">
             <div className="w-10 h-10 bg-brutal-accent flex items-center justify-center">
               <span className="font-mono text-brutal-black font-bold text-lg">U</span>
@@ -79,6 +101,14 @@ export default function SignupPage() {
           <h2 className="font-display font-bold text-3xl mb-2">Sign Up</h2>
           <p className="text-brutal-mid mb-8">Create your account to get started.</p>
 
+          {/* Error message */}
+          {error && (
+            <div className="border border-brutal-accent bg-brutal-accent/10 p-3 mb-6 flex items-center gap-2 text-sm text-brutal-accent">
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSignup} className="space-y-5">
             <div>
               <label className="font-mono text-xs text-brutal-mid uppercase tracking-widest block mb-2">
@@ -87,10 +117,11 @@ export default function SignupPage() {
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); setError(""); }}
                 placeholder="Your name"
                 className="w-full bg-brutal-gray border-3 border-white px-4 py-3 font-body text-white placeholder:text-brutal-mid/50 focus:outline-none focus:border-brutal-accent transition-colors"
                 required
+                autoFocus
               />
             </div>
 
@@ -101,7 +132,7 @@ export default function SignupPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setError(""); }}
                 placeholder="you@example.com"
                 className="w-full bg-brutal-gray border-3 border-white px-4 py-3 font-body text-white placeholder:text-brutal-mid/50 focus:outline-none focus:border-brutal-accent transition-colors"
                 required
@@ -116,7 +147,7 @@ export default function SignupPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setError(""); }}
                   placeholder="••••••••"
                   className="w-full bg-brutal-gray border-3 border-white px-4 py-3 font-body text-white placeholder:text-brutal-mid/50 focus:outline-none focus:border-brutal-accent transition-colors pr-12"
                   required
@@ -149,10 +180,10 @@ export default function SignupPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || authLoading || !isFormValid}
               className="w-full btn-brutal bg-brutal-accent text-brutal-black text-lg flex items-center justify-center gap-3 disabled:opacity-50"
             >
-              {loading ? (
+              {loading || authLoading ? (
                 <span className="animate-pulse">Creating account...</span>
               ) : (
                 <>

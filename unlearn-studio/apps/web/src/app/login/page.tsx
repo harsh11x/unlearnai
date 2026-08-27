@@ -3,21 +3,36 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { useAuth } from "@/lib/auth-helpers";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    router.push("/dashboard");
+    return null;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
-    // Simulate auth — in production, call your auth API
-    await new Promise((r) => setTimeout(r, 1000));
-    router.push("/dashboard");
+
+    const result = await login(email, password);
+
+    if (result.error) {
+      setError(result.error);
+      setLoading(false);
+    }
+    // Success: router.push("/dashboard") is called inside useAuth.login
   };
 
   return (
@@ -69,6 +84,19 @@ export default function LoginPage() {
           <h2 className="font-display font-bold text-3xl mb-2">Log In</h2>
           <p className="text-brutal-mid mb-8">Enter your credentials to access the platform.</p>
 
+          {/* Demo hint */}
+          <div className="border border-brutal-green/30 bg-brutal-green/5 p-3 mb-6 text-xs font-mono text-brutal-green">
+            Demo: demo@unlearn.studio / Password1
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="border border-brutal-accent bg-brutal-accent/10 p-3 mb-6 flex items-center gap-2 text-sm text-brutal-accent">
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <label className="font-mono text-xs text-brutal-mid uppercase tracking-widest block mb-2">
@@ -77,10 +105,11 @@ export default function LoginPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setError(""); }}
                 placeholder="you@example.com"
                 className="w-full bg-brutal-gray border-3 border-white px-4 py-3 font-body text-white placeholder:text-brutal-mid/50 focus:outline-none focus:border-brutal-accent transition-colors"
                 required
+                autoFocus
               />
             </div>
 
@@ -92,7 +121,7 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setError(""); }}
                   placeholder="••••••••"
                   className="w-full bg-brutal-gray border-3 border-white px-4 py-3 font-body text-white placeholder:text-brutal-mid/50 focus:outline-none focus:border-brutal-accent transition-colors pr-12"
                   required
@@ -109,10 +138,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || authLoading}
               className="w-full btn-brutal bg-brutal-accent text-brutal-black text-lg flex items-center justify-center gap-3 disabled:opacity-50"
             >
-              {loading ? (
+              {loading || authLoading ? (
                 <span className="animate-pulse">Authenticating...</span>
               ) : (
                 <>
