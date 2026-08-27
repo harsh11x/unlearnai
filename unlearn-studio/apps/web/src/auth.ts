@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
 import { getFirebaseAuth } from "@/lib/firebase-admin";
+import { authConfig } from "./auth.config";
 
 // ─── Verify Firebase ID token ───
 async function verifyFirebaseToken(idToken: string) {
@@ -27,6 +28,7 @@ export const {
   signIn,
   signOut,
 } = NextAuth({
+  ...authConfig,
   providers: [
     // ── Google OAuth ──
     Google({
@@ -52,38 +54,4 @@ export const {
       },
     }),
   ],
-
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
-  },
-
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
-
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-      }
-      return token;
-    },
-
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-      }
-      return session;
-    },
-
-    async redirect({ url, baseUrl }) {
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      if (new URL(url).origin === baseUrl) return url;
-      return `${baseUrl}/dashboard`;
-    },
-  },
-
-  secret: process.env.NEXTAUTH_SECRET || "nullmind-dev-secret-change-in-production",
 });
