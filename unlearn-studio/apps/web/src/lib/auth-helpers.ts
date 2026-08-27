@@ -30,6 +30,14 @@ export function useAuth() {
     [router]
   );
 
+  const loginWithGoogle = useCallback(async () => {
+    await signIn("google", { callbackUrl: "/dashboard" });
+  }, []);
+
+  const loginWithGitHub = useCallback(async () => {
+    await signIn("github", { callbackUrl: "/dashboard" });
+  }, []);
+
   const register = useCallback(
     async (
       name: string,
@@ -57,7 +65,6 @@ export function useAuth() {
         });
 
         if (loginResult?.error) {
-          // Account created but auto-login failed — redirect to login
           router.push("/login");
           return {};
         }
@@ -84,6 +91,8 @@ export function useAuth() {
     isAuthenticated: status === "authenticated",
     isLoading: status === "loading",
     login,
+    loginWithGoogle,
+    loginWithGitHub,
     register,
     logout,
     update,

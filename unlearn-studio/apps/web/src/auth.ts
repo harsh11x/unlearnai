@@ -1,14 +1,17 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+import GitHub from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
 
 // ─── In-memory user store (replace with DB in production) ───
-// This is a simple demo store. In production, use PostgreSQL/MongoDB.
 interface User {
   id: string;
   name: string;
   email: string;
-  password: string; // hashed
+  password?: string; // hashed — optional for OAuth users
+  image?: string;
+  provider: string;
   createdAt: string;
 }
 
@@ -18,33 +21,42 @@ const users: User[] = [
     id: "usr_demo",
     name: "Demo User",
     email: "demo@unlearn.studio",
-    password: "$2a$10$rQEY5z8q4K5X5X5X5X5X5eY5X5X5X5X5X5X5X5X5X5X5X5X5X", // bcrypt hash of "Password1"
+    password: "$2a$10$YourHashedPasswordHere",
+    provider: "credentials",
     createdAt: new Date().toISOString(),
   },
 ];
 
-// Helper: find user by email
+// ─── User helpers ───
 export function findUserByEmail(email: string): User | undefined {
   return users.find((u) => u.email.toLowerCase() === email.toLowerCase());
 }
 
-// Helper: create a new user
+export function findUserById(id: string): User | undefined {
+  return users.find((u) => u.id === id);
+}
+
 export async function createUser(
   name: string,
   email: string,
-  password: string
+  password?: string,
+  image?: string,
+  provider: string = "credentials"
 ): Promise<User> {
   const existing = findUserByEmail(email);
   if (existing) {
     throw new Error("A user with this email already exists.");
   }
 
-  const hashedPassword = await bcrypt.hash(password, 12);
+  const hashedPassword = password ? await bcrypt.hash(password, 12) : undefined;
+
   const user: User = {
     id: `usr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     name,
     email: email.toLowerCase(),
     password: hashedPassword,
+    image,
+    provider,
     createdAt: new Date().toISOString(),
   };
 
@@ -60,6 +72,19 @@ export const {
   signOut,
 } = NextAuth({
   providers: [
+    // ── Google OAuth ──
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+    }),
+
+    // ── GitHub OAuth ──
+    GitHub({
+      clientId: process.env.GITHUB_CLIENT_ID ?? "",
+      clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
+    }),
+
+    // ── Credentials (email/password) ──
     Credentials({
       name: "credentials",
       credentials: {
@@ -72,7 +97,7 @@ export const {
         }
 
         const user = findUserByEmail(credentials.email as string);
-        if (!user) {
+        if (!user || !user.password) {
           return null;
         }
 
@@ -89,31 +114,66 @@ export const {
           id: user.id,
           name: user.name,
           email: user.email,
+          image: user.image,
         };
       },
     }),
   ],
+
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+
   pages: {
     signIn: "/login",
     error: "/login",
   },
+
   callbacks: {
-    async jwt({ token, user }) {
+    // ── JWT: attach user ID ──
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
       }
+
+      // For OAuth sign-ins, find or create user on first login
+      if (account && account.provider !== "credentials" && token.email) {
+        let dbUser = findUserByEmail(token.email);
+
+        if (!dbUser) {
+          // Auto-create user from OAuth profile
+          dbUser = await createUser(
+            token.name || "OAuth User",
+            token.email,
+            undefined, // no password for OAuth users
+            token.picture || undefined,
+            account.provider
+          );
+        }
+
+        token.id = dbUser.id;
+      }
+
       return token;
     },
+
+    // ── Session: expose user ID and provider ──
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
       }
       return session;
     },
+
+    // ── Redirect: send OAuth users to dashboard ──
+    async redirect({ url, baseUrl }) {
+      // After OAuth sign-in, redirect to dashboard
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return `${baseUrl}/dashboard`;
+    },
   },
+
   secret: process.env.NEXTAUTH_SECRET || "unlearn-studio-dev-secret-change-in-production",
 });

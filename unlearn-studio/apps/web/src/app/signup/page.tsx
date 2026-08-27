@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth-helpers";
+import OAuthButtons from "@/components/OAuthButtons";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -16,7 +17,6 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Redirect if already authenticated
   if (isAuthenticated) {
     router.push("/dashboard");
     return null;
@@ -33,7 +33,6 @@ export default function SignupPage() {
       setError(result.error);
       setLoading(false);
     }
-    // Success: router.push("/dashboard") is called inside useAuth.register
   };
 
   const passwordChecks = [
@@ -49,7 +48,7 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left panel — branding */}
+      {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-brutal-gray border-r-3 border-white flex-col justify-between p-12 grid-bg">
         <Link href="/" className="flex items-center gap-3">
           <div className="w-10 h-10 bg-brutal-accent flex items-center justify-center">
@@ -85,10 +84,9 @@ export default function SignupPage() {
         </div>
       </div>
 
-      {/* Right panel — form */}
+      {/* Right panel */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          {/* Mobile logo */}
           <Link href="/" className="flex items-center gap-3 mb-12 lg:hidden">
             <div className="w-10 h-10 bg-brutal-accent flex items-center justify-center">
               <span className="font-mono text-brutal-black font-bold text-lg">U</span>
@@ -99,17 +97,21 @@ export default function SignupPage() {
           </Link>
 
           <h2 className="font-display font-bold text-3xl mb-2">Sign Up</h2>
-          <p className="text-brutal-mid mb-8">Create your account to get started.</p>
+          <p className="text-brutal-mid mb-6">Create your account or use a provider.</p>
 
-          {/* Error message */}
+          {/* OAuth buttons */}
+          <OAuthButtons mode="signup" onError={setError} />
+
+          {/* Error */}
           {error && (
-            <div className="border border-brutal-accent bg-brutal-accent/10 p-3 mb-6 flex items-center gap-2 text-sm text-brutal-accent">
+            <div className="border border-brutal-accent bg-brutal-accent/10 p-3 mt-6 flex items-center gap-2 text-sm text-brutal-accent">
               <AlertCircle size={16} />
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSignup} className="space-y-5">
+          {/* Email/password form */}
+          <form onSubmit={handleSignup} className="space-y-4 mt-6">
             <div>
               <label className="font-mono text-xs text-brutal-mid uppercase tracking-widest block mb-2">
                 Name
@@ -121,7 +123,6 @@ export default function SignupPage() {
                 placeholder="Your name"
                 className="w-full bg-brutal-gray border-3 border-white px-4 py-3 font-body text-white placeholder:text-brutal-mid/50 focus:outline-none focus:border-brutal-accent transition-colors"
                 required
-                autoFocus
               />
             </div>
 
@@ -160,9 +161,8 @@ export default function SignupPage() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              {/* Password strength */}
               {password.length > 0 && (
-                <div className="mt-3 space-y-1">
+                <div className="mt-2 space-y-1">
                   {passwordChecks.map((check) => (
                     <div key={check.label} className="flex items-center gap-2 text-xs font-mono">
                       <CheckCircle2
