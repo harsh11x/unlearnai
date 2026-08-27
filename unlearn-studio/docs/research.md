@@ -2,7 +2,7 @@
 
 ## What "Unlearning" Means in This Implementation
 
-Unlearn Studio V1 implements **gradient-based model editing**, not theoretical machine unlearning.
+NullMind V1 implements **gradient-based model editing**, not theoretical machine unlearning.
 
 ### What We Do
 

@@ -534,14 +534,14 @@ function Footer() {
             <span className="font-mono text-brutal-black font-bold text-sm">U</span>
           </div>
           <span className="font-display font-bold text-sm">
-            UNLEARN<span className="text-brutal-accent">STUDIO</span>
+            NULL<span className="text-brutal-accent">MIND</span>
           </span>
         </div>
         <p className="font-mono text-xs text-brutal-mid">
           Open Research Platform — Built with PyTorch, HuggingFace Transformers, FastAPI, Next.js
         </p>
         <p className="font-mono text-xs text-brutal-mid">
-          © 2026 Unlearn Studio
+          © 2026 NullMind
         </p>
       </div>
     </footer>

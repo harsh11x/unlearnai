@@ -1,5 +1,5 @@
 """
-Unlearn Studio - Evaluation Metrics
+NullMind - Evaluation Metrics
 Core metric calculation for model evaluation results.
 """
 

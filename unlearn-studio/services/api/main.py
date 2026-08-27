@@ -1,5 +1,5 @@
 """
-Unlearn Studio - FastAPI Backend
+NullMind - FastAPI Backend
 Main application entry point.
 """
 
@@ -16,7 +16,7 @@ from services.api.routes import models, jobs, evaluations, projects
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
-    print("Unlearn Studio API starting...")
+    print("NullMind API starting...")
     os.makedirs("storage/models", exist_ok=True)
     os.makedirs("storage/datasets", exist_ok=True)
     os.makedirs("storage/artifacts", exist_ok=True)
@@ -24,11 +24,11 @@ async def lifespan(app: FastAPI):
     os.makedirs("storage/reports", exist_ok=True)
     yield
     # Shutdown
-    print("Unlearn Studio API shutting down...")
+    print("NullMind API shutting down...")
 
 
 app = FastAPI(
-    title="Unlearn Studio",
+    title="NullMind",
     description="AI Model Unlearning Platform - API",
     version="0.1.0",
     lifespan=lifespan,
@@ -52,4 +52,4 @@ app.include_router(evaluations.router, prefix="/api/v1/evaluations", tags=["eval
 
 @app.get("/api/v1/health")
 def health_check():
-    return {"status": "healthy", "service": "unlearn-studio-api"}
+    return {"status": "healthy", "service": "nullmind-api"}

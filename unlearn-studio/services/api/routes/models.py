@@ -1,5 +1,5 @@
 """
-Unlearn Studio - Models API Routes
+NullMind - Models API Routes
 Handles model upload, inspection, and management.
 """
 

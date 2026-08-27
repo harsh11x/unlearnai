@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Unlearn Studio follows a phased architecture designed to start with ML proof-of-concept and progressively add API, worker, and UI layers.
+NullMind follows a phased architecture designed to start with ML proof-of-concept and progressively add API, worker, and UI layers.
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌─────────────────┐

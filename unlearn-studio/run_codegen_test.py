@@ -41,7 +41,7 @@ def progress_callback(entry):
 
 def main():
     print("=" * 60)
-    print("  UNLEARN STUDIO — Full Pipeline with codegen-350M-multi")
+    print("  NULLMIND — Full Pipeline with codegen-350M-multi")
     print("=" * 60)
     config.storage.ensure_dirs()
 

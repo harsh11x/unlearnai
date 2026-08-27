@@ -1,5 +1,5 @@
 """
-Unlearn Studio - Unlearning Engine
+NullMind - Unlearning Engine
 Implements unlearning methods for selective capability reduction.
 
 IMPORTANT SCIENTIFIC DISCLAIMER:

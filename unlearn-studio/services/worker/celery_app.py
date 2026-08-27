@@ -1,5 +1,5 @@
 """
-Unlearn Studio - Celery Worker
+NullMind - Celery Worker
 Background job processing for unlearning and evaluation tasks.
 """
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
 celery_app = Celery(
-    "unlearn_studio",
+    "nullmind",
     broker=REDIS_URL,
     backend=REDIS_URL,
 )

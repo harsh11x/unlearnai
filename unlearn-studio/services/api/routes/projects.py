@@ -1,5 +1,5 @@
 """
-Unlearn Studio - Projects API Routes
+NullMind - Projects API Routes
 """
 
 from fastapi import APIRouter, Depends, HTTPException

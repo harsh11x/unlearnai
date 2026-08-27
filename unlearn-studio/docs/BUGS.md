@@ -1,4 +1,4 @@
-# Bug Tracker — Unlearn Studio
+# Bug Tracker — NullMind
 
 Bugs discovered during development and CLI proof-of-concept testing.
 Status: **OPEN** = unfixed, **FIXED** = resolved, **KNOWN** = intentional limitation.

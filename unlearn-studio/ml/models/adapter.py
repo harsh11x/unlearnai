@@ -1,5 +1,5 @@
 """
-Unlearn Studio - Model Adapter
+NullMind - Model Adapter
 Abstract interface and HuggingFace implementation for model operations.
 """
 
@@ -395,7 +395,7 @@ class HuggingFaceAdapter(ModelAdapter):
             "architecture": type(self.model).__name__,
             "parameters": sum(p.numel() for p in self.model.parameters()),
         }
-        with open(save_dir / "unlearn_studio_metadata.json", "w") as f:
+        with open(save_dir / "nullmind_metadata.json", "w") as f:
             json.dump(metadata, f, indent=2)
 
         logger.info(f"Model saved to {save_dir}")

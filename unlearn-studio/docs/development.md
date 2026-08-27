@@ -1,6 +1,6 @@
 # Development Guide
 
-This guide covers setting up and developing Unlearn Studio locally.
+This guide covers setting up and developing NullMind locally.
 
 ## Prerequisites
 
@@ -17,7 +17,7 @@ This guide covers setting up and developing Unlearn Studio locally.
 
 ```bash
 git clone <repository-url>
-cd unlearn-studio
+cd nullmind
 
 # Create Python virtual environment
 python -m venv .venv
@@ -31,7 +31,7 @@ pip install -r requirements.txt
 
 ```bash
 # Start PostgreSQL (if not using Docker)
-createdb unlearn_studio
+createdb nullmind
 
 # Initialize database schema
 python -m services.api.init_db
@@ -78,7 +78,7 @@ This starts:
 ## Project Structure
 
 ```
-unlearn-studio/
+nullmind/
 ├── apps/web/              # Next.js frontend
 ├── services/
 │   ├── api/               # FastAPI backend
@@ -173,7 +173,7 @@ python -m tests.test_ml_pipeline
 ### API Server
 
 ```bash
-DATABASE_URL=postgresql://user:pass@localhost:5432/unlearn_studio
+DATABASE_URL=postgresql://user:pass@localhost:5432/nullmind
 REDIS_URL=redis://localhost:6379/0
 SECRET_KEY=your-secret-key
 STORAGE_PATH=/path/to/storage
@@ -212,7 +212,7 @@ MODEL_CACHE_DIR=/path/to/model/cache
 docker-compose logs api
 
 # Check database
-psql -d unlearn_studio -c "SELECT * FROM models;"
+psql -d nullmind -c "SELECT * FROM models;"
 ```
 
 ### Worker Issues

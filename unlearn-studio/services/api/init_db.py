@@ -1,5 +1,5 @@
 """
-Database initialization script for Unlearn Studio.
+Database initialization script for NullMind.
 
 Creates all tables and seeds initial data.
 """
@@ -17,7 +17,7 @@ from services.api.models import Base, Target
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://unlearn:unlearn@localhost:5432/unlearn_studio"
+    "postgresql://unlearn:unlearn@localhost:5432/nullmind"
 )
 
 

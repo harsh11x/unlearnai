@@ -1,5 +1,5 @@
 """
-Unlearn Studio - Report Generator
+NullMind - Report Generator
 Generates detailed unlearning experiment reports.
 """
 
@@ -236,7 +236,7 @@ class ReportGenerator:
         """Generate a human-readable markdown report."""
         md = []
 
-        md.append("# Unlearn Studio - Experiment Report")
+        md.append("# NullMind - Experiment Report")
         md.append("")
         md.append(f"**Report ID:** `{report['report_id']}`")
         md.append(f"**Generated:** {report['generated_at']}")

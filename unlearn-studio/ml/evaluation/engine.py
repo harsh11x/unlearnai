@@ -1,5 +1,5 @@
 """
-Unlearn Studio - Evaluation Engine
+NullMind - Evaluation Engine
 Runs probe suites against models and produces before/after metrics.
 """
 

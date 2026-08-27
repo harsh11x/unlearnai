@@ -20,7 +20,7 @@ export default function Header() {
           </div>
           <div>
             <span className="font-display font-bold text-xl tracking-tight">
-              UNLEARN<span className="text-brutal-accent">STUDIO</span>
+              NULL<span className="text-brutal-accent">MIND</span>
             </span>
           </div>
         </Link>

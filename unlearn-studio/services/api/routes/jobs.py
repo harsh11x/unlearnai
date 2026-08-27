@@ -1,5 +1,5 @@
 """
-Unlearn Studio - Jobs API Routes
+NullMind - Jobs API Routes
 Handles unlearning job creation, monitoring, and management.
 """
 

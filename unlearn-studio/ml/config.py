@@ -1,5 +1,5 @@
 """
-Unlearn Studio - ML Configuration
+NullMind - ML Configuration
 Central configuration for the machine learning pipeline.
 """
 

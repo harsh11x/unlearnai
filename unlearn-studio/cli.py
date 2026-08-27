@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unlearn Studio - CLI Proof of Concept
+NullMind - CLI Proof of Concept
 
 The first milestone: demonstrate the complete scientific loop.
 
@@ -39,13 +39,13 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
-logger = logging.getLogger("unlearn_studio.cli")
+logger = logging.getLogger("nullmind.cli")
 
 
 def print_banner():
     print("""
 ╔══════════════════════════════════════════════════════════╗
-║                  UNLEARN STUDIO                          ║
+║                  NULLMIND                          ║
 ║          AI Model Unlearning Platform                    ║
 ║                                                          ║
 ║  Scientific Disclaimer:                                  ║
@@ -338,7 +338,7 @@ def run_pipeline(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Unlearn Studio CLI - AI Model Unlearning Platform",
+        description="NullMind CLI - AI Model Unlearning Platform",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

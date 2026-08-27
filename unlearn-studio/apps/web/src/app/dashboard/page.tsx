@@ -84,7 +84,7 @@ function TopBar({ activeTab }: { activeTab: Tab }) {
   return (
     <header className="h-12 border-b-3 border-white bg-brutal-gray flex items-center justify-between px-4 shrink-0">
       <div className="flex items-center gap-3">
-        <div className="font-mono text-xs text-brutal-mid">unlearn-studio</div>
+        <div className="font-mono text-xs text-brutal-mid">nullmind</div>
         <ChevronRight size={12} className="text-brutal-mid" />
         <span className="font-display text-sm font-semibold">{titles[activeTab]}</span>
       </div>

@@ -16,11 +16,11 @@ interface User {
 }
 
 const users: User[] = [
-  // Pre-seeded demo user: demo@unlearn.studio / Password1
+  // Pre-seeded demo user: demo@nullmind.dev / Password1
   {
     id: "usr_demo",
     name: "Demo User",
-    email: "demo@unlearn.studio",
+    email: "demo@nullmind.dev",
     password: "$2a$10$YourHashedPasswordHere",
     provider: "credentials",
     createdAt: new Date().toISOString(),
@@ -175,5 +175,5 @@ export const {
     },
   },
 
-  secret: process.env.NEXTAUTH_SECRET || "unlearn-studio-dev-secret-change-in-production",
+  secret: process.env.NEXTAUTH_SECRET || "nullmind-dev-secret-change-in-production",
 });

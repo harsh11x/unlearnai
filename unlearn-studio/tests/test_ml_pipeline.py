@@ -1,5 +1,5 @@
 """
-Unlearn Studio - ML Pipeline Tests
+NullMind - ML Pipeline Tests
 Tests for the core ML components without requiring GPU or model loading.
 """
 

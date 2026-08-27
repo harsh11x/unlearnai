@@ -43,7 +43,7 @@ export default function LoginPage() {
             <span className="font-mono text-brutal-black font-bold text-lg">U</span>
           </div>
           <span className="font-display font-bold text-xl">
-            UNLEARN<span className="text-brutal-accent">STUDIO</span>
+            NULL<span className="text-brutal-accent">MIND</span>
           </span>
         </Link>
 
@@ -75,7 +75,7 @@ export default function LoginPage() {
               <span className="font-mono text-brutal-black font-bold text-lg">U</span>
             </div>
             <span className="font-display font-bold text-xl">
-              UNLEARN<span className="text-brutal-accent">STUDIO</span>
+              NULL<span className="text-brutal-accent">MIND</span>
             </span>
           </Link>
 
@@ -84,7 +84,7 @@ export default function LoginPage() {
 
           {/* Demo hint */}
           <div className="border border-brutal-green/30 bg-brutal-green/5 p-3 mb-6 text-xs font-mono text-brutal-green">
-            Demo: demo@unlearn.studio / Password1
+            Demo: demo@nullmind.dev / Password1
           </div>
 
           {/* OAuth buttons */}

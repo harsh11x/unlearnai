@@ -1,5 +1,5 @@
 """
-Unlearn Studio - Database Models
+NullMind - Database Models
 SQLAlchemy models for all database entities.
 """
 
@@ -222,7 +222,7 @@ class AuditEvent(Base):
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
-    "sqlite:///unlearn_studio.db"
+    "sqlite:///nullmind.db"
 )
 
 engine = create_engine(DATABASE_URL, echo=False)

@@ -1,5 +1,5 @@
 """
-Celery Worker Tasks for Unlearn Studio.
+Celery Worker Tasks for NullMind.
 
 These tasks run on GPU-enabled workers and handle:
 1. Model validation and metadata extraction

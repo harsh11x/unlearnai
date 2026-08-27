@@ -1,5 +1,5 @@
 """
-SQLAlchemy Database Models for Unlearn Studio.
+SQLAlchemy Database Models for NullMind.
 
 These models represent the persistent state of the platform including
 projects, models, versions, jobs, evaluations, and audit events.

@@ -1,8 +1,8 @@
-# Unlearn Studio
+# NullMind
 
 **AI Model Unlearning Platform**
 
-Unlearn Studio is an evidence-based platform for selectively reducing specific capabilities in language models while preserving unrelated knowledge.
+NullMind is an evidence-based platform for selectively reducing specific capabilities in language models while preserving unrelated knowledge.
 
 ## Status
 
@@ -26,7 +26,7 @@ V1 focuses on one domain: **Programming / Code Generation**, with Python as the 
 ## Architecture
 
 ```
-unlearn-studio/
+nullmind/
 ├── apps/web/              # Next.js frontend
 ├── services/
 │   ├── api/               # FastAPI backend
@@ -99,7 +99,7 @@ npm run dev
 
 ### Evaluation Methodology
 
-Unlearn Studio uses **controlled probing experiments** to measure observed capabilities:
+NullMind uses **controlled probing experiments** to measure observed capabilities:
 
 1. **Direct probes**: Standard prompts for specific capabilities
 2. **Paraphrase probes**: Reworded variants to test robustness

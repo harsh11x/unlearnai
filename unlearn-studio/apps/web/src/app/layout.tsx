@@ -3,7 +3,7 @@ import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
 
 export const metadata: Metadata = {
-  title: "UNLEARN STUDIO — AI Model Unlearning Platform",
+  title: "NULLMIND — AI Model Unlearning Platform",
   description: "Selective unlearning, capability reduction, and model knowledge control. Forget what you need, keep what matters.",
 };
 

@@ -1,5 +1,5 @@
 """
-Unlearn Studio - Python Probe Dataset
+NullMind - Python Probe Dataset
 Comprehensive evaluation probes for measuring Python capability.
 Each category has multiple probes with paraphrased variants.
 """
