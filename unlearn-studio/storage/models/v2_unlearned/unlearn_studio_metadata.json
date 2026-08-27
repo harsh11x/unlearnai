@@ -1,0 +1,6 @@
+{
+  "source_model": "hf-internal-testing/tiny-random-GPT2Model",
+  "version": "v2_unlearned",
+  "architecture": "GPT2LMHeadModel",
+  "parameters": 83161
+}

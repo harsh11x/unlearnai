@@ -1,0 +1,30 @@
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
+
+# Install Python
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-venv \
+    python3-pip \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Python 3.11 as default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
+
+WORKDIR /app
+
+# Copy requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY ml/ ml/
+COPY services/worker/ services/worker/
+COPY storage/ storage/
+
+# Run worker
+CMD ["celery", "-A", "services.worker.celery_app:celery_app", "worker", \
+     "--loglevel=info", \
+     "--concurrency=1", \
+     "-Q", "unlearning,evaluation"]

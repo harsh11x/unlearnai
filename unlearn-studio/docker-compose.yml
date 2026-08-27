@@ -1,0 +1,108 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: unlearn_studio
+      POSTGRES_USER: unlearn
+      POSTGRES_PASSWORD: unlearn_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unlearn -d unlearn_studio"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://unlearn:unlearn_dev@db:5432/unlearn_studio
+      REDIS_URL: redis://redis:6379/0
+      STORAGE_DIR: /app/storage
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Celery Worker (CPU tasks)
+  worker-cpu:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.worker
+    environment:
+      DATABASE_URL: postgresql://unlearn:unlearn_dev@db:5432/unlearn_studio
+      REDIS_URL: redis://redis:6379/0
+      STORAGE_DIR: /app/storage
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      - redis
+    command: >
+      celery -A services.worker.celery_app:celery_app worker
+      --loglevel=info
+      --concurrency=2
+      -Q evaluation
+
+  # Celery Worker (GPU tasks - unlearning)
+  worker-gpu:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile.worker
+    environment:
+      DATABASE_URL: postgresql://unlearn:unlearn_dev@db:5432/unlearn_studio
+      REDIS_URL: redis://redis:6379/0
+      STORAGE_DIR: /app/storage
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      - redis
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: >
+      celery -A services.worker.celery_app:celery_app worker
+      --loglevel=info
+      --concurrency=1
+      -Q unlearning
+
+  # Frontend (Next.js)
+  web:
+    build:
+      context: apps/web
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
