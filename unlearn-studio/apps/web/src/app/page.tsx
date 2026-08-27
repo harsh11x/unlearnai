@@ -5,39 +5,39 @@ import Header from "@/components/Header";
 import {
   ArrowRight, Target, CheckCircle2, XCircle,
   FlaskConical, BarChart3, Shield, GitBranch, Database, Cpu,
-  Layers, Zap, Sparkles, Pin, Bookmark, FileText, Check, HelpCircle
+  Layers, Zap
 } from "lucide-react";
 
 /* ════════════ HERO SECTION ════════════ */
 function Hero() {
   return (
-    <section className="relative pt-24 pb-20 bg-[#eae5d9] chart-grid border-b-3 border-[#0f172a] overflow-hidden">
+    <section className="relative pt-36 md:pt-44 pb-28 md:pb-36 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a] overflow-hidden">
       {/* Background Floating Decorative Sticky Notes */}
-      <div className="absolute top-16 right-10 w-32 h-32 bg-[#fef08a] border-2 border-[#0f172a] rotate-12 opacity-40 pointer-events-none hidden lg:block shadow-[4px_4px_0_0_#0f172a]">
-        <div className="p-2 font-hand text-lg text-slate-800">unlearn_v1.py</div>
+      <div className="absolute top-28 right-12 w-36 h-36 bg-[#fef08a] border-2 border-[#0f172a] rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
+        <div className="p-3 font-hand text-xl text-slate-800">unlearn_v1.py</div>
       </div>
-      <div className="absolute bottom-10 left-8 w-28 h-28 bg-[#fbcfe8] border-2 border-[#0f172a] -rotate-12 opacity-50 pointer-events-none hidden lg:block shadow-[4px_4px_0_0_#0f172a]">
-        <div className="p-2 font-hand text-base text-slate-800">python = 0%</div>
+      <div className="absolute bottom-12 right-1/3 w-32 h-32 bg-[#fbcfe8] border-2 border-[#0f172a] -rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
+        <div className="p-3 font-hand text-lg text-slate-800">python = 0%</div>
       </div>
 
-      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto relative z-10">
+      <div className="w-full px-4 md:px-8 lg:px-12 mx-auto relative z-10">
         
         {/* Top Tag Label */}
-        <div className="inline-flex items-center gap-2 bg-[#ffffff] border-2 border-[#0f172a] px-4 py-1.5 shadow-[3px_3px_0_0_#0f172a] mb-8 -rotate-1">
+        <div className="inline-flex items-center gap-2 bg-[#ffffff] border-2 border-[#0f172a] px-4 py-2 shadow-[3px_3px_0_0_#0f172a] mb-8 -rotate-1">
           <span className="w-2.5 h-2.5 bg-[#ef4444] rounded-full border border-[#0f172a]" />
-          <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#0f172a]">
-            📌 RESEARCH BULLETIN — NULLMIND PLATFORM
+          <span className="font-mono text-xs md:text-sm font-bold uppercase tracking-widest text-[#0f172a]">
+            📌 RESEARCH BULLETIN — NULLMIND PLATFORM V1.0
           </span>
         </div>
 
-        <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           
-          {/* Left Column: Big Headline & Subtitle */}
-          <div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.05] text-[#0f172a]">
+          {/* Left Column: Headline & Subtitle */}
+          <div className="w-full">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] text-[#0f172a]">
               SELECTIVELY <br />
-              <span className="relative inline-block my-2">
-                <span className="bg-[#fef08a] border-2 border-[#0f172a] px-3 py-1 shadow-[4px_4px_0_0_#0f172a] inline-block -rotate-1">
+              <span className="relative inline-block my-3">
+                <span className="bg-[#fef08a] border-3 border-[#0f172a] px-4 py-1.5 shadow-[5px_5px_0_0_#0f172a] inline-block -rotate-1">
                   UNLEARN
                 </span>
                 <div className="tape tape-top-right"></div>
@@ -46,9 +46,9 @@ function Hero() {
             </h1>
 
             {/* Sticky Card Note Subtitle */}
-            <div className="mt-8 relative bg-white border-2 border-[#0f172a] p-6 shadow-[6px_6px_0_0_#0f172a] rotate-1 max-w-xl">
+            <div className="mt-8 relative bg-white border-2 border-[#0f172a] p-6 md:p-8 shadow-[6px_6px_0_0_#0f172a] rotate-1 w-full">
               <div className="pushpin"></div>
-              <p className="font-mono text-sm md:text-base font-bold text-slate-800 leading-relaxed">
+              <p className="font-mono text-sm md:text-base lg:text-lg font-bold text-slate-800 leading-relaxed">
                 A production platform for{" "}
                 <span className="bg-[#bae6fd] px-2 py-0.5 border border-[#0f172a]">
                   measured capability reduction
@@ -58,63 +58,63 @@ function Hero() {
                   Keep everything else.
                 </span>
               </p>
-              <div className="mt-3 text-right font-hand text-xl font-bold text-slate-600">
+              <div className="mt-4 text-right font-hand text-2xl font-bold text-slate-600">
                 ~ Empirical & Reproducible
               </div>
             </div>
 
             {/* CTAs */}
             <div className="flex flex-wrap items-center gap-4 mt-8">
-              <Link href="/signup" className="btn-sticky text-base py-3 px-6">
+              <Link href="/signup" className="btn-sticky text-base py-3.5 px-7">
                 Start Experimenting <ArrowRight size={18} />
               </Link>
-              <Link href="/#how-it-works" className="btn-tape text-base py-3 px-6">
+              <Link href="/#how-it-works" className="btn-tape text-base py-3.5 px-7">
                 See How It Works 📋
               </Link>
             </div>
           </div>
 
           {/* Right Column: Interactive Sticky Note Grid Stats */}
-          <div className="grid grid-cols-2 gap-4 relative">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
             
             {/* Sticky 1 */}
-            <div className="sticky-note bg-[#fef08a] p-5 -rotate-2">
+            <div className="sticky-note bg-[#fef08a] p-6 -rotate-2 w-full">
               <div className="tape tape-top-center"></div>
-              <div className="font-mono text-3xl md:text-4xl font-black text-[#0f172a]">20+</div>
-              <div className="font-mono text-xs font-bold uppercase tracking-wider text-slate-700 mt-2 border-t border-[#0f172a]/30 pt-2">
+              <div className="font-mono text-4xl md:text-5xl font-black text-[#0f172a]">20+</div>
+              <div className="font-mono text-xs md:text-sm font-bold uppercase tracking-wider text-slate-700 mt-3 border-t-2 border-[#0f172a]/30 pt-3">
                 Probe Categories
               </div>
-              <div className="font-hand text-lg text-slate-600 mt-1">Code, Safety, Math...</div>
+              <div className="font-hand text-xl text-slate-700 mt-1">Code, Safety, Math...</div>
             </div>
 
             {/* Sticky 2 */}
-            <div className="sticky-note bg-[#bae6fd] p-5 rotate-3">
+            <div className="sticky-note bg-[#bae6fd] p-6 rotate-2 w-full">
               <div className="tape tape-top-right"></div>
-              <div className="font-mono text-3xl md:text-4xl font-black text-[#0f172a]">89</div>
-              <div className="font-mono text-xs font-bold uppercase tracking-wider text-slate-700 mt-2 border-t border-[#0f172a]/30 pt-2">
+              <div className="font-mono text-4xl md:text-5xl font-black text-[#0f172a]">89</div>
+              <div className="font-mono text-xs md:text-sm font-bold uppercase tracking-wider text-slate-700 mt-3 border-t-2 border-[#0f172a]/30 pt-3">
                 Evaluation Probes
               </div>
-              <div className="font-hand text-lg text-slate-600 mt-1">Targeted test battery</div>
+              <div className="font-hand text-xl text-slate-700 mt-1">Targeted test battery</div>
             </div>
 
             {/* Sticky 3 */}
-            <div className="sticky-note bg-[#fbcfe8] p-5 rotate-2">
+            <div className="sticky-note bg-[#fbcfe8] p-6 rotate-2 w-full">
               <div className="tape tape-top-left"></div>
-              <div className="font-mono text-3xl md:text-4xl font-black text-[#0f172a]">2</div>
-              <div className="font-mono text-xs font-bold uppercase tracking-wider text-slate-700 mt-2 border-t border-[#0f172a]/30 pt-2">
+              <div className="font-mono text-4xl md:text-5xl font-black text-[#0f172a]">2</div>
+              <div className="font-mono text-xs md:text-sm font-bold uppercase tracking-wider text-slate-700 mt-3 border-t-2 border-[#0f172a]/30 pt-3">
                 Unlearn Methods
               </div>
-              <div className="font-hand text-lg text-slate-600 mt-1">Ascent + Retain Loss</div>
+              <div className="font-hand text-xl text-slate-700 mt-1">Ascent + Retain Loss</div>
             </div>
 
             {/* Sticky 4 */}
-            <div className="sticky-note bg-[#bbf7d0] p-5 -rotate-3">
+            <div className="sticky-note bg-[#bbf7d0] p-6 -rotate-2 w-full">
               <div className="tape tape-top-center"></div>
-              <div className="font-mono text-3xl md:text-4xl font-black text-[#0f172a]">5</div>
-              <div className="font-mono text-xs font-bold uppercase tracking-wider text-slate-700 mt-2 border-t border-[#0f172a]/30 pt-2">
+              <div className="font-mono text-4xl md:text-5xl font-black text-[#0f172a]">5</div>
+              <div className="font-mono text-xs md:text-sm font-bold uppercase tracking-wider text-slate-700 mt-3 border-t-2 border-[#0f172a]/30 pt-3">
                 Languages Tested
               </div>
-              <div className="font-hand text-lg text-slate-600 mt-1">Python, JS, TS, C++</div>
+              <div className="font-hand text-xl text-slate-700 mt-1">Python, JS, TS, C++</div>
             </div>
 
           </div>
@@ -127,37 +127,37 @@ function Hero() {
 /* ════════════ PROBLEM SECTION ════════════ */
 function ProblemSection() {
   return (
-    <section className="py-20 bg-[#e5dec9] border-b-3 border-[#0f172a]">
-      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto">
+    <section className="py-28 md:py-36 bg-[#e5dec9] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 md:px-8 lg:px-12 mx-auto">
         
-        {/* Folder / Cardboard Wrapper */}
-        <div className="cardboard p-6 md:p-10 relative">
-          <div className="absolute -top-4 left-8 bg-[#ef4444] text-white px-4 py-1 font-mono font-black text-xs uppercase tracking-widest border-2 border-[#0f172a] shadow-[2px_2px_0_0_#0f172a]">
+        {/* Folder / Cardboard Wrapper spanning full width */}
+        <div className="cardboard p-6 md:p-10 lg:p-12 relative w-full">
+          <div className="absolute -top-4 left-6 bg-[#ef4444] text-white px-4 py-1 font-mono font-black text-xs uppercase tracking-widest border-2 border-[#0f172a] shadow-[2px_2px_0_0_#0f172a]">
             ⚠️ CASE FILE #409: THE PERMANENCE PROBLEM
           </div>
 
-          <div className="grid lg:grid-cols-[1fr_1.2fr] gap-10 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             
             {/* Left Box */}
-            <div>
+            <div className="w-full">
               <div className="stamp mb-4">CONFIDENTIAL</div>
-              <h2 className="text-3xl md:text-4xl font-black text-[#0f172a] leading-tight">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-[#0f172a] leading-tight">
                 AI Models Cannot <br />
-                <span className="bg-[#fef08a] px-2 py-0.5 border border-[#0f172a]">Selectively Forget</span>
+                <span className="bg-[#fef08a] px-3 py-1 border-2 border-[#0f172a] inline-block my-2">Selectively Forget</span>
               </h2>
-              <p className="mt-4 font-mono text-sm text-slate-700 leading-relaxed">
+              <p className="mt-4 font-mono text-sm md:text-base text-slate-800 leading-relaxed">
                 Once trained, LLMs permanently memorize code, PII, and copyrighted content across millions of parameters.
               </p>
 
-              <div className="mt-6 p-4 bg-white border-2 border-[#0f172a] shadow-[4px_4px_0_0_#0f172a] rotate-1">
-                <span className="font-hand text-2xl font-bold text-[#ef4444]">
+              <div className="mt-6 p-5 bg-white border-2 border-[#0f172a] shadow-[5px_5px_0_0_#0f172a] rotate-1">
+                <span className="font-hand text-2xl md:text-3xl font-bold text-[#ef4444]">
                   "Retraining from scratch costs $100k+ every time a removal request arrives."
                 </span>
               </div>
             </div>
 
             {/* Right Sticky Card Stack */}
-            <div className="space-y-4">
+            <div className="space-y-4 w-full">
               {[
                 { title: "Permanent Memorization", color: "bg-[#fef08a]", text: "Training data is baked directly into neural network weights." },
                 { title: "No Erase Button", color: "bg-[#bae6fd]", text: "Standard RLHF or fine-tuning only suppresses output — data remains accessible via jailbreaks." },
@@ -166,14 +166,14 @@ function ProblemSection() {
               ].map((item, idx) => (
                 <div 
                   key={idx} 
-                  className={`sticky-note ${item.color} p-4 flex items-start gap-4 transition-all hover:translate-x-2`}
+                  className={`sticky-note ${item.color} p-5 flex items-start gap-4 transition-all hover:translate-x-2 w-full`}
                 >
-                  <span className="font-mono font-black text-xl bg-[#0f172a] text-white w-7 h-7 flex items-center justify-center shrink-0">
+                  <span className="font-mono font-black text-xl bg-[#0f172a] text-white w-8 h-8 flex items-center justify-center shrink-0">
                     {idx + 1}
                   </span>
                   <div>
-                    <h3 className="font-mono text-sm font-bold uppercase text-[#0f172a]">{item.title}</h3>
-                    <p className="font-mono text-xs text-slate-700 mt-1">{item.text}</p>
+                    <h3 className="font-mono text-sm md:text-base font-bold uppercase text-[#0f172a]">{item.title}</h3>
+                    <p className="font-mono text-xs md:text-sm text-slate-800 mt-1">{item.text}</p>
                   </div>
                 </div>
               ))}
@@ -199,30 +199,30 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="py-20 bg-[#eae5d9] chart-grid border-b-3 border-[#0f172a]">
-      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto">
+    <section id="how-it-works" className="py-28 md:py-36 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 md:px-8 lg:px-12 mx-auto">
         
         {/* Header Tag */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-14 gap-6">
           <div>
-            <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-2">
+            <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-3">
               📋 PROTOCOL PIPELINE
             </div>
             <h2 className="text-3xl md:text-5xl font-black text-[#0f172a] tracking-tight">
               Six Steps to Verified Unlearning
             </h2>
           </div>
-          <div className="font-hand text-2xl font-bold text-slate-700 bg-[#fef08a] px-4 py-1 border-2 border-[#0f172a] -rotate-2">
+          <div className="font-hand text-2xl md:text-3xl font-bold text-slate-700 bg-[#fef08a] px-5 py-2 border-2 border-[#0f172a] -rotate-2">
             ~ Fully Reproducible Pipeline ~
           </div>
         </div>
 
-        {/* 6 Sticky Notes Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* 6 Sticky Notes Grid filling full width */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {steps.map((step) => (
             <div
               key={step.num}
-              className={`sticky-note ${step.color} ${step.rot} p-6 flex flex-col justify-between min-h-[240px]`}
+              className={`sticky-note ${step.color} ${step.rot} p-6 md:p-7 flex flex-col justify-between min-h-[260px] w-full`}
             >
               <div className="tape tape-top-center"></div>
 
@@ -234,15 +234,15 @@ function HowItWorks() {
                   <span className="font-hand text-2xl font-bold text-slate-700">#probe</span>
                 </div>
 
-                <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase">{step.title}</h3>
-                <p className="font-mono text-xs font-bold text-slate-800 leading-relaxed mt-2">{step.desc}</p>
+                <h3 className="font-mono text-lg md:text-xl font-black text-[#0f172a] uppercase">{step.title}</h3>
+                <p className="font-mono text-xs md:text-sm font-bold text-slate-800 leading-relaxed mt-3">{step.desc}</p>
               </div>
 
               <div className="mt-6 pt-3 border-t-2 border-dashed border-[#0f172a]/30 flex items-center justify-between">
-                <span className="font-mono text-[10px] font-black uppercase text-slate-600 bg-white/70 px-2 py-0.5 border border-[#0f172a]/40">
+                <span className="font-mono text-[11px] font-black uppercase text-slate-700 bg-white/70 px-2 py-1 border border-[#0f172a]/40">
                   {step.tag}
                 </span>
-                <span className="text-sm">📌</span>
+                <span className="text-base">📌</span>
               </div>
             </div>
           ))}
@@ -256,31 +256,31 @@ function HowItWorks() {
 /* ════════════ VISUAL PIPELINE / CHART PAPER LAB ════════════ */
 function VisualPipeline() {
   return (
-    <section className="py-20 bg-[#f4efe4] border-b-3 border-[#0f172a]">
-      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto">
+    <section className="py-28 md:py-36 bg-[#f4efe4] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 md:px-8 lg:px-12 mx-auto">
         
-        <div className="text-center mb-12">
-          <div className="stamp stamp-green mb-2">SCIENTIFIC DUAL LOSS</div>
+        <div className="text-center mb-14">
+          <div className="stamp stamp-green mb-3">SCIENTIFIC DUAL LOSS</div>
           <h2 className="text-3xl md:text-5xl font-black text-[#0f172a]">
             Retention-Aware Loss Architecture
           </h2>
         </div>
 
         {/* Blueprint Chart Board */}
-        <div className="bg-white border-3 border-[#0f172a] p-6 md:p-10 shadow-[8px_8px_0_0_#0f172a] chart-grid-dense relative">
+        <div className="bg-white border-3 border-[#0f172a] p-6 md:p-10 lg:p-12 shadow-[10px_10px_0_0_#0f172a] chart-grid-dense relative w-full">
           <div className="pushpin"></div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             {/* Phase 1 */}
-            <div className="bg-[#fef08a] border-2 border-[#0f172a] p-6 shadow-[4px_4px_0_0_#0f172a] relative -rotate-1">
+            <div className="bg-[#fef08a] border-2 border-[#0f172a] p-6 shadow-[5px_5px_0_0_#0f172a] relative -rotate-1 w-full">
               <div className="absolute top-2 right-2 font-mono text-xs font-bold bg-[#0f172a] text-white px-2 py-0.5">
                 PHASE A
               </div>
-              <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4">
+              <h3 className="font-mono text-lg md:text-xl font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4">
                 1. Baseline Score
               </h3>
-              <ul className="font-mono text-xs font-bold text-slate-800 space-y-2">
+              <ul className="font-mono text-xs md:text-sm font-bold text-slate-800 space-y-3">
                 <li className="flex items-center gap-2">✓ Python Probes: 50.0%</li>
                 <li className="flex items-center gap-2">✓ JavaScript: 50.0%</li>
                 <li className="flex items-center gap-2">✓ TypeScript: 100.0%</li>
@@ -289,35 +289,35 @@ function VisualPipeline() {
             </div>
 
             {/* Phase 2 */}
-            <div className="bg-[#fbcfe8] border-2 border-[#0f172a] p-6 shadow-[4px_4px_0_0_#0f172a] relative rotate-1">
+            <div className="bg-[#fbcfe8] border-2 border-[#0f172a] p-6 shadow-[5px_5px_0_0_#0f172a] relative rotate-1 w-full">
               <div className="absolute top-2 right-2 font-mono text-xs font-bold bg-[#0f172a] text-white px-2 py-0.5">
                 PHASE B
               </div>
-              <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4">
+              <h3 className="font-mono text-lg md:text-xl font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4">
                 2. Dual Unlearn
               </h3>
-              <div className="font-mono text-xs font-bold text-slate-800 space-y-2">
-                <div className="p-2 bg-white border border-[#0f172a]">
+              <div className="font-mono text-xs md:text-sm font-bold text-slate-800 space-y-3">
+                <div className="p-2.5 bg-white border border-[#0f172a]">
                   🔥 Gradient Ascent: Target (Python)
                 </div>
-                <div className="p-2 bg-white border border-[#0f172a]">
+                <div className="p-2.5 bg-white border border-[#0f172a]">
                   🛡️ Gradient Descent: Retain Set
                 </div>
-                <div className="font-hand text-xl text-slate-700 text-center mt-2">
+                <div className="font-hand text-2xl text-slate-700 text-center mt-3">
                   L_total = L_forget + λ L_retain
                 </div>
               </div>
             </div>
 
             {/* Phase 3 */}
-            <div className="bg-[#bbf7d0] border-2 border-[#0f172a] p-6 shadow-[4px_4px_0_0_#0f172a] relative -rotate-1">
+            <div className="bg-[#bbf7d0] border-2 border-[#0f172a] p-6 shadow-[5px_5px_0_0_#0f172a] relative -rotate-1 w-full">
               <div className="absolute top-2 right-2 font-mono text-xs font-bold bg-[#0f172a] text-white px-2 py-0.5">
                 PHASE C
               </div>
-              <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4">
+              <h3 className="font-mono text-lg md:text-xl font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4">
                 3. Verification
               </h3>
-              <ul className="font-mono text-xs font-bold text-slate-800 space-y-2">
+              <ul className="font-mono text-xs md:text-sm font-bold text-slate-800 space-y-3">
                 <li className="flex items-center gap-2 text-red-600 font-black">🎯 Python: 50% → 0.0% (UNLEARNED)</li>
                 <li className="flex items-center gap-2">✅ JavaScript: 50.0% (PRESERVED)</li>
                 <li className="flex items-center gap-2">✅ TypeScript: 100.0% (PRESERVED)</li>
@@ -327,8 +327,8 @@ function VisualPipeline() {
 
           </div>
 
-          <div className="mt-8 text-center">
-            <span className="inline-block bg-[#0f172a] text-[#fef08a] font-mono text-xs font-bold uppercase tracking-widest px-6 py-3 border-2 border-[#0f172a] shadow-[4px_4px_0_0_#0f172a]">
+          <div className="mt-10 text-center">
+            <span className="inline-block bg-[#0f172a] text-[#fef08a] font-mono text-xs md:text-sm font-bold uppercase tracking-widest px-6 py-3.5 border-2 border-[#0f172a] shadow-[4px_4px_0_0_#0f172a]">
               ⚡ RESULT: TARGET CAPABILITY REDUCED WHILE PRESERVING RETAINED SKILLS
             </span>
           </div>
@@ -351,11 +351,11 @@ function Features() {
   ];
 
   return (
-    <section id="features" className="py-20 bg-[#e5dec9] border-b-3 border-[#0f172a]">
-      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto">
+    <section id="features" className="py-28 md:py-36 bg-[#e5dec9] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 md:px-8 lg:px-12 mx-auto">
         
-        <div className="mb-12">
-          <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-2">
+        <div className="mb-14">
+          <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-3">
             ⚙️ ENGINE CAPABILITIES
           </div>
           <h2 className="text-3xl md:text-5xl font-black text-[#0f172a]">
@@ -363,20 +363,20 @@ function Features() {
           </h2>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((f, i) => (
             <div
               key={f.title}
-              className={`sticky-note ${f.color} p-6 flex flex-col justify-between`}
+              className={`sticky-note ${f.color} p-7 flex flex-col justify-between w-full`}
             >
               <div>
-                <div className="w-10 h-10 bg-[#0f172a] text-white flex items-center justify-center mb-4 border border-[#0f172a]">
-                  <f.icon size={20} />
+                <div className="w-12 h-12 bg-[#0f172a] text-white flex items-center justify-center mb-5 border border-[#0f172a]">
+                  <f.icon size={22} />
                 </div>
-                <h3 className="font-mono text-base font-black text-[#0f172a] uppercase">{f.title}</h3>
-                <p className="font-mono text-xs font-bold text-slate-800 leading-relaxed mt-2">{f.desc}</p>
+                <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase">{f.title}</h3>
+                <p className="font-mono text-xs md:text-sm font-bold text-slate-800 leading-relaxed mt-3">{f.desc}</p>
               </div>
-              <div className="font-hand text-lg text-slate-600 mt-4 text-right">
+              <div className="font-hand text-xl text-slate-600 mt-6 text-right">
                 #feature-{i + 1}
               </div>
             </div>
@@ -399,41 +399,41 @@ function Results() {
   ];
 
   return (
-    <section className="py-20 bg-[#fef08a] border-b-3 border-[#0f172a] chart-grid">
-      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto">
+    <section className="py-28 md:py-36 bg-[#fef08a] border-b-4 border-[#0f172a] chart-grid">
+      <div className="w-full px-4 md:px-8 lg:px-12 mx-auto">
         
-        <div className="grid lg:grid-cols-[1fr_1.4fr] gap-10 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           
           {/* Left Column */}
-          <div>
+          <div className="w-full">
             <div className="stamp stamp-green mb-4">PROOFS OF CONCEPT</div>
             <h2 className="text-3xl md:text-5xl font-black text-[#0f172a] leading-tight">
               Real Evaluation Scorecard
             </h2>
-            <p className="font-mono text-sm text-slate-800 leading-relaxed mt-4">
-              Tested on <span className="bg-black text-white px-2 py-0.5 font-mono text-xs">Salesforce/codegen-350M</span>.
+            <p className="font-mono text-sm md:text-base text-slate-800 leading-relaxed mt-4">
+              Tested on <span className="bg-black text-white px-2 py-0.5 font-mono text-xs md:text-sm">Salesforce/codegen-350M</span>.
             </p>
 
-            <div className="mt-6 p-5 bg-white border-2 border-[#0f172a] shadow-[5px_5px_0_0_#0f172a] -rotate-1">
-              <div className="flex items-center gap-3">
-                <CheckCircle2 size={28} className="text-green-600 shrink-0" />
+            <div className="mt-6 p-6 bg-white border-2 border-[#0f172a] shadow-[6px_6px_0_0_#0f172a] -rotate-1 w-full">
+              <div className="flex items-center gap-4">
+                <CheckCircle2 size={32} className="text-green-600 shrink-0" />
                 <div>
-                  <div className="font-mono text-base font-black text-[#0f172a] uppercase">VERDICT: PASS</div>
-                  <div className="font-mono text-xs text-slate-700">Target Python capability eliminated with 0 collateral damage on JS/TS/C++.</div>
+                  <div className="font-mono text-base md:text-lg font-black text-[#0f172a] uppercase">VERDICT: PASS</div>
+                  <div className="font-mono text-xs md:text-sm text-slate-700 mt-1">Target Python capability eliminated with 0 collateral damage on JS/TS/C++.</div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Right Column: Chart Table */}
-          <div className="bg-white border-3 border-[#0f172a] shadow-[8px_8px_0_0_#0f172a] p-4 rotate-1">
-            <div className="font-mono text-xs font-black uppercase bg-[#0f172a] text-white p-3 flex justify-between items-center mb-2">
+          <div className="bg-white border-3 border-[#0f172a] shadow-[8px_8px_0_0_#0f172a] p-5 rotate-1 w-full">
+            <div className="font-mono text-xs md:text-sm font-black uppercase bg-[#0f172a] text-white p-3 flex justify-between items-center mb-3">
               <span>EVALUATION METRICS TABLE</span>
               <span className="text-[#fef08a]">codegen-350m-v2</span>
             </div>
 
             <div className="divide-y-2 divide-[#0f172a]">
-              <div className="grid grid-cols-4 font-mono text-xs font-black text-slate-600 p-2 bg-[#f4efe4]">
+              <div className="grid grid-cols-4 font-mono text-xs font-black text-slate-600 p-2.5 bg-[#f4efe4]">
                 <div>CAPABILITY</div>
                 <div className="text-center">BEFORE</div>
                 <div className="text-center">AFTER</div>
@@ -443,14 +443,14 @@ function Results() {
               {results.map((r) => (
                 <div 
                   key={r.cap} 
-                  className={`grid grid-cols-4 font-mono text-xs font-bold p-3 items-center ${
+                  className={`grid grid-cols-4 font-mono text-xs md:text-sm font-bold p-3.5 items-center ${
                     r.isTarget ? "bg-[#fbcfe8]" : "hover:bg-[#f4efe4]"
                   }`}
                 >
                   <div className="flex items-center gap-1.5 font-black text-[#0f172a]">
-                    {r.isTarget && <Target size={14} className="text-red-600 shrink-0" />}
+                    {r.isTarget && <Target size={16} className="text-red-600 shrink-0" />}
                     {r.cap}
-                    {r.isTarget && <span className="text-[9px] bg-red-600 text-white px-1 ml-1">TARGET</span>}
+                    {r.isTarget && <span className="text-[9px] bg-red-600 text-white px-1 ml-1 hidden sm:inline-block">TARGET</span>}
                   </div>
                   <div className="text-center text-slate-700">{r.before}</div>
                   <div className="text-center text-slate-700">{r.after}</div>
@@ -472,11 +472,11 @@ function Results() {
 /* ════════════ RESEARCH TRANSPARENCY MEMO ════════════ */
 function ResearchSection() {
   return (
-    <section id="research" className="py-20 bg-[#eae5d9] border-b-3 border-[#0f172a]">
-      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto">
+    <section id="research" className="py-28 md:py-36 bg-[#eae5d9] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 md:px-8 lg:px-12 mx-auto">
         
-        <div className="text-center mb-12">
-          <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-2">
+        <div className="text-center mb-14">
+          <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-3">
             🔬 TRANSPARENCY NOTICE
           </div>
           <h2 className="text-3xl md:text-5xl font-black text-[#0f172a]">
@@ -484,33 +484,33 @@ function ResearchSection() {
           </h2>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 w-full">
           
           {/* Memo 1: What We Do */}
-          <div className="sticky-note bg-[#bbf7d0] p-6 -rotate-1">
+          <div className="sticky-note bg-[#bbf7d0] p-7 -rotate-1 w-full">
             <div className="tape tape-top-left"></div>
-            <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4 flex items-center gap-2">
-              <CheckCircle2 size={20} className="text-green-700" /> WHAT WE DO
+            <h3 className="font-mono text-lg md:text-xl font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-3 mb-5 flex items-center gap-2">
+              <CheckCircle2 size={22} className="text-green-700" /> WHAT WE DO
             </h3>
-            <ul className="font-mono text-xs font-bold text-slate-800 space-y-3">
-              <li className="flex items-start gap-2"><span>✓</span> Gradient-based model editing to reduce specific capabilities</li>
-              <li className="flex items-start gap-2"><span>✓</span> Controlled probing battery to measure output differences</li>
-              <li className="flex items-start gap-2"><span>✓</span> Retain-aware optimization to preserve un-targeted skills</li>
-              <li className="flex items-start gap-2"><span>✓</span> Robustness tests against paraphrased and indirect prompts</li>
+            <ul className="font-mono text-xs md:text-sm font-bold text-slate-800 space-y-4">
+              <li className="flex items-start gap-2.5"><span>✓</span> Gradient-based model editing to reduce specific capabilities</li>
+              <li className="flex items-start gap-2.5"><span>✓</span> Controlled probing battery to measure output differences</li>
+              <li className="flex items-start gap-2.5"><span>✓</span> Retain-aware optimization to preserve un-targeted skills</li>
+              <li className="flex items-start gap-2.5"><span>✓</span> Robustness tests against paraphrased and indirect prompts</li>
             </ul>
           </div>
 
           {/* Memo 2: What We Don't Claim */}
-          <div className="sticky-note bg-[#fbcfe8] p-6 rotate-1">
+          <div className="sticky-note bg-[#fbcfe8] p-7 rotate-1 w-full">
             <div className="tape tape-top-right"></div>
-            <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4 flex items-center gap-2">
-              <XCircle size={20} className="text-red-600" /> WHAT WE DON'T CLAIM
+            <h3 className="font-mono text-lg md:text-xl font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-3 mb-5 flex items-center gap-2">
+              <XCircle size={22} className="text-red-600" /> WHAT WE DON'T CLAIM
             </h3>
-            <ul className="font-mono text-xs font-bold text-slate-800 space-y-3">
-              <li className="flex items-start gap-2"><span>✕</span> We do NOT inspect internal model weights or neural representations</li>
-              <li className="flex items-start gap-2"><span>✕</span> We do NOT claim 100% mathematical knowledge deletion</li>
-              <li className="flex items-start gap-2"><span>✕</span> We do NOT guarantee theoretical machine unlearning proofs</li>
-              <li className="flex items-start gap-2"><span>✕</span> Results are empirical and based strictly on probe performance</li>
+            <ul className="font-mono text-xs md:text-sm font-bold text-slate-800 space-y-4">
+              <li className="flex items-start gap-2.5"><span>✕</span> We do NOT inspect internal model weights or neural representations</li>
+              <li className="flex items-start gap-2.5"><span>✕</span> We do NOT claim 100% mathematical knowledge deletion</li>
+              <li className="flex items-start gap-2.5"><span>✕</span> We do NOT guarantee theoretical machine unlearning proofs</li>
+              <li className="flex items-start gap-2.5"><span>✕</span> Results are empirical and based strictly on probe performance</li>
             </ul>
           </div>
 
@@ -524,25 +524,25 @@ function ResearchSection() {
 /* ════════════ CTA & FOOTER ════════════ */
 function CTASection() {
   return (
-    <section className="py-20 bg-[#f4efe4] border-b-3 border-[#0f172a]">
-      <div className="w-full max-w-[1000px] px-4 mx-auto text-center">
+    <section className="py-28 md:py-36 bg-[#f4efe4] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 md:px-8 lg:px-12 mx-auto text-center">
         
-        <div className="sticky-note bg-[#fef08a] p-8 md:p-12 rotate-1 relative">
+        <div className="sticky-note bg-[#fef08a] p-8 md:p-14 rotate-1 relative w-full">
           <div className="pushpin"></div>
           
           <h2 className="text-3xl md:text-5xl font-black text-[#0f172a] leading-tight">
             Ready to Unlearn Your Models?
           </h2>
           
-          <p className="font-mono text-sm md:text-base font-bold text-slate-800 mt-4 max-w-xl mx-auto">
+          <p className="font-mono text-sm md:text-base lg:text-lg font-bold text-slate-800 mt-4 max-w-2xl mx-auto">
             Upload your model checkpoint, run probe baseline, select target capability, and verify unlearning within minutes.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
-            <Link href="/signup" className="btn-sticky text-base py-3 px-8">
+            <Link href="/signup" className="btn-sticky text-base py-3.5 px-8">
               Start Free Trial 📌
             </Link>
-            <Link href="/#how-it-works" className="btn-tape text-base py-3 px-8">
+            <Link href="/#how-it-works" className="btn-tape text-base py-3.5 px-8">
               Read Documentation 📖
             </Link>
           </div>
@@ -555,8 +555,8 @@ function CTASection() {
 
 function Footer() {
   return (
-    <footer className="py-8 bg-[#0f172a] text-white">
-      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto flex flex-col md:flex-row justify-between items-center gap-4 font-mono text-xs">
+    <footer className="py-10 bg-[#0f172a] text-white">
+      <div className="w-full px-4 md:px-8 lg:px-12 mx-auto flex flex-col md:flex-row justify-between items-center gap-4 font-mono text-xs md:text-sm">
         <div className="flex items-center gap-3">
           <span className="bg-[#fef08a] text-[#0f172a] font-black px-2 py-0.5">NULLMIND</span>
           <span>Open Research Platform for LLM Capability Reduction</span>
