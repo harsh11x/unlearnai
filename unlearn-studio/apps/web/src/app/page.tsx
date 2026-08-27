@@ -9,32 +9,10 @@ import {
   Layers, ChevronDown, Zap, Play
 } from "lucide-react";
 
-/* ─── Intersection observer hook ─── */
-function useInView(threshold = 0.15) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } },
-      { threshold }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
-  return { ref, inView };
-}
-
-/* ─── Animated section wrapper ─── */
+/* ─── Animated section wrapper (Animations removed for brutalism) ─── */
 function Section({ children, className = "", id }: { children: React.ReactNode; className?: string; id?: string }) {
-  const { ref, inView } = useInView();
   return (
-    <section
-      ref={ref}
-      id={id}
-      className={`transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${className}`}
-    >
+    <section id={id} className={`border-b-[8px] border-black ${className}`}>
       {children}
     </section>
   );
@@ -43,75 +21,64 @@ function Section({ children, className = "", id }: { children: React.ReactNode; 
 /* ════════════ HERO ════════════ */
 function Hero() {
   return (
-    <section className="min-h-screen flex flex-col justify-center relative overflow-hidden">
-      {/* Subtle grid pattern */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: "linear-gradient(var(--color-ink) 1px, transparent 1px), linear-gradient(90deg, var(--color-ink) 1px, transparent 1px)",
-        backgroundSize: "80px 80px"
-      }} />
-
-      {/* Gradient orb */}
-      <div className="absolute top-1/4 right-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-highlight/5 to-transparent blur-3xl" />
+    <section className="min-h-screen flex flex-col justify-center relative border-b-[8px] border-black bg-highlight">
+      {/* Brutalist Grid is in globals.css applied to body, so we let it show or override here */}
+      <div className="absolute inset-0 z-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0wIDM5LjVoNDBWMDBIMHYzOS41eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMSIvPjwvc3ZnPg==')]"></div>
 
       <div className="max-w-[1320px] mx-auto w-full px-6 md:px-10 pt-32 pb-20 relative z-10">
         {/* Eyebrow */}
-        <div className="animate-fade-in-up delay-1 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border mb-8">
-          <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-          <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-ink-muted">
+        <div className="inline-flex items-center gap-3 px-4 py-2 border-4 border-black bg-white shadow-[4px_4px_0_0_#000] mb-8">
+          <div className="w-3 h-3 bg-error border-2 border-black" />
+          <span className="text-sm font-bold font-mono tracking-widest uppercase text-black">
             Open Research Platform — v1.0
           </span>
         </div>
 
         {/* Headline */}
-        <h1 className="animate-fade-in-up delay-2">
-          <span className="block text-[clamp(2.5rem,6vw,5rem)] leading-[1.05] font-bold tracking-[-0.03em]">
+        <h1 className="uppercase">
+          <span className="block text-[clamp(3rem,8vw,6rem)] leading-[0.9] font-black tracking-tighter">
             Selectively
           </span>
-          <span className="block text-[clamp(3rem,8vw,7rem)] leading-[0.95] font-serif font-bold italic tracking-[-0.02em]">
-            Unlearn
+          <span className="block text-[clamp(4rem,10vw,8rem)] leading-[0.8] font-bold font-serif text-white bg-black inline-block px-4 py-2 border-4 border-black my-4 shadow-[8px_8px_0_0_#000] transform -rotate-2">
+            UNLEARN
           </span>
-          <span className="block text-[clamp(2.5rem,6vw,5rem)] leading-[1.05] font-bold tracking-[-0.03em]">
+          <span className="block text-[clamp(3rem,8vw,6rem)] leading-[0.9] font-black tracking-tighter">
             AI Models
           </span>
         </h1>
 
         {/* Subtitle */}
-        <p className="animate-fade-in-up delay-3 mt-8 text-lg md:text-xl text-ink-muted max-w-xl leading-relaxed">
+        <p className="mt-10 text-xl md:text-2xl font-bold font-mono text-black max-w-2xl leading-relaxed border-l-8 border-black pl-6 bg-white p-6 shadow-[8px_8px_0_0_#000]">
           A production platform for{" "}
-          <span className="highlight">measured capability reduction</span>{" "}
+          <span className="bg-highlight px-2 border-2 border-black">measured capability reduction</span>{" "}
           in language models. Forget what you need to.{" "}
-          <span className="font-semibold text-ink">Keep what matters.</span>
+          <span className="underline decoration-4 underline-offset-4">Keep what matters.</span>
         </p>
 
         {/* CTA */}
-        <div className="animate-fade-in-up delay-4 flex flex-wrap gap-4 mt-10">
-          <Link href="/signup" className="btn-primary text-base px-8 py-4">
-            Start Experimenting <ArrowRight size={18} />
+        <div className="flex flex-wrap gap-6 mt-12">
+          <Link href="/signup" className="btn-primary text-lg px-10 py-5">
+            Start Experimenting <ArrowRight size={24} className="stroke-[3px]" />
           </Link>
-          <Link href="/#how-it-works" className="btn-outline text-base px-8 py-4">
+          <Link href="/#how-it-works" className="btn-outline text-lg px-10 py-5 bg-white">
             See How It Works
           </Link>
         </div>
 
         {/* Stats */}
-        <div className="animate-fade-in-up delay-5 mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+        <div className="mt-24 grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
             { value: "20+", label: "Probe Categories" },
             { value: "89", label: "Evaluation Probes" },
             { value: "2", label: "Unlearning Methods" },
             { value: "5", label: "Languages Supported" },
           ].map((stat, i) => (
-            <div key={stat.label} className={`animate-fade-in-up delay-${6 + i}`}>
-              <div className="text-3xl md:text-4xl font-bold tracking-tight">{stat.value}</div>
-              <div className="text-sm text-ink-muted mt-1 tracking-wide">{stat.label}</div>
+            <div key={stat.label} className="bg-white border-4 border-black p-6 shadow-[6px_6px_0_0_#000] hover:-translate-y-1 hover:shadow-[10px_10px_0_0_#000] transition-all">
+              <div className="text-4xl md:text-5xl font-black font-mono tracking-tighter text-highlight stroke-black" style={{ WebkitTextStroke: "2px black" }}>{stat.value}</div>
+              <div className="text-sm font-bold font-mono uppercase mt-2 border-t-4 border-black pt-2">{stat.label}</div>
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Scroll indicator */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-fade-in delay-8">
-        <ChevronDown size={20} className="text-ink-subtle animate-bounce" />
       </div>
     </section>
   );
@@ -120,24 +87,24 @@ function Hero() {
 /* ════════════ PROBLEM ════════════ */
 function ProblemSection() {
   return (
-    <Section className="section">
+    <Section className="py-24 bg-white">
       <div className="max-w-[1320px] mx-auto px-6 md:px-10">
         <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-start">
-          <div>
-            <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-highlight">The Problem</span>
-            <h2 className="mt-4 text-[clamp(2rem,4vw,3.5rem)] font-bold leading-[1.1] tracking-[-0.02em]">
-              AI Models{" "}
-              <span className="font-serif italic">Can&apos;t Forget</span>
+          <div className="border-4 border-black p-8 bg-highlight shadow-[8px_8px_0_0_#000]">
+            <span className="text-sm font-black font-mono tracking-widest uppercase bg-black text-white px-3 py-1">The Problem</span>
+            <h2 className="mt-8 text-[clamp(2.5rem,5vw,4.5rem)] font-black leading-[0.9] uppercase tracking-tighter">
+              AI Models<br/>
+              <span className="text-white" style={{ WebkitTextStroke: "2px black" }}>Can&apos;t Forget</span>
             </h2>
-            <p className="mt-6 text-ink-muted text-lg leading-relaxed max-w-lg">
+            <p className="mt-8 font-mono text-lg font-bold leading-relaxed bg-white border-4 border-black p-6 shadow-[4px_4px_0_0_#000]">
               Once trained, language models permanently encode their training data.
               They can reproduce copyrighted code, leak private information, and
               generate harmful content — with{" "}
-              <span className="highlight">no way to selectively remove</span>{" "}
+              <span className="bg-error text-white px-1">no way to selectively remove</span>{" "}
               specific knowledge.
             </p>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-6">
             {[
               "Models memorize training data permanently",
               "No built-in mechanism to forget specific knowledge",
@@ -146,12 +113,12 @@ function ProblemSection() {
             ].map((text, i) => (
               <div
                 key={i}
-                className="flex items-start gap-4 p-5 rounded-xl border border-border/60 bg-white/50 hover:bg-white hover:shadow-sm transition-all duration-300"
+                className="flex items-center gap-6 p-6 border-4 border-black bg-white hover:bg-highlight hover:-translate-y-1 hover:shadow-[8px_8px_0_0_#000] transition-all"
               >
-                <div className="w-6 h-6 rounded-full bg-highlight/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-highlight text-xs font-bold">{i + 1}</span>
+                <div className="w-12 h-12 bg-black flex items-center justify-center shrink-0 shadow-[4px_4px_0_0_#ffff00]">
+                  <span className="text-highlight text-xl font-black font-mono">{i + 1}</span>
                 </div>
-                <span className="text-ink/80 leading-relaxed">{text}</span>
+                <span className="text-black font-bold font-mono text-lg uppercase leading-tight">{text}</span>
               </div>
             ))}
           </div>
@@ -173,33 +140,35 @@ function HowItWorks() {
   ];
 
   return (
-    <Section id="how-it-works" className="section bg-white">
+    <Section id="how-it-works" className="py-24 bg-bg-alt">
       <div className="max-w-[1320px] mx-auto px-6 md:px-10">
-        <div className="text-center mb-16">
-          <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-highlight">Process</span>
-          <h2 className="mt-4 text-[clamp(2rem,4vw,3.5rem)] font-bold tracking-[-0.02em]">
-            How It <span className="font-serif italic">Works</span>
-          </h2>
-          <p className="mt-4 text-ink-muted max-w-lg mx-auto">
+        <div className="mb-16 border-b-8 border-black pb-8 flex flex-col md:flex-row md:items-end justify-between gap-8">
+          <div>
+            <span className="text-sm font-black font-mono tracking-widest uppercase bg-black text-highlight px-3 py-1">Process</span>
+            <h2 className="mt-6 text-[clamp(3rem,6vw,5rem)] font-black uppercase tracking-tighter leading-[0.9]">
+              How It <span className="bg-highlight px-2 border-4 border-black shadow-[4px_4px_0_0_#000]">Works</span>
+            </h2>
+          </div>
+          <p className="font-mono font-bold max-w-sm text-lg border-l-4 border-black pl-4">
             Six steps from upload to verified unlearning. Every result is reproducible.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {steps.map((step, i) => (
             <div
               key={step.num}
-              className="group p-6 md:p-8 rounded-2xl border border-border/60 bg-bg hover:bg-white hover:shadow-lg hover:border-border transition-all duration-500 hover-lift"
+              className="p-8 border-4 border-black bg-white shadow-[8px_8px_0_0_#000] hover:-translate-y-2 hover:-translate-x-2 hover:shadow-[16px_16px_0_0_#000] transition-all flex flex-col"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-2xl">{step.icon}</span>
-                <span className="font-mono text-xs text-ink-subtle">{step.num}</span>
+              <div className="flex items-start justify-between mb-6">
+                <span className="text-4xl">{step.icon}</span>
+                <span className="font-mono text-3xl font-black text-black/20">{step.num}</span>
               </div>
-              <h3 className="text-xl font-bold mb-3 group-hover:text-highlight transition-colors duration-300">
+              <h3 className="text-2xl font-black uppercase mb-4 bg-highlight inline-block self-start px-2 border-2 border-black">
                 {step.title}
               </h3>
-              <p className="text-ink-muted text-sm leading-relaxed mb-4">{step.desc}</p>
-              <div className="text-[11px] font-mono text-ink-subtle tracking-wide uppercase">
+              <p className="font-mono font-bold text-sm leading-relaxed mb-8 flex-grow">{step.desc}</p>
+              <div className="text-xs font-black font-mono bg-black text-white px-3 py-2 uppercase border-l-4 border-highlight">
                 {step.tag}
               </div>
             </div>
@@ -213,53 +182,53 @@ function HowItWorks() {
 /* ════════════ VISUAL PIPELINE ════════════ */
 function VisualPipeline() {
   return (
-    <Section className="section">
+    <Section className="py-24 bg-white">
       <div className="max-w-[1320px] mx-auto px-6 md:px-10">
         <div className="text-center mb-16">
-          <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-highlight">Architecture</span>
-          <h2 className="mt-4 text-[clamp(2rem,4vw,3.5rem)] font-bold tracking-[-0.02em]">
-            The Scientific <span className="font-serif italic">Loop</span>
+          <span className="text-sm font-black font-mono tracking-widest uppercase bg-highlight border-2 border-black px-3 py-1 shadow-[4px_4px_0_0_#000]">Architecture</span>
+          <h2 className="mt-8 text-[clamp(2.5rem,5vw,4.5rem)] font-black uppercase tracking-tighter">
+            The Scientific <span className="underline decoration-8 underline-offset-8 decoration-highlight">Loop</span>
           </h2>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-px bg-border rounded-2xl overflow-hidden">
+        <div className="grid lg:grid-cols-3 gap-0 border-8 border-black shadow-[16px_16px_0_0_#000]">
           {/* Baseline */}
-          <div className="bg-white p-8 md:p-10">
-            <div className="text-[11px] font-semibold tracking-[0.15em] uppercase text-success mb-4">Phase 1</div>
-            <h3 className="text-xl font-bold mb-5">Baseline</h3>
-            <div className="space-y-3">
+          <div className="bg-white p-8 md:p-10 border-b-8 lg:border-b-0 lg:border-r-8 border-black relative">
+            <div className="absolute top-0 right-0 bg-black text-white font-mono font-black px-4 py-2 border-b-4 border-l-4 border-black">PHASE 1</div>
+            <h3 className="text-3xl font-black uppercase mt-4 mb-8">Baseline</h3>
+            <div className="space-y-4">
               {["Load original model", "Run 89 probes", "Measure Python: 50%", "Measure JS/TS/C++: 75%"].map((item) => (
-                <div key={item} className="flex items-center gap-3 text-sm">
-                  <CheckCircle2 size={15} className="text-success shrink-0" />
-                  <span className="text-ink/80">{item}</span>
+                <div key={item} className="flex items-center gap-4 font-mono font-bold border-2 border-black p-3 bg-bg-alt">
+                  <CheckCircle2 size={20} className="stroke-[3px]" />
+                  <span>{item}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Unlearning */}
-          <div className="bg-bg-alt p-8 md:p-10">
-            <div className="text-[11px] font-semibold tracking-[0.15em] uppercase text-highlight mb-4">Phase 2</div>
-            <h3 className="text-xl font-bold mb-5">Unlearn</h3>
-            <div className="space-y-3">
+          <div className="bg-highlight p-8 md:p-10 border-b-8 lg:border-b-0 lg:border-r-8 border-black relative">
+            <div className="absolute top-0 right-0 bg-black text-white font-mono font-black px-4 py-2 border-b-4 border-l-4 border-black">PHASE 2</div>
+            <h3 className="text-3xl font-black uppercase mt-4 mb-8">Unlearn</h3>
+            <div className="space-y-4">
               {["Gradient ascent on Python", "Gradient descent on retain", "Optimize dual objective", "Save new model version"].map((item) => (
-                <div key={item} className="flex items-center gap-3 text-sm">
-                  <Zap size={15} className="text-highlight shrink-0" />
-                  <span className="text-ink/80">{item}</span>
+                <div key={item} className="flex items-center gap-4 font-mono font-bold border-2 border-black p-3 bg-white">
+                  <Zap size={20} className="stroke-[3px]" />
+                  <span>{item}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Verify */}
-          <div className="bg-white p-8 md:p-10">
-            <div className="text-[11px] font-semibold tracking-[0.15em] uppercase text-ink-muted mb-4">Phase 3</div>
-            <h3 className="text-xl font-bold mb-5">Verify</h3>
-            <div className="space-y-3">
+          <div className="bg-white p-8 md:p-10 relative">
+            <div className="absolute top-0 right-0 bg-black text-white font-mono font-black px-4 py-2 border-b-4 border-l-4 border-black">PHASE 3</div>
+            <h3 className="text-3xl font-black uppercase mt-4 mb-8">Verify</h3>
+            <div className="space-y-4">
               {["Re-run same 89 probes", "Python: 50% → 0%", "JS/TS/C++: Preserved", "Verdict: PASS"].map((item) => (
-                <div key={item} className="flex items-center gap-3 text-sm">
-                  <BarChart3 size={15} className="text-ink-muted shrink-0" />
-                  <span className="text-ink/80">{item}</span>
+                <div key={item} className="flex items-center gap-4 font-mono font-bold border-2 border-black p-3 bg-bg-alt">
+                  <BarChart3 size={20} className="stroke-[3px]" />
+                  <span>{item}</span>
                 </div>
               ))}
             </div>
@@ -267,12 +236,12 @@ function VisualPipeline() {
         </div>
 
         {/* Flow */}
-        <div className="flex justify-center mt-10">
-          <div className="flex items-center gap-4 text-sm text-ink-muted font-mono">
+        <div className="flex justify-center mt-12">
+          <div className="flex items-center gap-4 text-lg font-black font-mono uppercase bg-black text-white p-4 border-4 border-black shadow-[8px_8px_0_0_#ffff00]">
             <span>Original</span>
-            <ArrowRight size={16} className="text-highlight" />
-            <span className="text-ink font-semibold">Unlearned</span>
-            <ArrowRight size={16} className="text-highlight" />
+            <ArrowRight size={24} className="text-highlight stroke-[3px]" />
+            <span className="text-highlight">Unlearned</span>
+            <ArrowRight size={24} className="text-highlight stroke-[3px]" />
             <span>v2 (New Version)</span>
           </div>
         </div>
@@ -293,26 +262,26 @@ function Features() {
   ];
 
   return (
-    <Section id="features" className="section bg-white">
+    <Section id="features" className="py-24 bg-bg-alt">
       <div className="max-w-[1320px] mx-auto px-6 md:px-10">
-        <div className="text-center mb-16">
-          <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-highlight">Capabilities</span>
-          <h2 className="mt-4 text-[clamp(2rem,4vw,3.5rem)] font-bold tracking-[-0.02em]">
-            Built for <span className="font-serif italic">Research</span>
+        <div className="flex flex-col items-center mb-16 text-center">
+          <span className="text-sm font-black font-mono tracking-widest uppercase bg-black text-white px-4 py-2 border-4 border-black shadow-[4px_4px_0_0_#ffff00]">Capabilities</span>
+          <h2 className="mt-8 text-[clamp(2.5rem,5vw,4.5rem)] font-black uppercase tracking-tighter">
+            Built for <span className="bg-white border-4 border-black px-2 shadow-[4px_4px_0_0_#000]">Research</span>
           </h2>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((f) => (
             <div
               key={f.title}
-              className="group p-7 rounded-2xl border border-border/60 hover:border-border hover:shadow-lg transition-all duration-500 hover-lift bg-bg"
+              className="p-8 border-4 border-black bg-white shadow-[8px_8px_0_0_#000] hover:bg-black hover:text-white transition-colors group"
             >
-              <div className="w-11 h-11 rounded-xl bg-ink/5 flex items-center justify-center mb-5 group-hover:bg-ink group-hover:text-white transition-all duration-300">
-                <f.icon size={20} />
+              <div className="w-16 h-16 bg-highlight border-4 border-black flex items-center justify-center mb-6 group-hover:bg-white group-hover:text-black transition-colors">
+                <f.icon size={32} className="stroke-[3px]" />
               </div>
-              <h3 className="text-lg font-bold mb-2">{f.title}</h3>
-              <p className="text-ink-muted text-sm leading-relaxed">{f.desc}</p>
+              <h3 className="text-2xl font-black uppercase mb-4">{f.title}</h3>
+              <p className="font-mono font-bold text-sm leading-relaxed opacity-90">{f.desc}</p>
             </div>
           ))}
         </div>
@@ -332,46 +301,48 @@ function Results() {
   ];
 
   return (
-    <Section className="section">
+    <Section className="py-24 bg-highlight">
       <div className="max-w-[1320px] mx-auto px-6 md:px-10">
-        <div className="mb-12">
-          <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-highlight">Proof of Concept</span>
-          <h2 className="mt-4 text-[clamp(2rem,4vw,3.5rem)] font-bold tracking-[-0.02em]">
-            Real <span className="font-serif italic">Results</span>
-          </h2>
-          <p className="mt-4 text-ink-muted max-w-xl">
-            Tested on <span className="font-semibold text-ink">Salesforce/codegen-350M</span> (304M parameters).
+        <div className="mb-16 border-b-8 border-black pb-8 flex flex-col md:flex-row justify-between items-end gap-8">
+          <div>
+            <span className="text-sm font-black font-mono tracking-widest uppercase bg-black text-white px-3 py-1">Proof of Concept</span>
+            <h2 className="mt-6 text-[clamp(3rem,6vw,5rem)] font-black uppercase tracking-tighter leading-[0.9]">
+              Real <span className="text-white" style={{ WebkitTextStroke: "2px black" }}>Results</span>
+            </h2>
+          </div>
+          <p className="font-mono font-bold max-w-sm text-lg border-l-4 border-black pl-4 bg-white p-4 shadow-[4px_4px_0_0_#000]">
+            Tested on <span className="bg-black text-white px-1">Salesforce/codegen-350M</span>.
             Python capability reduced while other languages preserved.
           </p>
         </div>
 
-        <div className="rounded-2xl border border-border overflow-hidden bg-white">
+        <div className="border-8 border-black bg-white shadow-[16px_16px_0_0_#000]">
           {/* Header */}
-          <div className="grid grid-cols-4 bg-ink text-white text-[11px] font-semibold uppercase tracking-[0.1em]">
-            <div className="p-4 md:p-5">Capability</div>
-            <div className="p-4 md:p-5 text-center">Before</div>
-            <div className="p-4 md:p-5 text-center">After</div>
-            <div className="p-4 md:p-5 text-center">Change</div>
+          <div className="grid grid-cols-4 bg-black text-white text-sm font-black uppercase font-mono tracking-widest border-b-4 border-black">
+            <div className="p-4 md:p-6 border-r-4 border-black">Capability</div>
+            <div className="p-4 md:p-6 border-r-4 border-black text-center">Before</div>
+            <div className="p-4 md:p-6 border-r-4 border-black text-center">After</div>
+            <div className="p-4 md:p-6 text-center">Change</div>
           </div>
 
           {/* Rows */}
-          {results.map((r) => (
+          {results.map((r, idx) => (
             <div
               key={r.cap}
-              className={`grid grid-cols-4 border-t border-border/50 transition-colors hover:bg-bg-alt/50 ${r.isTarget ? "bg-highlight/[0.03]" : ""}`}
+              className={`grid grid-cols-4 border-b-4 border-black last:border-b-0 hover:bg-bg-alt transition-none ${r.isTarget ? "bg-highlight/20" : ""}`}
             >
-              <div className="p-4 md:p-5 font-semibold text-sm flex items-center gap-2">
-                {r.isTarget && <Target size={14} className="text-highlight" />}
+              <div className="p-4 md:p-6 font-black uppercase flex items-center gap-3 border-r-4 border-black text-lg md:text-xl">
+                {r.isTarget && <Target size={24} className="stroke-[3px]" />}
                 {r.cap}
                 {r.isTarget && (
-                  <span className="text-[9px] font-mono text-highlight border border-highlight/30 px-1.5 py-0.5 rounded">
+                  <span className="hidden md:inline-block text-xs font-mono font-black bg-black text-white px-2 py-1 ml-auto">
                     TARGET
                   </span>
                 )}
               </div>
-              <div className="p-4 md:p-5 text-center font-mono text-sm text-ink-muted">{r.before}</div>
-              <div className="p-4 md:p-5 text-center font-mono text-sm text-ink-muted">{r.after}</div>
-              <div className={`p-4 md:p-5 text-center font-mono text-sm font-bold ${r.isTarget ? "text-highlight" : "text-success"}`}>
+              <div className="p-4 md:p-6 text-center font-mono font-bold text-xl border-r-4 border-black flex items-center justify-center">{r.before}</div>
+              <div className="p-4 md:p-6 text-center font-mono font-bold text-xl border-r-4 border-black flex items-center justify-center">{r.after}</div>
+              <div className={`p-4 md:p-6 text-center font-mono font-black text-2xl flex items-center justify-center ${r.isTarget ? "text-error" : ""}`}>
                 {r.delta}
               </div>
             </div>
@@ -379,11 +350,12 @@ function Results() {
         </div>
 
         {/* Verdict */}
-        <div className="mt-6 p-6 rounded-2xl border border-success/20 bg-success/[0.03] flex items-start gap-4">
-          <CheckCircle2 size={22} className="text-success shrink-0 mt-0.5" />
+        <div className="mt-12 p-8 border-4 border-black bg-white shadow-[8px_8px_0_0_#000] flex flex-col md:flex-row items-center md:items-start gap-6 relative">
+          <div className="absolute top-0 right-0 w-8 h-8 border-b-4 border-l-4 border-black bg-highlight"></div>
+          <CheckCircle2 size={48} className="text-black shrink-0 stroke-[3px]" />
           <div>
-            <div className="font-bold text-lg text-success">Verdict: PASS</div>
-            <p className="text-ink-muted text-sm mt-1">
+            <div className="font-black text-3xl uppercase mb-2">Verdict: PASS</div>
+            <p className="font-mono font-bold text-lg max-w-3xl">
               Python capability successfully reduced. Retained capabilities preserved. Low collateral damage.
             </p>
           </div>
@@ -396,22 +368,23 @@ function Results() {
 /* ════════════ RESEARCH ════════════ */
 function ResearchSection() {
   return (
-    <Section id="research" className="section bg-white">
+    <Section id="research" className="py-24 bg-white">
       <div className="max-w-[1320px] mx-auto px-6 md:px-10">
-        <div className="text-center mb-16">
-          <span className="text-[11px] font-semibold tracking-[0.15em] uppercase text-highlight">Transparency</span>
-          <h2 className="mt-4 text-[clamp(2rem,4vw,3.5rem)] font-bold tracking-[-0.02em]">
+        <div className="flex flex-col items-center mb-16 text-center">
+          <span className="text-sm font-black font-mono tracking-widest uppercase border-4 border-black bg-black text-white px-4 py-2 shadow-[4px_4px_0_0_#ffff00]">Transparency</span>
+          <h2 className="mt-8 text-[clamp(2.5rem,5vw,4.5rem)] font-black uppercase tracking-tighter">
             What This Is{" "}
-            <span className="font-serif italic">(And Isn&apos;t)</span>
+            <br className="md:hidden" />
+            <span className="bg-highlight border-4 border-black px-4 ml-2 shadow-[4px_4px_0_0_#000] inline-block -rotate-1">(And Isn&apos;t)</span>
           </h2>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
-          <div className="p-8 rounded-2xl border border-border/60 bg-bg">
-            <h3 className="font-bold text-lg mb-5 flex items-center gap-2.5">
-              <CheckCircle2 size={18} className="text-success" /> What We Do
+        <div className="grid lg:grid-cols-2 gap-12">
+          <div className="p-10 border-8 border-black bg-bg-alt shadow-[16px_16px_0_0_#000]">
+            <h3 className="font-black text-3xl mb-8 flex items-center gap-4 uppercase">
+              <CheckCircle2 size={32} className="stroke-[4px]" /> What We Do
             </h3>
-            <ul className="space-y-3.5">
+            <ul className="space-y-6">
               {[
                 "Gradient-based model editing to reduce specific capabilities",
                 "Controlled probing to measure observed capability changes",
@@ -419,18 +392,18 @@ function ResearchSection() {
                 "Robustness testing against prompt rewording",
                 "Full reproducibility with provenance tracking",
               ].map((item) => (
-                <li key={item} className="flex items-start gap-3 text-ink/80 text-sm leading-relaxed">
-                  <span className="text-success mt-0.5">→</span>{item}
+                <li key={item} className="flex items-start gap-4 font-mono font-bold text-lg">
+                  <span className="text-black font-black mt-1">→</span>{item}
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="p-8 rounded-2xl border border-border/60 bg-bg">
-            <h3 className="font-bold text-lg mb-5 flex items-center gap-2.5">
-              <XCircle size={18} className="text-error" /> What We Don&apos;t Claim
+          <div className="p-10 border-8 border-black bg-black text-white shadow-[16px_16px_0_0_#ffff00]">
+            <h3 className="font-black text-3xl mb-8 flex items-center gap-4 uppercase">
+              <XCircle size={32} className="stroke-[4px]" /> What We Don&apos;t Claim
             </h3>
-            <ul className="space-y-3.5">
+            <ul className="space-y-6">
               {[
                 "We do NOT inspect internal model weights or knowledge",
                 "We do NOT claim complete knowledge deletion",
@@ -438,8 +411,8 @@ function ResearchSection() {
                 "Results are empirical, measured through experiments",
                 "Residual capability may exist beyond probe coverage",
               ].map((item) => (
-                <li key={item} className="flex items-start gap-3 text-ink/80 text-sm leading-relaxed">
-                  <span className="text-error mt-0.5">→</span>{item}
+                <li key={item} className="flex items-start gap-4 font-mono font-bold text-lg">
+                  <span className="text-highlight font-black mt-1">→</span>{item}
                 </li>
               ))}
             </ul>
@@ -453,25 +426,19 @@ function ResearchSection() {
 /* ════════════ CTA ════════════ */
 function CTASection() {
   return (
-    <Section className="section">
-      <div className="max-w-[1320px] mx-auto px-6 md:px-10">
-        <div className="relative overflow-hidden rounded-3xl bg-ink text-white p-12 md:p-20 text-center">
-          {/* Decorative */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-highlight/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
-
-          <div className="relative z-10">
-            <h2 className="text-[clamp(2rem,5vw,4rem)] font-bold tracking-[-0.02em] mb-5">
-              Ready to <span className="font-serif italic text-highlight">Unlearn</span>?
-            </h2>
-            <p className="text-white/60 text-lg mb-10 max-w-xl mx-auto">
-              Upload a model. Establish a baseline. Run unlearning. Verify results.
-              Start experimenting today.
-            </p>
-            <Link href="/signup" className="btn-primary bg-white text-ink hover:bg-white/90 text-base px-10 py-4">
-              Get Started Free <ArrowRight size={18} />
-            </Link>
-          </div>
+    <Section className="py-32 bg-bg-alt">
+      <div className="max-w-[1000px] mx-auto px-6 md:px-10">
+        <div className="border-8 border-black bg-highlight p-12 md:p-24 text-center shadow-[24px_24px_0_0_#000]">
+          <h2 className="text-[clamp(3rem,6vw,5rem)] font-black uppercase tracking-tighter mb-8 leading-[0.9]">
+            Ready to <span className="bg-white px-4 border-4 border-black">Unlearn</span>?
+          </h2>
+          <p className="font-mono font-bold text-xl mb-12 max-w-2xl mx-auto bg-black text-white p-4">
+            Upload a model. Establish a baseline. Run unlearning. Verify results.
+            Start experimenting today.
+          </p>
+          <Link href="/signup" className="btn-primary bg-black text-white text-xl px-12 py-6 hover:bg-white hover:text-black shadow-[8px_8px_0_0_#fff]">
+            Get Started Free <ArrowRight size={24} className="stroke-[3px]" />
+          </Link>
         </div>
       </div>
     </Section>
@@ -481,20 +448,20 @@ function CTASection() {
 /* ════════════ FOOTER ════════════ */
 function Footer() {
   return (
-    <footer className="py-12 px-6 md:px-10 border-t border-border">
-      <div className="max-w-[1320px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-ink rounded-md flex items-center justify-center">
-            <span className="text-white font-serif text-xs font-bold italic">N</span>
+    <footer className="py-12 px-6 md:px-10 bg-black text-white border-t-[16px] border-highlight">
+      <div className="max-w-[1320px] mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-white border-4 border-black flex items-center justify-center">
+            <span className="text-black font-serif font-black text-2xl">N</span>
           </div>
-          <span className="font-serif font-bold text-sm">
-            Null<span className="italic">Mind</span>
+          <span className="font-serif font-black text-2xl uppercase tracking-widest">
+            NullMind
           </span>
         </div>
-        <p className="text-xs text-ink-subtle font-mono">
+        <p className="text-sm font-bold font-mono uppercase tracking-widest border-2 border-white/20 p-4 bg-white/5">
           Built with PyTorch · HuggingFace · FastAPI · Next.js
         </p>
-        <p className="text-xs text-ink-subtle">
+        <p className="text-sm font-bold font-mono uppercase bg-highlight text-black px-4 py-2 font-black">
           © 2026 NullMind
         </p>
       </div>
@@ -505,7 +472,7 @@ function Footer() {
 /* ════════════ PAGE ════════════ */
 export default function Home() {
   return (
-    <main>
+    <main className="pt-[80px]">
       <Header />
       <Hero />
       <ProblemSection />

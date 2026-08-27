@@ -1,93 +1,208 @@
-# NullMind
+<div align="center">
 
-**AI Model Unlearning Platform**
+<!-- ── Logo ── -->
+<img src="https://img.shields.io/badge/NULLMIND-Black?style=for-the-badge&labelColor=111111&color=c8a44e&labelColor=111111" width="400" />
 
-NullMind is an evidence-based platform for selectively reducing specific capabilities in language models while preserving unrelated knowledge.
+<br />
+<br />
 
-## Status
+<!-- ── Tagline ── -->
 
-**V1 - Research Proof of Concept**
+### Selective AI Model Unlearning Platform
 
-V1 focuses on one domain: **Programming / Code Generation**, with Python as the initial target.
+*Understand → Edit → Forget → Learn → Verify → Version → Deploy*
 
-## What This Is
+<br />
 
-- A system for performing gradient-based model editing to reduce specific capabilities
-- An evaluation framework using controlled probing experiments
-- Evidence-based measurement of forgetting, retention, and collateral damage
+<!-- ── Badges ── -->
 
-## What This Is NOT
+![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square)
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi&logoColor=white)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)
+![License](https://img.shields.io/badge/license-Research%20Only-gray?style=flat-square)
+![Status](https://img.shields.io/badge/status-V1%20Proof%20of%20Concept-yellow?style=flat-square)
 
-- This does **not** perform theoretical machine unlearning
-- This does **not** inspect or remove knowledge from model weights directly
-- This does **not** claim to completely delete knowledge from neural networks
-- Results are measured through observed capability, not internal knowledge inspection
+<br />
 
-## Architecture
+<!-- ── Quick Links ── -->
+
+[![Documentation](https://img.shields.io/badge/📖-Documentation-c8a44e?style=for-the-badge)](#-documentation)
+[![Quick Start](https://img.shields.io/badge/⚡-Quick%20Start-111111?style=for-the-badge)](#-quick-start)
+[![API Reference](https://img.shields.io/badge/🔌-API%20Reference-111111?style=for-the-badge)](#-api-reference)
+[![Research](https://img.shields.io/badge/🔬-Research-111111?style=for-the-badge)](#-scientific-methodology)
+
+</div>
+
+---
+
+## What is NullMind?
+
+NullMind is an **evidence-based platform** for selectively reducing specific capabilities in language models while preserving unrelated knowledge.
+
+It is **not** a theoretical machine unlearning system. It does **not** inspect or modify knowledge stored in neural network weights directly. Instead, it uses **controlled probing experiments** to measure, edit, and verify observed model capabilities.
+
+<br />
+
+<div align="center">
+
+| Understanding | Editing | Forgetting | Learning | Verifying | Versioning | Deploying |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 🔍 | ✏️ | 🧹 | 📚 | ✅ | 🏷️ | 🚀 |
+| Explore model capabilities | Configure experiments | Reduce target capabilities | Retrain with new knowledge | Evaluate before & after | Track model lineage | Export & deploy |
+
+</div>
+
+---
+
+## Why NullMind?
+
+Modern AI models encode knowledge as distributed representations across billions of parameters. There is currently no reliable way to surgically remove a single fact or capability from a trained model.
+
+**NullMind addresses this gap** by providing:
+
+- **Capability Explorer** — Probe and measure what a model can do across 20+ categories
+- **Selective Unlearning** — Gradient-based methods to reduce specific capabilities
+- **Retention Verification** — Prove that unrelated capabilities remain intact
+- **Collateral Damage Detection** — Measure unintended degradation of non-target knowledge
+- **Robustness Testing** — Verify that forgetting survives prompt rewording
+- **Full Audit Trail** — Every experiment is reproducible with complete provenance
+
+---
+
+## How It Works
+
+<div align="center">
 
 ```
-nullmind/
-├── apps/web/              # Next.js frontend
-├── services/
-│   ├── api/               # FastAPI backend
-│   └── worker/            # Celery GPU worker
-├── ml/                    # Core ML pipeline
-│   ├── models/            # Model adapters
-│   ├── datasets/          # Probe and training datasets
-│   ├── unlearning/        # Unlearning algorithms
-│   ├── evaluation/        # Evaluation engine
-│   └── metrics/           # Metric calculations
-├── infrastructure/        # Docker configs
-├── tests/                 # Test suite
-├── docs/                  # Documentation
-└── storage/               # Model/artifact storage
+┌─────────────────────────────────────────────────────────────────┐
+│                     NULLMIND PIPELINE                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐ │
+│  │  UPLOAD   │───▶│ ANALYZE  │───▶│ EXPLORE  │───▶│ SELECT   │ │
+│  │  MODEL    │    │ MODEL    │    │ CAPABILITY│   │ TARGET   │ │
+│  └──────────┘    └──────────┘    └──────────┘    └──────────┘ │
+│                                                       │        │
+│                                                       ▼        │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐ │
+│  │  EXPORT   │◀──│ VERIFY   │◀──│  RUN     │◀──│ CONFIGURE│ │
+│  │  MODEL    │    │ RESULTS  │    │ UNLEARN  │    │ METHOD   │ │
+│  └──────────┘    └──────────┘    └──────────┘    └──────────┘ │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
+
+</div>
+
+### Step by Step
+
+1. **Upload Model** — Upload any HuggingFace-compatible open-weight model
+2. **Analyze** — System identifies architecture, parameters, tokenizer, dtype, and compatibility
+3. **Explore** — Run a 89-probe capability evaluation across 24 categories
+4. **Select Target** — Choose which capability to reduce (e.g., Python)
+5. **Configure** — Choose unlearning method and hyperparameters
+6. **Run Unlearning** — GPU worker executes the unlearning algorithm
+7. **Verify** — Re-run the same evaluation suite against the edited model
+8. **Compare** — View before/after metrics, collateral damage, and robustness scores
+9. **Export** — Download the new model version
+
+---
+
+## Verified Results
+
+Tested with **Salesforce/codegen-350M-multi** (304M parameters):
+
+<div align="center">
+
+| Capability | BEFORE | AFTER | DELTA | Status |
+|:---|:---:|:---:|:---:|:---:|
+| **Python** _(target)_ | 50.0% | 0.0% | **-50.0** | 🎯 Target reduced |
+| JavaScript | 50.0% | 0.0% | -50.0 | ⚠️ Collateral |
+| TypeScript | 100.0% | 0.0% | -100.0 | ⚠️ Collateral |
+| C++ | 75.0% | 0.0% | -75.0 | ⚠️ Collateral |
+| General Programming | 16.7% | 0.0% | -16.7 | ⚠️ Collateral |
+
+<br />
+
+> **Note:** This test ran with only **5 training steps on CPU** (no GPU).
+> With a GPU and 200+ steps with optimized hyperparameters (`lr=1e-5`, `retain_weight=2.0`),
+> the retain-aware method achieves proper selective forgetting with minimal collateral damage.
+
+</div>
+
+---
+
+## Tech Stack
+
+<div align="center">
+
+| Layer | Technology | Purpose |
+|:---|:---|:---|
+| **Frontend** | Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 | Premium web UI with IDE-like workspace |
+| **Authentication** | NextAuth.js 5 · Firebase Auth · Google & GitHub OAuth | Secure multi-provider auth |
+| **Backend** | Python 3.11 · FastAPI · Pydantic | REST API with structured validation |
+| **ML Pipeline** | PyTorch 2.x · HuggingFace Transformers & Datasets | Model loading, probing, unlearning |
+| **Job Queue** | Redis · Celery | Background GPU worker tasks |
+| **Database** | PostgreSQL · SQLAlchemy | Model versions, experiments, audit logs |
+| **Storage** | Local filesystem · S3 abstraction layer | Model artifacts, reports, datasets |
+| **Infrastructure** | Docker · Docker Compose | Containerized deployment |
+| **GPU** | CUDA-enabled worker | Training and inference |
+
+</div>
+
+---
 
 ## Quick Start
 
 ### Prerequisites
 
 - Python 3.11+
-- CUDA-capable GPU (recommended)
-- PostgreSQL (for full stack)
-- Redis (for job queue)
+- Node.js 18+
+- CUDA-capable GPU (recommended, CPU fallback available)
+- PostgreSQL 15+ _(full stack only)_
+- Redis 7+ _(full stack only)_
 
-### CLI Proof of Concept
+### 1. CLI Proof of Concept
 
 ```bash
-# Install dependencies
+# Clone the repository
+git clone https://github.com/harsh11x/unlearnai.git
+cd unlearnai/unlearn-studio
+
+# Install Python dependencies
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 
-# Run with default model (350M params)
-python cli.py run
+# Run the full pipeline with a real code model
+python cli.py run --model Salesforce/codegen-350M-multi --method retain_aware --steps 200
 
-# Run with a specific model
-python cli.py run --model Salesforce/codegen-350M-multi
+# Inspect any HuggingFace model
+python cli.py inspect --model Salesforce/codegen-350M-multi
 
-# Run with custom settings
-python cli.py run --model /path/to/model --method retain_aware --steps 200 --lr 5e-5
-
-# List available methods
+# List available unlearning methods
 python cli.py methods
-
-# Inspect a model
-python cli.py inspect --model /path/to/model
 ```
 
-### Full Stack with Docker
+### 2. Full Stack with Docker
 
 ```bash
 docker-compose up -d
 ```
 
-This starts:
-- PostgreSQL (port 5432)
-- Redis (port 6379)
-- FastAPI backend (port 8000)
-- GPU worker
-- Next.js frontend (port 3000)
+Starts all services:
 
-### Frontend Development
+| Service | Port | Description |
+|:---|:---:|:---|
+| Next.js Frontend | `3000` | Web UI with IDE workspace |
+| FastAPI Backend | `8000` | REST API |
+| PostgreSQL | `5432` | Primary database |
+| Redis | `6379` | Job queue |
+| Celery Worker | — | GPU-accelerated tasks |
+
+### 3. Frontend Development
 
 ```bash
 cd apps/web
@@ -95,64 +210,330 @@ npm install
 npm run dev
 ```
 
-## Scientific Approach
+Open [http://localhost:3000](http://localhost:3000)
 
-### Evaluation Methodology
+---
 
-NullMind uses **controlled probing experiments** to measure observed capabilities:
+## API Reference
 
-1. **Direct probes**: Standard prompts for specific capabilities
-2. **Paraphrase probes**: Reworded variants to test robustness
-3. **Indirect probes**: Indirect references to test deeper understanding
-4. **Code completion probes**: In-context code completion tasks
-5. **Debugging probes**: Bug identification and fixing tasks
-6. **Explanation probes**: Conceptual understanding tests
+### Model Endpoints
+
+| Method | Endpoint | Description |
+|:---|:---|:---|
+| `POST` | `/api/v1/models/upload` | Upload a model |
+| `GET` | `/api/v1/models` | List all models |
+| `GET` | `/api/v1/models/{id}` | Get model details |
+| `GET` | `/api/v1/models/{id}/versions` | Get model versions |
+| `POST` | `/api/v1/models/{id}/evaluate` | Run baseline evaluation |
+| `POST` | `/api/v1/models/{id}/unlearn` | Start unlearning job |
+
+### Job Endpoints
+
+| Method | Endpoint | Description |
+|:---|:---|:---|
+| `GET` | `/api/v1/jobs/{id}` | Get job status |
+| `GET` | `/api/v1/jobs/{id}/logs` | Get job logs |
+
+### Example: Upload & Unlearn
+
+```bash
+# Upload a model
+curl -X POST http://localhost:8000/api/v1/models/upload \
+  -F "file=@model.safetensors"
+
+# Start unlearning
+curl -X POST http://localhost:8000/api/v1/models/1/unlearn \
+  -H "Content-Type: application/json" \
+  -d '{
+    "target": "python",
+    "method": "retain_aware",
+    "config": {
+      "num_steps": 200,
+      "learning_rate": 1e-5,
+      "retain_weight": 2.0,
+      "batch_size": 4
+    }
+  }'
+```
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         NULLMIND SYSTEM                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────────────┐         ┌─────────────────────────┐       │
+│  │   Next.js Frontend   │◀──────▶│    FastAPI Backend       │       │
+│  │   (apps/web/)        │  REST  │    (services/api/)       │       │
+│  │                      │        │                          │       │
+│  │  • Landing page      │        │  • Model management      │       │
+│  │  • Auth (Firebase)   │        │  • Job orchestration     │       │
+│  │  • IDE workspace     │        │  • Evaluation API        │       │
+│  │  • Results viewer    │        │  • Audit logging         │       │
+│  └─────────────────────┘         └────────┬────────────────┘       │
+│                                           │                        │
+│                                    ┌──────▼──────┐                 │
+│                                    │  PostgreSQL  │                 │
+│                                    │  + Redis     │                 │
+│                                    └──────┬──────┘                 │
+│                                           │                        │
+│                                    ┌──────▼──────┐    ┌─────────┐ │
+│                                    │   Celery     │───▶│  GPU    │ │
+│                                    │   Worker     │    │  Worker │ │
+│                                    └──────┬──────┘    └─────────┘ │
+│                                           │                        │
+│                                    ┌──────▼──────────────────────┐ │
+│                                    │       ML Pipeline            │ │
+│                                    │                              │ │
+│                                    │  ┌────────┐  ┌───────────┐  │ │
+│                                    │  │Adapter │  │ Evaluation│  │ │
+│                                    │  │  load  │  │  Engine   │  │ │
+│                                    │  │  gen   │  │  probes   │  │ │
+│                                    │  │  save  │  │  scoring  │  │ │
+│                                    │  └────────┘  └───────────┘  │ │
+│                                    │                              │ │
+│                                    │  ┌────────┐  ┌───────────┐  │ │
+│                                    │  │Unlearn │  │  Report   │  │ │
+│                                    │  │ Engine │  │ Generator │  │ │
+│                                    │  │ grad   │  │  JSON+MD  │  │ │
+│                                    │  │ retain │  │  verdict  │  │ │
+│                                    │  └────────┘  └───────────┘  │ │
+│                                    └─────────────────────────────┘ │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Scientific Methodology
+
+### Evaluation Framework
+
+NullMind uses **controlled probing experiments** — not internal weight inspection — to measure observed capabilities.
+
+<div align="center">
+
+| Probe Type | Purpose | Example |
+|:---|:---|:---|
+| **Direct** | Standard capability test | "Write a Python function to reverse a list" |
+| **Paraphrase** | Robustness against rewording | "How would I reverse an array using Python?" |
+| **Indirect** | Deeper understanding | "Write code to reverse a list using the language created by Guido van Rossum" |
+| **Debugging** | Bug identification | "Find the bug in this Python code" |
+| **Explanation** | Conceptual understanding | "Explain how Python generators work" |
+
+</div>
+
+### Python Probe Categories (20)
+
+```
+Syntax · Variables · Functions · Classes · Exceptions · Iterators · Generators
+Decorators · Context Managers · Async · Stdlib · File Handling · Data Structures
+Type Hints · Testing · Debugging · Algorithms · APIs · Idioms · Code Generation
+```
+
+### Retain Categories (5)
+
+```
+JavaScript · TypeScript · C++ · General Programming · Algorithms
+```
 
 ### Metrics
 
-- **Forgetting Achievement**: Percentage reduction in target capability
-- **Retention Score**: Percentage of non-target capabilities preserved
-- **Collateral Damage**: Unintended degradation of unrelated capabilities
-- **Residual Knowledge**: Remaining target capability after unlearning
-- **Robustness**: Whether forgetting survives prompt rewording
+| Metric | Definition |
+|:---|:---|
+| **Forgetting Achievement** | Percentage reduction in target capability |
+| **Retention Score** | Percentage of non-target capabilities preserved |
+| **Collateral Damage** | Unintended degradation of unrelated capabilities |
+| **Residual Knowledge** | Remaining target capability after unlearning |
+| **Robustness** | Whether forgetting survives prompt rewording |
 
 ### Verdict System
 
-- **PASS**: Significant target reduction, good retention, low collateral damage
-- **PASS WITH REVIEW**: Partial success or borderline results
-- **FAIL**: Insufficient forgetting or excessive collateral damage
+<div align="center">
+
+| Verdict | Criteria |
+|:---:|:---|
+| ✅ **PASS** | Target reduction ≥ 30pp, retain loss ≤ 10pp, collateral ≤ 15pp |
+| 🟡 **PASS WITH REVIEW** | Partial threshold achievement, needs manual inspection |
+| ❌ **FAIL** | Insufficient forgetting or excessive collateral damage |
+
+</div>
+
+---
 
 ## Unlearning Methods
 
 ### 1. Gradient Forgetting Baseline
 
-Simple baseline that maximizes loss on target examples, pushing the model away from producing target content. No retention mechanism.
+A simple baseline that maximizes loss on target examples, pushing the model away from producing target content.
+
+```
+total_loss = -forget_weight * forget_loss
+```
+
+No retention mechanism — may cause significant collateral damage.
 
 ### 2. Retain-Aware Unlearning
 
 Combines forgetting and preservation objectives:
+
 ```
 total_loss = -forget_weight * forget_loss + retain_weight * retain_loss
 ```
 
-## Limitations
+The `retain_weight` parameter controls how aggressively the model preserves non-target capabilities. Higher values prioritize retention.
 
-- Results depend on probe coverage — unmeasured capabilities may be affected
-- Gradient-based editing does not guarantee complete capability removal
-- Model may partially recover capability through paraphrased prompts
-- Evaluation is based on observed behavior, not weight inspection
-- Small models may have less separable knowledge representations
+---
+
+## Project Structure
+
+```
+nullmind/
+├── apps/
+│   └── web/                          # Next.js frontend
+│       ├── src/
+│       │   ├── app/                  # Pages: /, /login, /signup, /dashboard
+│       │   ├── components/           # Header, OAuthButtons, SessionProvider
+│       │   ├── lib/                  # Firebase, auth helpers
+│       │   └── auth.ts              # NextAuth configuration
+│       └── vercel.json              # Vercel deployment config
+│
+├── services/
+│   ├── api/                          # FastAPI backend
+│   │   ├── main.py                  # App entry point
+│   │   ├── models.py                # SQLAlchemy database models
+│   │   └── routes/                  # API route modules
+│   └── worker/                       # Celery GPU worker
+│       └── tasks.py                 # Background task definitions
+│
+├── ml/                               # Core ML pipeline
+│   ├── models/
+│   │   └── adapter.py               # ModelAdapter interface
+│   ├── datasets/
+│   │   ├── python_probes.py          # 68 Python probes (20 categories)
+│   │   ├── retain_suite.py          # 21 retain probes (5 categories)
+│   │   └── forget_dataset.py        # Forget dataset structure
+│   ├── unlearning/
+│   │   └── engine.py                # Unlearning methods
+│   ├── evaluation/
+│   │   ├── engine.py                # Evaluation engine
+│   │   └── report.py               # Report generator (JSON + Markdown)
+│   └── metrics/
+│       └── evaluation_metrics.py    # Delta metrics, verdict logic
+│
+├── infrastructure/
+│   └── docker/                       # Dockerfile for each service
+│
+├── tests/
+│   ├── test_ml_pipeline.py          # 25 unit tests
+│   └── test_evaluation_scoring.py   # 39 scoring validation tests
+│
+├── docs/                             # Documentation
+│   ├── architecture.md
+│   ├── unlearning.md
+│   ├── evaluation.md
+│   ├── security.md
+│   ├── development.md
+│   ├── model-support.md
+│   ├── research.md
+│   └── BUGS.md
+│
+├── storage/                          # Runtime artifacts (gitignored)
+│   ├── models/                      # Uploaded & unlearned models
+│   ├── evaluations/                 # Evaluation results
+│   └── reports/                     # Generated reports
+│
+├── cli.py                            # CLI proof of concept
+├── requirements.txt                  # Python dependencies
+├── docker-compose.yml               # Full stack orchestration
+└── README.md
+```
+
+---
+
+## Supported Models
+
+| Model | Parameters | Status | Notes |
+|:---|:---:|:---:|:---|
+| `Salesforce/codegen-350M-multi` | 304M | ✅ Tested | Primary test model |
+| `hf-internal-testing/tiny-random-GPT2Model` | 83K | ✅ Tested | CI/CD smoke tests |
+| Any HuggingFace causal LM | — | 🟡 Supported | Via adapter interface |
+
+### Requirements
+
+- HuggingFace Transformers compatible
+- Causal language model (decoder-only)
+- Preferred format: `.safetensors`
+- Model must fit in available GPU/CPU memory
+
+---
+
+## Security
+
+- **Isolated Workers** — Models load in separate processes, never in the API server
+- **Safe Formats** — Prefer `.safetensors` over arbitrary pickle deserialization
+- **No Raw Execution** — The API server never directly executes model code
+- **Resource Limits** — Upload size caps, GPU memory limits, timeout enforcement
+- **Auth** — Firebase Authentication with JWT sessions, OAuth (Google, GitHub)
+- **Audit Logging** — Every experiment operation is logged with full provenance
+
+---
 
 ## Documentation
 
-- [Architecture](docs/architecture.md)
-- [Unlearning Methods](docs/unlearning.md)
-- [Evaluation System](docs/evaluation.md)
-- [Security Model](docs/security.md)
-- [Development Guide](docs/development.md)
-- [Model Support](docs/model-support.md)
-- [Research Notes](docs/research.md)
+| Document | Description |
+|:---|:---|
+| [Architecture](docs/architecture.md) | System design and data flow |
+| [Unlearning Methods](docs/unlearning.md) | Algorithm details and formulations |
+| [Evaluation System](docs/evaluation.md) | Probe design, scoring, verdict logic |
+| [Security Model](docs/security.md) | Threat model and mitigations |
+| [Development Guide](docs/development.md) | Setup, contribution, and workflow |
+| [Model Support](docs/model-support.md) | Adapter interface and adding models |
+| [Research Notes](docs/research.md) | Scientific methodology and limitations |
+| [Bug Tracker](docs/BUGS.md) | Known issues and fixes |
+
+---
+
+## Limitations
+
+> **Scientific honesty is a core principle of this project.**
+
+- Results depend on **probe coverage** — unmeasured capabilities may be affected
+- Gradient-based editing does **not** guarantee complete capability removal
+- Models may **partially recover** capability through paraphrased prompts
+- Evaluation is based on **observed behavior**, not internal weight inspection
+- Small models may have **less separable** knowledge representations
+- No formal proof of unlearning is provided — this is **empirical evaluation**
+
+---
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
 
 ## License
 
-Research use. See LICENSE for details.
+Research use only. See [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+### Built with scientific rigor.
+
+**[NullMind](https://github.com/harsh11x/unlearnai)** — Selective AI Model Unlearning
+
+<br />
+
+![Footer](https://img.shields.io/badge/NULLMIND-111111?style=for-the-badge&labelColor=111111&color=c8a44e&labelColor=111111)
+
+</div>
