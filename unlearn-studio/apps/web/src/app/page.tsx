@@ -11,19 +11,19 @@ import {
 /* ════════════ HERO SECTION ════════════ */
 function Hero() {
   return (
-    <section className="relative pt-24 sm:pt-28 md:pt-36 lg:pt-44 pb-24 md:pb-36 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a] overflow-hidden">
+    <section className="relative pt-32 sm:pt-40 md:pt-52 lg:pt-64 pb-36 md:pb-48 lg:pb-60 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a] overflow-hidden">
       {/* Background Floating Decorative Sticky Notes */}
-      <div className="absolute top-28 right-12 w-36 h-36 bg-[#fef08a] border-2 border-[#0f172a] rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
+      <div className="absolute top-36 right-12 w-36 h-36 bg-[#fef08a] border-2 border-[#0f172a] rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
         <div className="p-3 font-hand text-xl text-slate-800">unlearn_v1.py</div>
       </div>
-      <div className="absolute bottom-12 right-1/3 w-32 h-32 bg-[#fbcfe8] border-2 border-[#0f172a] -rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
+      <div className="absolute bottom-16 right-1/3 w-32 h-32 bg-[#fbcfe8] border-2 border-[#0f172a] -rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
         <div className="p-3 font-hand text-lg text-slate-800">python = 0%</div>
       </div>
 
       <div className="w-full px-3 sm:px-6 md:px-10 lg:px-14 mx-auto relative z-10">
         
         {/* Top Tag Label */}
-        <div className="inline-flex items-center gap-2 bg-[#ffffff] border-2 border-[#0f172a] px-4 py-2 shadow-[3px_3px_0_0_#0f172a] mb-10 -rotate-1">
+        <div className="inline-flex items-center gap-2 bg-[#ffffff] border-2 border-[#0f172a] px-4 py-2 shadow-[3px_3px_0_0_#0f172a] mb-12 -rotate-1">
           <span className="w-2.5 h-2.5 bg-[#ef4444] rounded-full border border-[#0f172a]" />
           <span className="font-mono text-xs md:text-sm font-bold uppercase tracking-widest text-[#0f172a]">
             📌 RESEARCH BULLETIN — NULLMIND PLATFORM V1.0
@@ -46,7 +46,7 @@ function Hero() {
             </h1>
 
             {/* Sticky Card Note Subtitle */}
-            <div className="mt-10 relative bg-white border-2 border-[#0f172a] p-6 md:p-8 shadow-[6px_6px_0_0_#0f172a] rotate-1 w-full">
+            <div className="mt-12 relative bg-white border-2 border-[#0f172a] p-6 md:p-8 shadow-[6px_6px_0_0_#0f172a] rotate-1 w-full">
               <div className="pushpin"></div>
               <p className="font-mono text-sm md:text-base lg:text-lg font-bold text-slate-800 leading-relaxed">
                 A production platform for{" "}
@@ -64,7 +64,7 @@ function Hero() {
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-4 mt-10">
+            <div className="flex flex-wrap items-center gap-4 mt-12">
               <Link href="/signup" className="btn-sticky text-base py-3.5 px-7">
                 Start Experimenting <ArrowRight size={18} />
               </Link>
@@ -127,16 +127,16 @@ function Hero() {
 /* ════════════ PROBLEM SECTION ════════════ */
 function ProblemSection() {
   return (
-    <section className="py-24 md:py-36 lg:py-44 bg-[#e5dec9] border-b-4 border-[#0f172a]">
+    <section className="py-36 md:py-48 lg:py-60 bg-[#e5dec9] border-b-4 border-[#0f172a]">
       <div className="w-full px-3 sm:px-6 md:px-10 lg:px-14 mx-auto">
         
         {/* Folder / Cardboard Wrapper */}
-        <div className="cardboard p-6 sm:p-8 md:p-12 relative w-full mt-6">
+        <div className="cardboard p-6 sm:p-8 md:p-12 relative w-full mt-8">
           <div className="absolute -top-6 left-6 bg-[#ef4444] text-white px-4 py-1.5 font-mono font-black text-xs uppercase tracking-widest border-2 border-[#0f172a] shadow-[2px_2px_0_0_#0f172a]">
             ⚠️ CASE FILE #409: THE PERMANENCE PROBLEM
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center pt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center pt-6">
             
             {/* Left Box */}
             <div className="w-full">
@@ -199,11 +199,11 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="py-24 md:py-36 lg:py-44 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a]">
+    <section id="how-it-works" className="py-36 md:py-48 lg:py-60 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a]">
       <div className="w-full px-3 sm:px-6 md:px-10 lg:px-14 mx-auto">
         
         {/* Header Tag */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-6">
           <div>
             <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-4">
               📋 PROTOCOL PIPELINE
@@ -256,10 +256,10 @@ function HowItWorks() {
 /* ════════════ VISUAL PIPELINE / CHART PAPER LAB ════════════ */
 function VisualPipeline() {
   return (
-    <section className="py-24 md:py-36 lg:py-44 bg-[#f4efe4] border-b-4 border-[#0f172a]">
+    <section className="py-36 md:py-48 lg:py-60 bg-[#f4efe4] border-b-4 border-[#0f172a]">
       <div className="w-full px-3 sm:px-6 md:px-10 lg:px-14 mx-auto">
         
-        <div className="text-center mb-16">
+        <div className="text-center mb-20">
           <div className="stamp stamp-green mb-4">SCIENTIFIC DUAL LOSS</div>
           <h2 className="text-3xl md:text-5xl font-black text-[#0f172a]">
             Retention-Aware Loss Architecture
@@ -351,10 +351,10 @@ function Features() {
   ];
 
   return (
-    <section id="features" className="py-24 md:py-36 lg:py-44 bg-[#e5dec9] border-b-4 border-[#0f172a]">
+    <section id="features" className="py-36 md:py-48 lg:py-60 bg-[#e5dec9] border-b-4 border-[#0f172a]">
       <div className="w-full px-3 sm:px-6 md:px-10 lg:px-14 mx-auto">
         
-        <div className="mb-16">
+        <div className="mb-20">
           <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-3">
             ⚙️ ENGINE CAPABILITIES
           </div>
@@ -399,7 +399,7 @@ function Results() {
   ];
 
   return (
-    <section className="py-24 md:py-36 lg:py-44 bg-[#fef08a] border-b-4 border-[#0f172a] chart-grid">
+    <section className="py-36 md:py-48 lg:py-60 bg-[#fef08a] border-b-4 border-[#0f172a] chart-grid">
       <div className="w-full px-3 sm:px-6 md:px-10 lg:px-14 mx-auto">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -472,10 +472,10 @@ function Results() {
 /* ════════════ RESEARCH TRANSPARENCY MEMO ════════════ */
 function ResearchSection() {
   return (
-    <section id="research" className="py-24 md:py-36 lg:py-44 bg-[#eae5d9] border-b-4 border-[#0f172a]">
+    <section id="research" className="py-36 md:py-48 lg:py-60 bg-[#eae5d9] border-b-4 border-[#0f172a]">
       <div className="w-full px-3 sm:px-6 md:px-10 lg:px-14 mx-auto">
         
-        <div className="text-center mb-16">
+        <div className="text-center mb-20">
           <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-3">
             🔬 TRANSPARENCY NOTICE
           </div>
@@ -524,7 +524,7 @@ function ResearchSection() {
 /* ════════════ CTA & FOOTER ════════════ */
 function CTASection() {
   return (
-    <section className="py-24 md:py-36 lg:py-44 bg-[#f4efe4] border-b-4 border-[#0f172a]">
+    <section className="py-36 md:py-48 lg:py-60 bg-[#f4efe4] border-b-4 border-[#0f172a]">
       <div className="w-full px-3 sm:px-6 md:px-10 lg:px-14 mx-auto text-center">
         
         <div className="sticky-note bg-[#fef08a] p-8 md:p-14 rotate-1 relative w-full">
@@ -555,7 +555,7 @@ function CTASection() {
 
 function Footer() {
   return (
-    <footer className="py-10 bg-[#0f172a] text-white">
+    <footer className="py-12 bg-[#0f172a] text-white">
       <div className="w-full px-3 sm:px-6 md:px-10 lg:px-14 mx-auto flex flex-col md:flex-row justify-between items-center gap-4 font-mono text-xs md:text-sm">
         <div className="flex items-center gap-3">
           <span className="bg-[#fef08a] text-[#0f172a] font-black px-2 py-0.5">NULLMIND</span>
