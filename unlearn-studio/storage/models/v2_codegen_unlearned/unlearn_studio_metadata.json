@@ -1,6 +1,0 @@
-{
-  "source_model": "Salesforce/codegen-350M-multi",
-  "version": "v2_codegen_unlearned",
-  "architecture": "CodeGenForCausalLM",
-  "parameters": 356712448
-}
