@@ -44,7 +44,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.4;
   overflow-x: hidden;
-  border: 8px solid #000;
   min-height: 100vh;
 }
 
