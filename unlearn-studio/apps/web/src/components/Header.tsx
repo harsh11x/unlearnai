@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Menu, X, LogOut, LayoutDashboard, ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/auth-helpers";
 
@@ -11,16 +11,14 @@ export default function Header() {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b-4 border-black transition-none">
-      <div className="w-full max-w-[1600px] px-[8px] md:px-8 mx-auto flex items-center justify-between h-[80px]">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b-2 border-black">
+      <div className="container mx-auto flex items-center justify-between h-[64px]">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 bg-black border-2 border-black flex items-center justify-center group-hover:bg-highlight group-hover:text-black transition-none">
-            <span className="text-white group-hover:text-black font-serif font-bold text-xl">N</span>
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 bg-black flex items-center justify-center group-hover:bg-[#f0ff00] transition-colors">
+            <span className="text-white group-hover:text-black font-bold text-sm tracking-tighter">N</span>
           </div>
-          <span className="font-serif font-black text-2xl tracking-tighter uppercase">
-            NullMind
-          </span>
+          <span className="font-black text-lg tracking-tight">NULLMIND</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -33,53 +31,46 @@ export default function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-mono font-bold text-black border-b-2 border-transparent hover:border-black transition-none uppercase tracking-wide"
+              className="text-xs font-mono font-bold text-black/60 hover:text-black uppercase tracking-widest transition-colors"
             >
               {item.label}
             </Link>
           ))}
 
-          <div className="w-[2px] h-6 bg-black mx-4" />
+          <div className="w-px h-5 bg-black/20 mx-2" />
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {isLoading ? (
-              <div className="w-8 h-8 border-2 border-black border-t-highlight animate-spin" />
+              <div className="w-6 h-6 border-2 border-black border-t-transparent animate-spin" />
             ) : isAuthenticated && user ? (
               <div className="relative">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-3 px-3 py-2 border-2 border-black bg-white hover:bg-highlight hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[4px_4px_0_0_#000] transition-all"
+                  className="flex items-center gap-2 px-3 py-1.5 border-2 border-black hover:bg-[#f0ff00] transition-colors"
                 >
-                  <div className="w-8 h-8 bg-black flex items-center justify-center">
+                  <div className="w-6 h-6 bg-black flex items-center justify-center">
                     <span className="text-white text-xs font-bold font-mono">
                       {user.name?.charAt(0)?.toUpperCase() || "N"}
                     </span>
                   </div>
-                  <span className="text-sm font-bold font-mono hidden xl:block uppercase tracking-wide">{user.name}</span>
-                  <ChevronDown size={16} className="text-black stroke-[3px]" />
+                  <span className="text-xs font-bold font-mono uppercase tracking-wide hidden xl:block">{user.name}</span>
+                  <ChevronDown size={12} className="text-black stroke-[3px]" />
                 </button>
 
                 {showUserMenu && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
-                    <div className="absolute right-0 top-full mt-4 w-56 bg-white border-2 border-black shadow-[6px_6px_0_0_#000] z-50">
-                      <div className="p-4 border-b-2 border-black bg-highlight">
-                        <div className="text-sm font-bold uppercase truncate">{user.name}</div>
-                        <div className="text-xs font-mono text-black truncate mt-1">{user.email}</div>
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white border-2 border-black shadow-[4px_4px_0_0_#000] z-50">
+                      <div className="p-3 border-b-2 border-black bg-[#f0ff00]">
+                        <div className="text-xs font-bold uppercase truncate">{user.name}</div>
+                        <div className="text-[10px] font-mono text-black/60 truncate mt-0.5">{user.email}</div>
                       </div>
-                      <Link
-                        href="/dashboard"
-                        className="flex items-center gap-3 px-4 py-3 text-sm font-bold font-mono uppercase hover:bg-black hover:text-white transition-none"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        <LayoutDashboard size={16} />
+                      <Link href="/dashboard" className="flex items-center gap-2 px-3 py-2.5 text-xs font-bold font-mono uppercase hover:bg-black hover:text-white transition-colors" onClick={() => setShowUserMenu(false)}>
+                        <LayoutDashboard size={12} />
                         Dashboard
                       </Link>
-                      <button
-                        onClick={() => { setShowUserMenu(false); logout(); }}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold font-mono uppercase bg-error text-white hover:bg-black transition-none border-t-2 border-black"
-                      >
-                        <LogOut size={16} />
+                      <button onClick={() => { setShowUserMenu(false); logout(); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-bold font-mono uppercase bg-[#dc2626] text-white hover:bg-black transition-colors border-t-2 border-black">
+                        <LogOut size={12} />
                         Log Out
                       </button>
                     </div>
@@ -88,13 +79,10 @@ export default function Header() {
               </div>
             ) : (
               <>
-                <Link
-                  href="/login"
-                  className="text-sm font-bold font-mono uppercase text-black hover:bg-highlight px-4 py-2 border-2 border-transparent hover:border-black transition-none tracking-wide"
-                >
+                <Link href="/login" className="text-xs font-mono font-bold uppercase tracking-widest text-black/60 hover:text-black transition-colors">
                   Log In
                 </Link>
-                <Link href="/signup" className="btn-primary text-sm px-6 py-3 border-2 shadow-[4px_4px_0_0_#ffff00]">
+                <Link href="/signup" className="btn-primary">
                   Get Started
                 </Link>
               </>
@@ -103,18 +91,15 @@ export default function Header() {
         </nav>
 
         {/* Mobile toggle */}
-        <button
-          className="lg:hidden p-2 border-2 border-black bg-highlight shadow-[4px_4px_0_0_#000]"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          {menuOpen ? <X size={24} className="stroke-[3px]" /> : <Menu size={24} className="stroke-[3px]" />}
+        <button className="lg:hidden p-2 border-2 border-black" onClick={() => setMenuOpen(!menuOpen)}>
+          {menuOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
       </div>
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="lg:hidden bg-white border-t-4 border-black border-b-4">
-          <div className="flex flex-col p-6 gap-4">
+        <div className="lg:hidden bg-white border-t-2 border-black">
+          <div className="container mx-auto flex flex-col py-4 gap-1">
             {[
               { href: "/#how-it-works", label: "How It Works" },
               { href: "/#features", label: "Features" },
@@ -123,43 +108,20 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-base font-bold font-mono uppercase py-4 px-4 border-2 border-black hover:bg-highlight hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#000] transition-all tracking-wide"
+                className="text-sm font-mono font-bold uppercase py-3 px-3 hover:bg-[#f0ff00] transition-colors tracking-wide border-b border-black/10"
                 onClick={() => setMenuOpen(false)}
               >
                 {item.label}
               </Link>
             ))}
-            <div className="h-[2px] bg-black my-4" />
-            {isAuthenticated && user ? (
-              <>
-                <div className="flex items-center gap-4 px-4 py-4 bg-highlight border-2 border-black">
-                  <div className="w-10 h-10 bg-black flex items-center justify-center">
-                    <span className="text-white text-base font-bold font-mono">
-                      {user.name?.charAt(0)?.toUpperCase() || "N"}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="text-base font-bold uppercase">{user.name}</div>
-                    <div className="text-xs font-mono mt-1">{user.email}</div>
-                  </div>
-                </div>
-                <Link href="/dashboard" className="text-base font-bold font-mono uppercase py-4 px-4 border-2 border-black hover:bg-black hover:text-white mt-4 tracking-wide" onClick={() => setMenuOpen(false)}>
-                  Dashboard
-                </Link>
-                <button onClick={() => { setMenuOpen(false); logout(); }} className="text-base font-bold font-mono uppercase py-4 px-4 text-left bg-error text-white border-2 border-black hover:bg-black mt-4 tracking-wide">
-                  Log Out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link href="/login" className="text-base font-bold font-mono uppercase py-4 px-4 border-2 border-black hover:bg-highlight hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#000] transition-all tracking-wide" onClick={() => setMenuOpen(false)}>
-                  Log In
-                </Link>
-                <Link href="/signup" className="btn-primary text-base text-center mt-4 w-full border-2 shadow-[6px_6px_0_0_#ffff00] py-4" onClick={() => setMenuOpen(false)}>
-                  Get Started
-                </Link>
-              </>
-            )}
+            <div className="pt-3 flex flex-col gap-2">
+              <Link href="/login" className="text-sm font-mono font-bold uppercase py-3 px-3 border-2 border-black text-center" onClick={() => setMenuOpen(false)}>
+                Log In
+              </Link>
+              <Link href="/signup" className="btn-primary text-center" onClick={() => setMenuOpen(false)}>
+                Get Started
+              </Link>
+            </div>
           </div>
         </div>
       )}
