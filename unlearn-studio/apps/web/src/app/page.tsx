@@ -5,253 +5,393 @@ import Header from "@/components/Header";
 import {
   ArrowRight, Target, CheckCircle2, XCircle,
   FlaskConical, BarChart3, Shield, GitBranch, Database, Cpu,
-  Layers, Zap,
+  Layers, Zap, Sparkles, Pin, Bookmark, FileText, Check, HelpCircle
 } from "lucide-react";
 
-/* ════════════ HERO ════════════ */
+/* ════════════ HERO SECTION ════════════ */
 function Hero() {
   return (
-    <section className="bg-[#f0ff00] border-b-2 border-black">
-      <div className="container mx-auto pt-28 pb-20">
-        {/* Eyebrow */}
-        <div className="flex items-center gap-2 mb-8">
-          <div className="w-1.5 h-1.5 bg-black rounded-none" />
-          <span className="text-xs font-mono font-bold uppercase tracking-[0.15em] text-black/60">
-            Open Research Platform — v1.0
+    <section className="relative pt-24 pb-20 bg-[#eae5d9] chart-grid border-b-3 border-[#0f172a] overflow-hidden">
+      {/* Background Floating Decorative Sticky Notes */}
+      <div className="absolute top-16 right-10 w-32 h-32 bg-[#fef08a] border-2 border-[#0f172a] rotate-12 opacity-40 pointer-events-none hidden lg:block shadow-[4px_4px_0_0_#0f172a]">
+        <div className="p-2 font-hand text-lg text-slate-800">unlearn_v1.py</div>
+      </div>
+      <div className="absolute bottom-10 left-8 w-28 h-28 bg-[#fbcfe8] border-2 border-[#0f172a] -rotate-12 opacity-50 pointer-events-none hidden lg:block shadow-[4px_4px_0_0_#0f172a]">
+        <div className="p-2 font-hand text-base text-slate-800">python = 0%</div>
+      </div>
+
+      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto relative z-10">
+        
+        {/* Top Tag Label */}
+        <div className="inline-flex items-center gap-2 bg-[#ffffff] border-2 border-[#0f172a] px-4 py-1.5 shadow-[3px_3px_0_0_#0f172a] mb-8 -rotate-1">
+          <span className="w-2.5 h-2.5 bg-[#ef4444] rounded-full border border-[#0f172a]" />
+          <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#0f172a]">
+            📌 RESEARCH BULLETIN — NULLMIND PLATFORM
           </span>
         </div>
 
-        {/* Headline */}
-        <div className="max-w-4xl">
-          <h1 className="text-[clamp(2.8rem,5vw,5rem)] font-black leading-[1.0] tracking-tighter text-black mb-2">
-            Selectively<br />
-            <span className="bg-black text-[#f0ff00] px-3 inline-block my-1">UNLEARN</span><br />
-            AI Models.
-          </h1>
+        <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-12 items-center">
+          
+          {/* Left Column: Big Headline & Subtitle */}
+          <div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.05] text-[#0f172a]">
+              SELECTIVELY <br />
+              <span className="relative inline-block my-2">
+                <span className="bg-[#fef08a] border-2 border-[#0f172a] px-3 py-1 shadow-[4px_4px_0_0_#0f172a] inline-block -rotate-1">
+                  UNLEARN
+                </span>
+                <div className="tape tape-top-right"></div>
+              </span> <br />
+              AI MODELS.
+            </h1>
 
-          <p className="mt-8 text-lg font-medium text-black/70 max-w-xl leading-relaxed">
-            A production platform for{" "}
-            <span className="font-bold text-black border-b-2 border-black">measured capability reduction</span>{" "}
-            in language models. Forget what you need to. Keep what matters.
-          </p>
-
-          <div className="flex flex-wrap gap-3 mt-10">
-            <Link href="/signup" className="btn-primary">
-              Start Experimenting <ArrowRight size={14} />
-            </Link>
-            <Link href="/#how-it-works" className="btn-outline">
-              See How It Works
-            </Link>
-          </div>
-        </div>
-
-        {/* Stats bar */}
-        <div className="mt-20 pt-8 border-t-2 border-black/20 grid grid-cols-2 md:grid-cols-4 gap-px bg-black/10">
-          {[
-            { value: "20+", label: "Probe Categories" },
-            { value: "89", label: "Evaluation Probes" },
-            { value: "2", label: "Unlearning Methods" },
-            { value: "5", label: "Languages Supported" },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-[#f0ff00] px-6 py-5">
-              <div className="text-3xl font-black font-mono tracking-tight">{stat.value}</div>
-              <div className="text-xs font-mono font-bold uppercase tracking-widest text-black/50 mt-1">{stat.label}</div>
+            {/* Sticky Card Note Subtitle */}
+            <div className="mt-8 relative bg-white border-2 border-[#0f172a] p-6 shadow-[6px_6px_0_0_#0f172a] rotate-1 max-w-xl">
+              <div className="pushpin"></div>
+              <p className="font-mono text-sm md:text-base font-bold text-slate-800 leading-relaxed">
+                A production platform for{" "}
+                <span className="bg-[#bae6fd] px-2 py-0.5 border border-[#0f172a]">
+                  measured capability reduction
+                </span>{" "}
+                in language models. Forget targeted data.{" "}
+                <span className="bg-[#bbf7d0] px-2 py-0.5 border border-[#0f172a] underline decoration-2">
+                  Keep everything else.
+                </span>
+              </p>
+              <div className="mt-3 text-right font-hand text-xl font-bold text-slate-600">
+                ~ Empirical & Reproducible
+              </div>
             </div>
-          ))}
+
+            {/* CTAs */}
+            <div className="flex flex-wrap items-center gap-4 mt-8">
+              <Link href="/signup" className="btn-sticky text-base py-3 px-6">
+                Start Experimenting <ArrowRight size={18} />
+              </Link>
+              <Link href="/#how-it-works" className="btn-tape text-base py-3 px-6">
+                See How It Works 📋
+              </Link>
+            </div>
+          </div>
+
+          {/* Right Column: Interactive Sticky Note Grid Stats */}
+          <div className="grid grid-cols-2 gap-4 relative">
+            
+            {/* Sticky 1 */}
+            <div className="sticky-note bg-[#fef08a] p-5 -rotate-2">
+              <div className="tape tape-top-center"></div>
+              <div className="font-mono text-3xl md:text-4xl font-black text-[#0f172a]">20+</div>
+              <div className="font-mono text-xs font-bold uppercase tracking-wider text-slate-700 mt-2 border-t border-[#0f172a]/30 pt-2">
+                Probe Categories
+              </div>
+              <div className="font-hand text-lg text-slate-600 mt-1">Code, Safety, Math...</div>
+            </div>
+
+            {/* Sticky 2 */}
+            <div className="sticky-note bg-[#bae6fd] p-5 rotate-3">
+              <div className="tape tape-top-right"></div>
+              <div className="font-mono text-3xl md:text-4xl font-black text-[#0f172a]">89</div>
+              <div className="font-mono text-xs font-bold uppercase tracking-wider text-slate-700 mt-2 border-t border-[#0f172a]/30 pt-2">
+                Evaluation Probes
+              </div>
+              <div className="font-hand text-lg text-slate-600 mt-1">Targeted test battery</div>
+            </div>
+
+            {/* Sticky 3 */}
+            <div className="sticky-note bg-[#fbcfe8] p-5 rotate-2">
+              <div className="tape tape-top-left"></div>
+              <div className="font-mono text-3xl md:text-4xl font-black text-[#0f172a]">2</div>
+              <div className="font-mono text-xs font-bold uppercase tracking-wider text-slate-700 mt-2 border-t border-[#0f172a]/30 pt-2">
+                Unlearn Methods
+              </div>
+              <div className="font-hand text-lg text-slate-600 mt-1">Ascent + Retain Loss</div>
+            </div>
+
+            {/* Sticky 4 */}
+            <div className="sticky-note bg-[#bbf7d0] p-5 -rotate-3">
+              <div className="tape tape-top-center"></div>
+              <div className="font-mono text-3xl md:text-4xl font-black text-[#0f172a]">5</div>
+              <div className="font-mono text-xs font-bold uppercase tracking-wider text-slate-700 mt-2 border-t border-[#0f172a]/30 pt-2">
+                Languages Tested
+              </div>
+              <div className="font-hand text-lg text-slate-600 mt-1">Python, JS, TS, C++</div>
+            </div>
+
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-/* ════════════ PROBLEM ════════════ */
+/* ════════════ PROBLEM SECTION ════════════ */
 function ProblemSection() {
   return (
-    <section className="py-24 bg-white border-b-2 border-black">
-      <div className="container mx-auto">
-        <div className="grid lg:grid-cols-[1fr_1.2fr] gap-16 items-start">
-          {/* Left */}
-          <div>
-            <span className="section-label">The Problem</span>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-[1.05] mb-6">
-              AI Models<br />
-              <span className="relative inline-block mt-1">
-                Can't Forget.
-                <span className="absolute bottom-0 left-0 right-0 h-[6px] bg-[#f0ff00] -z-10" />
-              </span>
-            </h2>
-            <p className="text-base text-black/60 leading-relaxed max-w-sm">
-              Once trained, models permanently encode their training data. There's currently no clean way to selectively remove specific knowledge.
-            </p>
+    <section className="py-20 bg-[#e5dec9] border-b-3 border-[#0f172a]">
+      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto">
+        
+        {/* Folder / Cardboard Wrapper */}
+        <div className="cardboard p-6 md:p-10 relative">
+          <div className="absolute -top-4 left-8 bg-[#ef4444] text-white px-4 py-1 font-mono font-black text-xs uppercase tracking-widest border-2 border-[#0f172a] shadow-[2px_2px_0_0_#0f172a]">
+            ⚠️ CASE FILE #409: THE PERMANENCE PROBLEM
           </div>
 
-          {/* Right */}
-          <div className="space-y-3">
-            {[
-              { num: "01", text: "Models memorize training data permanently" },
-              { num: "02", text: "No built-in mechanism to forget specific knowledge" },
-              { num: "03", text: "Retraining from scratch is expensive and wasteful" },
-              { num: "04", text: "Privacy regulations demand the right to erasure" },
-            ].map((item) => (
-              <div key={item.num} className="flex items-center gap-5 p-5 border-2 border-black hover:bg-[#f0ff00] hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#000] transition-all group">
-                <span className="text-xs font-mono font-bold text-black/30 group-hover:text-black/60 shrink-0 w-6">{item.num}</span>
-                <span className="text-sm font-semibold uppercase tracking-wide leading-snug">{item.text}</span>
+          <div className="grid lg:grid-cols-[1fr_1.2fr] gap-10 items-center">
+            
+            {/* Left Box */}
+            <div>
+              <div className="stamp mb-4">CONFIDENTIAL</div>
+              <h2 className="text-3xl md:text-4xl font-black text-[#0f172a] leading-tight">
+                AI Models Cannot <br />
+                <span className="bg-[#fef08a] px-2 py-0.5 border border-[#0f172a]">Selectively Forget</span>
+              </h2>
+              <p className="mt-4 font-mono text-sm text-slate-700 leading-relaxed">
+                Once trained, LLMs permanently memorize code, PII, and copyrighted content across millions of parameters.
+              </p>
+
+              <div className="mt-6 p-4 bg-white border-2 border-[#0f172a] shadow-[4px_4px_0_0_#0f172a] rotate-1">
+                <span className="font-hand text-2xl font-bold text-[#ef4444]">
+                  "Retraining from scratch costs $100k+ every time a removal request arrives."
+                </span>
               </div>
-            ))}
+            </div>
+
+            {/* Right Sticky Card Stack */}
+            <div className="space-y-4">
+              {[
+                { title: "Permanent Memorization", color: "bg-[#fef08a]", text: "Training data is baked directly into neural network weights." },
+                { title: "No Erase Button", color: "bg-[#bae6fd]", text: "Standard RLHF or fine-tuning only suppresses output — data remains accessible via jailbreaks." },
+                { title: "Prohibitive Retraining Cost", color: "bg-[#fbcfe8]", text: "Re-cleansing data and retraining full parameters is economically unfeasible." },
+                { title: "Right to be Forgotten", color: "bg-[#bbf7d0]", text: "Privacy compliance (GDPR/CCPA) requires verifiable data removal." },
+              ].map((item, idx) => (
+                <div 
+                  key={idx} 
+                  className={`sticky-note ${item.color} p-4 flex items-start gap-4 transition-all hover:translate-x-2`}
+                >
+                  <span className="font-mono font-black text-xl bg-[#0f172a] text-white w-7 h-7 flex items-center justify-center shrink-0">
+                    {idx + 1}
+                  </span>
+                  <div>
+                    <h3 className="font-mono text-sm font-bold uppercase text-[#0f172a]">{item.title}</h3>
+                    <p className="font-mono text-xs text-slate-700 mt-1">{item.text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
           </div>
         </div>
+
       </div>
     </section>
   );
 }
 
-/* ════════════ HOW IT WORKS ════════════ */
+/* ════════════ HOW IT WORKS (Sticky Note Grid) ════════════ */
 function HowItWorks() {
   const steps = [
-    { num: "01", icon: "📤", title: "Upload Model", desc: "Upload any open-weight model. System validates architecture, extracts metadata, checks GPU requirements.", tag: "safetensors · HuggingFace" },
-    { num: "02", icon: "🔍", title: "Explore Capabilities", desc: "Run controlled probing experiments across 20 categories and 89 probes to establish a baseline.", tag: "89 probes · 20 categories" },
-    { num: "03", icon: "🎯", title: "Select Target", desc: "Choose what to unlearn. In V1, we focus on Python — measuring its reduction while preserving other languages.", tag: "Python → JS · TS · C++" },
-    { num: "04", icon: "🧠", title: "Run Unlearning", desc: "Choose gradient-based forgetting or retain-aware unlearning. Dual objective: forget target, preserve capabilities.", tag: "gradient ascent + descent" },
-    { num: "05", icon: "🔬", title: "Verify Results", desc: "Re-run the same evaluation suite. Compare before/after across all capabilities with robustness testing.", tag: "paraphrases · indirect · code" },
-    { num: "06", icon: "📊", title: "Review Report", desc: "Comprehensive report: forgetting achievement, retention score, collateral damage, and a final verdict.", tag: "PASS · REVIEW · FAIL" },
+    { num: "01", title: "Upload Model", desc: "Upload any open-weight model (HuggingFace / Safetensors). System validates metadata & GPU specs.", tag: "Safetensors · HF", color: "bg-[#fef08a]", rot: "-rotate-2" },
+    { num: "02", title: "Explore Baseline", desc: "Run probing suite across 20 categories and 89 probes to record starting capabilities.", tag: "89 Probes Battery", color: "bg-[#bae6fd]", rot: "rotate-1" },
+    { num: "03", title: "Select Target", desc: "Define capability target (e.g. Python code generation) to selectively unlearn.", tag: "Target: Python", color: "bg-[#fbcfe8]", rot: "-rotate-1" },
+    { num: "04", title: "Run Unlearning", desc: "Execute gradient ascent on target dataset combined with gradient descent on retain set.", tag: "Dual Objective Loss", color: "bg-[#bbf7d0]", rot: "rotate-2" },
+    { num: "05", title: "Verify Results", desc: "Re-evaluate exact probes. Verify target dropped to ~0% while collateral skills remained intact.", tag: "Paraphrase Tests", color: "bg-[#fed7aa]", rot: "-rotate-2" },
+    { num: "06", title: "Audit Report", desc: "Generate reproducible PDF audit report with model weights diff and pass/fail verdict.", tag: "PASS / FAIL Audit", color: "bg-[#fef08a]", rot: "rotate-1" },
   ];
 
   return (
-    <section id="how-it-works" className="py-24 bg-[#f5f5f0] border-b-2 border-black">
-      <div className="container mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
+    <section id="how-it-works" className="py-20 bg-[#eae5d9] chart-grid border-b-3 border-[#0f172a]">
+      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto">
+        
+        {/* Header Tag */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
           <div>
-            <span className="section-label">Process</span>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
-              How It Works
+            <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-2">
+              📋 PROTOCOL PIPELINE
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black text-[#0f172a] tracking-tight">
+              Six Steps to Verified Unlearning
             </h2>
           </div>
-          <p className="text-sm font-mono text-black/50 max-w-xs text-right leading-relaxed hidden md:block">
-            Six steps from upload to<br />verified unlearning.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {steps.map((step) => (
-            <div key={step.num} className="card p-6 bg-white flex flex-col">
-              <div className="flex items-start justify-between mb-5">
-                <span className="text-2xl">{step.icon}</span>
-                <span className="text-xs font-mono font-bold text-black/20">{step.num}</span>
-              </div>
-              <h3 className="text-base font-black uppercase tracking-wide mb-3 bg-[#f0ff00] inline-block self-start px-2 py-0.5 text-sm">
-                {step.title}
-              </h3>
-              <p className="text-sm text-black/60 leading-relaxed flex-grow mb-4">{step.desc}</p>
-              <div className="text-[10px] font-mono font-bold bg-black text-white px-3 py-1.5 uppercase tracking-widest self-start">
-                {step.tag}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ════════════ PIPELINE ════════════ */
-function VisualPipeline() {
-  return (
-    <section className="py-24 bg-white border-b-2 border-black">
-      <div className="container mx-auto">
-        <div className="text-center mb-14">
-          <span className="section-label">Architecture</span>
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight">The Scientific Loop</h2>
-        </div>
-
-        <div className="grid lg:grid-cols-3 border-2 border-black shadow-[6px_6px_0_0_#000] max-w-5xl mx-auto">
-          {[
-            {
-              phase: "01", title: "Baseline", bg: "bg-white",
-              items: ["Load original model", "Run 89 probes", "Measure Python: 50%", "Measure JS/TS/C++: 75%"],
-              Icon: CheckCircle2,
-            },
-            {
-              phase: "02", title: "Unlearn", bg: "bg-[#f0ff00]",
-              items: ["Gradient ascent on Python", "Gradient descent on retain", "Optimize dual objective", "Save new model version"],
-              Icon: Zap,
-            },
-            {
-              phase: "03", title: "Verify", bg: "bg-white",
-              items: ["Re-run same 89 probes", "Python: 50% → 0%", "JS/TS/C++: Preserved", "Verdict: PASS"],
-              Icon: BarChart3,
-            },
-          ].map((phase, i) => (
-            <div key={phase.phase} className={`${phase.bg} p-8 ${i < 2 ? "border-r-2 border-black" : ""}`}>
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-black uppercase tracking-wide">{phase.title}</h3>
-                <span className="text-xs font-mono font-bold text-black/30">Phase {phase.phase}</span>
-              </div>
-              <div className="space-y-2">
-                {phase.items.map((item) => (
-                  <div key={item} className="flex items-center gap-3 text-sm font-medium text-black/70 py-2 border-b border-black/10 last:border-0">
-                    <phase.Icon size={14} className="shrink-0 text-black/50" />
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex justify-center mt-8">
-          <div className="flex items-center gap-4 text-sm font-mono font-bold uppercase tracking-widest bg-black text-white px-6 py-3">
-            <span>Original</span>
-            <ArrowRight size={16} className="text-[#f0ff00]" />
-            <span className="text-[#f0ff00]">Unlearned</span>
-            <ArrowRight size={16} className="text-[#f0ff00]" />
-            <span>v2.0</span>
+          <div className="font-hand text-2xl font-bold text-slate-700 bg-[#fef08a] px-4 py-1 border-2 border-[#0f172a] -rotate-2">
+            ~ Fully Reproducible Pipeline ~
           </div>
         </div>
+
+        {/* 6 Sticky Notes Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {steps.map((step) => (
+            <div
+              key={step.num}
+              className={`sticky-note ${step.color} ${step.rot} p-6 flex flex-col justify-between min-h-[240px]`}
+            >
+              <div className="tape tape-top-center"></div>
+
+              <div>
+                <div className="flex items-center justify-between border-b-2 border-[#0f172a]/20 pb-3 mb-4">
+                  <span className="font-mono text-xs font-bold uppercase bg-[#0f172a] text-white px-2 py-0.5">
+                    STEP {step.num}
+                  </span>
+                  <span className="font-hand text-2xl font-bold text-slate-700">#probe</span>
+                </div>
+
+                <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase">{step.title}</h3>
+                <p className="font-mono text-xs font-bold text-slate-800 leading-relaxed mt-2">{step.desc}</p>
+              </div>
+
+              <div className="mt-6 pt-3 border-t-2 border-dashed border-[#0f172a]/30 flex items-center justify-between">
+                <span className="font-mono text-[10px] font-black uppercase text-slate-600 bg-white/70 px-2 py-0.5 border border-[#0f172a]/40">
+                  {step.tag}
+                </span>
+                <span className="text-sm">📌</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
     </section>
   );
 }
 
-/* ════════════ FEATURES ════════════ */
+/* ════════════ VISUAL PIPELINE / CHART PAPER LAB ════════════ */
+function VisualPipeline() {
+  return (
+    <section className="py-20 bg-[#f4efe4] border-b-3 border-[#0f172a]">
+      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto">
+        
+        <div className="text-center mb-12">
+          <div className="stamp stamp-green mb-2">SCIENTIFIC DUAL LOSS</div>
+          <h2 className="text-3xl md:text-5xl font-black text-[#0f172a]">
+            Retention-Aware Loss Architecture
+          </h2>
+        </div>
+
+        {/* Blueprint Chart Board */}
+        <div className="bg-white border-3 border-[#0f172a] p-6 md:p-10 shadow-[8px_8px_0_0_#0f172a] chart-grid-dense relative">
+          <div className="pushpin"></div>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            
+            {/* Phase 1 */}
+            <div className="bg-[#fef08a] border-2 border-[#0f172a] p-6 shadow-[4px_4px_0_0_#0f172a] relative -rotate-1">
+              <div className="absolute top-2 right-2 font-mono text-xs font-bold bg-[#0f172a] text-white px-2 py-0.5">
+                PHASE A
+              </div>
+              <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4">
+                1. Baseline Score
+              </h3>
+              <ul className="font-mono text-xs font-bold text-slate-800 space-y-2">
+                <li className="flex items-center gap-2">✓ Python Probes: 50.0%</li>
+                <li className="flex items-center gap-2">✓ JavaScript: 50.0%</li>
+                <li className="flex items-center gap-2">✓ TypeScript: 100.0%</li>
+                <li className="flex items-center gap-2">✓ C++ Probes: 75.0%</li>
+              </ul>
+            </div>
+
+            {/* Phase 2 */}
+            <div className="bg-[#fbcfe8] border-2 border-[#0f172a] p-6 shadow-[4px_4px_0_0_#0f172a] relative rotate-1">
+              <div className="absolute top-2 right-2 font-mono text-xs font-bold bg-[#0f172a] text-white px-2 py-0.5">
+                PHASE B
+              </div>
+              <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4">
+                2. Dual Unlearn
+              </h3>
+              <div className="font-mono text-xs font-bold text-slate-800 space-y-2">
+                <div className="p-2 bg-white border border-[#0f172a]">
+                  🔥 Gradient Ascent: Target (Python)
+                </div>
+                <div className="p-2 bg-white border border-[#0f172a]">
+                  🛡️ Gradient Descent: Retain Set
+                </div>
+                <div className="font-hand text-xl text-slate-700 text-center mt-2">
+                  L_total = L_forget + λ L_retain
+                </div>
+              </div>
+            </div>
+
+            {/* Phase 3 */}
+            <div className="bg-[#bbf7d0] border-2 border-[#0f172a] p-6 shadow-[4px_4px_0_0_#0f172a] relative -rotate-1">
+              <div className="absolute top-2 right-2 font-mono text-xs font-bold bg-[#0f172a] text-white px-2 py-0.5">
+                PHASE C
+              </div>
+              <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4">
+                3. Verification
+              </h3>
+              <ul className="font-mono text-xs font-bold text-slate-800 space-y-2">
+                <li className="flex items-center gap-2 text-red-600 font-black">🎯 Python: 50% → 0.0% (UNLEARNED)</li>
+                <li className="flex items-center gap-2">✅ JavaScript: 50.0% (PRESERVED)</li>
+                <li className="flex items-center gap-2">✅ TypeScript: 100.0% (PRESERVED)</li>
+                <li className="flex items-center gap-2">✅ C++: 75.0% (PRESERVED)</li>
+              </ul>
+            </div>
+
+          </div>
+
+          <div className="mt-8 text-center">
+            <span className="inline-block bg-[#0f172a] text-[#fef08a] font-mono text-xs font-bold uppercase tracking-widest px-6 py-3 border-2 border-[#0f172a] shadow-[4px_4px_0_0_#0f172a]">
+              ⚡ RESULT: TARGET CAPABILITY REDUCED WHILE PRESERVING RETAINED SKILLS
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
+/* ════════════ FEATURES SECTION ════════════ */
 function Features() {
   const features = [
-    { icon: Shield, title: "Evidence-Based", desc: "No internal weight claims. All results come from controlled probing with measurable outcomes." },
-    { icon: GitBranch, title: "Version Control", desc: "Every operation creates a new model version. Original models are never overwritten." },
-    { icon: Layers, title: "Dual Objective", desc: "Retain-aware unlearning balances forgetting and preservation with weighted loss." },
-    { icon: Cpu, title: "GPU Workers", desc: "Isolated Celery workers handle GPU-intensive tasks asynchronously." },
-    { icon: Database, title: "Full Provenance", desc: "Model hashes, hyperparameters, seeds — every experiment is fully reproducible." },
-    { icon: FlaskConical, title: "Robustness Testing", desc: "Tests paraphrases, indirect prompts, and code completion to verify forgetting holds." },
+    { title: "Evidence-Based", desc: "No opaque internal model weight claims. All unlearning is validated via controlled probing.", color: "bg-[#fef08a]", icon: Shield },
+    { title: "Version Lineage", desc: "Every experiment creates an immutable checkpoint version. Original models are untouched.", color: "bg-[#bae6fd]", icon: GitBranch },
+    { title: "Dual Objective", desc: "Retain-aware loss prevents model degradation while erasing targeted capability domains.", color: "bg-[#fbcfe8]", icon: Layers },
+    { title: "GPU Worker Queue", desc: "Async Celery background tasks handle model loading and gradient computation seamlessly.", color: "bg-[#bbf7d0]", icon: Cpu },
+    { title: "Full Provenance", desc: "Complete reproducibility log with dataset hashes, learning rates, and seed tracking.", color: "bg-[#fed7aa]", icon: Database },
+    { title: "Robustness Suite", desc: "Paraphrase and adversarial prompt tests ensure unlearning resists simple jailbreaks.", color: "bg-[#fef08a]", icon: FlaskConical },
   ];
 
   return (
-    <section id="features" className="py-24 bg-[#f5f5f0] border-b-2 border-black">
-      <div className="container mx-auto">
-        <div className="mb-14">
-          <span className="section-label">Capabilities</span>
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight">Built for Research</h2>
+    <section id="features" className="py-20 bg-[#e5dec9] border-b-3 border-[#0f172a]">
+      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto">
+        
+        <div className="mb-12">
+          <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-2">
+            ⚙️ ENGINE CAPABILITIES
+          </div>
+          <h2 className="text-3xl md:text-5xl font-black text-[#0f172a]">
+            Built for Rigorous ML Research
+          </h2>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {features.map((f) => (
-            <div key={f.title} className="card p-7 bg-white group hover:bg-black hover:text-white">
-              <div className="w-10 h-10 bg-[#f0ff00] border-2 border-black flex items-center justify-center mb-5 group-hover:bg-white transition-colors">
-                <f.icon size={18} className="stroke-[2.5px]" />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((f, i) => (
+            <div
+              key={f.title}
+              className={`sticky-note ${f.color} p-6 flex flex-col justify-between`}
+            >
+              <div>
+                <div className="w-10 h-10 bg-[#0f172a] text-white flex items-center justify-center mb-4 border border-[#0f172a]">
+                  <f.icon size={20} />
+                </div>
+                <h3 className="font-mono text-base font-black text-[#0f172a] uppercase">{f.title}</h3>
+                <p className="font-mono text-xs font-bold text-slate-800 leading-relaxed mt-2">{f.desc}</p>
               </div>
-              <h3 className="text-base font-black uppercase tracking-wide mb-2">{f.title}</h3>
-              <p className="text-sm text-black/60 group-hover:text-white/60 leading-relaxed">{f.desc}</p>
+              <div className="font-hand text-lg text-slate-600 mt-4 text-right">
+                #feature-{i + 1}
+              </div>
             </div>
           ))}
         </div>
+
       </div>
     </section>
   );
 }
 
-/* ════════════ RESULTS ════════════ */
+/* ════════════ REAL RESULTS SCORECARD ════════════ */
 function Results() {
   const results = [
-    { cap: "Python", before: "50.0%", after: "0.0%", delta: "−50.0%", isTarget: true },
+    { cap: "Python", before: "50.0%", after: "0.0%", delta: "-50.0%", isTarget: true },
     { cap: "JavaScript", before: "50.0%", after: "50.0%", delta: "0.0%", isTarget: false },
     { cap: "TypeScript", before: "100.0%", after: "100.0%", delta: "0.0%", isTarget: false },
     { cap: "C++", before: "75.0%", after: "75.0%", delta: "0.0%", isTarget: false },
@@ -259,165 +399,183 @@ function Results() {
   ];
 
   return (
-    <section className="py-24 bg-[#f0ff00] border-b-2 border-black">
-      <div className="container mx-auto">
-        <div className="grid lg:grid-cols-[1fr_1.5fr] gap-14 items-start">
-          {/* Left */}
+    <section className="py-20 bg-[#fef08a] border-b-3 border-[#0f172a] chart-grid">
+      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto">
+        
+        <div className="grid lg:grid-cols-[1fr_1.4fr] gap-10 items-center">
+          
+          {/* Left Column */}
           <div>
-            <span className="section-label">Proof of Concept</span>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6">Real Results.</h2>
-            <p className="text-sm font-mono text-black/60 leading-relaxed mb-6">
-              Tested on{" "}
-              <span className="bg-black text-white px-2 py-0.5 font-mono text-xs">Salesforce/codegen-350M</span>.
-              <br /><br />
-              Python capability reduced to zero while other languages remain fully intact.
+            <div className="stamp stamp-green mb-4">PROOFS OF CONCEPT</div>
+            <h2 className="text-3xl md:text-5xl font-black text-[#0f172a] leading-tight">
+              Real Evaluation Scorecard
+            </h2>
+            <p className="font-mono text-sm text-slate-800 leading-relaxed mt-4">
+              Tested on <span className="bg-black text-white px-2 py-0.5 font-mono text-xs">Salesforce/codegen-350M</span>.
             </p>
-            <div className="flex items-center gap-3 p-4 bg-white border-2 border-black">
-              <CheckCircle2 size={20} className="shrink-0" />
-              <div>
-                <div className="text-sm font-black uppercase tracking-wide">Verdict: PASS</div>
-                <div className="text-xs text-black/50 font-mono mt-0.5">Low collateral damage</div>
+
+            <div className="mt-6 p-5 bg-white border-2 border-[#0f172a] shadow-[5px_5px_0_0_#0f172a] -rotate-1">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 size={28} className="text-green-600 shrink-0" />
+                <div>
+                  <div className="font-mono text-base font-black text-[#0f172a] uppercase">VERDICT: PASS</div>
+                  <div className="font-mono text-xs text-slate-700">Target Python capability eliminated with 0 collateral damage on JS/TS/C++.</div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Right: table */}
-          <div className="border-2 border-black shadow-[6px_6px_0_0_#000] bg-white">
-            <div className="grid grid-cols-4 bg-black text-white text-[10px] font-mono font-bold uppercase tracking-widest border-b-2 border-black">
-              <div className="p-3 border-r-2 border-white/20">Capability</div>
-              <div className="p-3 border-r-2 border-white/20 text-center">Before</div>
-              <div className="p-3 border-r-2 border-white/20 text-center">After</div>
-              <div className="p-3 text-center">Δ</div>
+          {/* Right Column: Chart Table */}
+          <div className="bg-white border-3 border-[#0f172a] shadow-[8px_8px_0_0_#0f172a] p-4 rotate-1">
+            <div className="font-mono text-xs font-black uppercase bg-[#0f172a] text-white p-3 flex justify-between items-center mb-2">
+              <span>EVALUATION METRICS TABLE</span>
+              <span className="text-[#fef08a]">codegen-350m-v2</span>
             </div>
-            {results.map((r) => (
-              <div
-                key={r.cap}
-                className={`grid grid-cols-4 border-b border-black/10 last:border-0 ${r.isTarget ? "bg-[#fff0f0]" : ""}`}
-              >
-                <div className="p-3 border-r border-black/10 text-sm font-bold flex items-center gap-2">
-                  {r.isTarget && <Target size={12} className="text-[#dc2626] shrink-0" />}
-                  {r.cap}
-                </div>
-                <div className="p-3 border-r border-black/10 text-center text-sm font-mono">{r.before}</div>
-                <div className="p-3 border-r border-black/10 text-center text-sm font-mono">{r.after}</div>
-                <div className={`p-3 text-center text-sm font-mono font-bold ${r.isTarget ? "text-[#dc2626]" : "text-black/40"}`}>{r.delta}</div>
+
+            <div className="divide-y-2 divide-[#0f172a]">
+              <div className="grid grid-cols-4 font-mono text-xs font-black text-slate-600 p-2 bg-[#f4efe4]">
+                <div>CAPABILITY</div>
+                <div className="text-center">BEFORE</div>
+                <div className="text-center">AFTER</div>
+                <div className="text-center">DELTA</div>
               </div>
-            ))}
+
+              {results.map((r) => (
+                <div 
+                  key={r.cap} 
+                  className={`grid grid-cols-4 font-mono text-xs font-bold p-3 items-center ${
+                    r.isTarget ? "bg-[#fbcfe8]" : "hover:bg-[#f4efe4]"
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 font-black text-[#0f172a]">
+                    {r.isTarget && <Target size={14} className="text-red-600 shrink-0" />}
+                    {r.cap}
+                    {r.isTarget && <span className="text-[9px] bg-red-600 text-white px-1 ml-1">TARGET</span>}
+                  </div>
+                  <div className="text-center text-slate-700">{r.before}</div>
+                  <div className="text-center text-slate-700">{r.after}</div>
+                  <div className={`text-center font-black ${r.isTarget ? "text-red-600" : "text-slate-500"}`}>
+                    {r.delta}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+
         </div>
+
       </div>
     </section>
   );
 }
 
-/* ════════════ RESEARCH ════════════ */
+/* ════════════ RESEARCH TRANSPARENCY MEMO ════════════ */
 function ResearchSection() {
   return (
-    <section id="research" className="py-24 bg-white border-b-2 border-black">
-      <div className="container mx-auto">
-        <div className="mb-14 text-center">
-          <span className="section-label">Transparency</span>
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight">What This Is (And Isn't)</h2>
+    <section id="research" className="py-20 bg-[#eae5d9] border-b-3 border-[#0f172a]">
+      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto">
+        
+        <div className="text-center mb-12">
+          <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-2">
+            🔬 TRANSPARENCY NOTICE
+          </div>
+          <h2 className="text-3xl md:text-5xl font-black text-[#0f172a]">
+            What We Do (And Don't Claim)
+          </h2>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          <div className="p-8 border-2 border-black bg-[#f5f5f0]">
-            <h3 className="text-base font-black uppercase tracking-wide mb-6 flex items-center gap-2">
-              <CheckCircle2 size={16} /> What We Do
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          
+          {/* Memo 1: What We Do */}
+          <div className="sticky-note bg-[#bbf7d0] p-6 -rotate-1">
+            <div className="tape tape-top-left"></div>
+            <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4 flex items-center gap-2">
+              <CheckCircle2 size={20} className="text-green-700" /> WHAT WE DO
             </h3>
-            <ul className="space-y-4">
-              {[
-                "Gradient-based model editing to reduce specific capabilities",
-                "Controlled probing to measure observed capability changes",
-                "Retain-aware optimization to preserve unrelated skills",
-                "Robustness testing against prompt rewording",
-                "Full reproducibility with provenance tracking",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-3 text-sm text-black/70 leading-relaxed">
-                  <span className="font-black mt-0.5 text-black shrink-0">→</span>
-                  {item}
-                </li>
-              ))}
+            <ul className="font-mono text-xs font-bold text-slate-800 space-y-3">
+              <li className="flex items-start gap-2"><span>✓</span> Gradient-based model editing to reduce specific capabilities</li>
+              <li className="flex items-start gap-2"><span>✓</span> Controlled probing battery to measure output differences</li>
+              <li className="flex items-start gap-2"><span>✓</span> Retain-aware optimization to preserve un-targeted skills</li>
+              <li className="flex items-start gap-2"><span>✓</span> Robustness tests against paraphrased and indirect prompts</li>
             </ul>
           </div>
 
-          <div className="p-8 border-2 border-black bg-black text-white">
-            <h3 className="text-base font-black uppercase tracking-wide mb-6 flex items-center gap-2">
-              <XCircle size={16} /> What We Don't Claim
+          {/* Memo 2: What We Don't Claim */}
+          <div className="sticky-note bg-[#fbcfe8] p-6 rotate-1">
+            <div className="tape tape-top-right"></div>
+            <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4 flex items-center gap-2">
+              <XCircle size={20} className="text-red-600" /> WHAT WE DON'T CLAIM
             </h3>
-            <ul className="space-y-4">
-              {[
-                "We do NOT inspect internal model weights or knowledge",
-                "We do NOT claim complete knowledge deletion",
-                "We do NOT guarantee theoretical machine unlearning",
-                "Results are empirical, measured through experiments",
-                "Residual capability may exist beyond probe coverage",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-3 text-sm text-white/60 leading-relaxed">
-                  <span className="font-black mt-0.5 text-[#f0ff00] shrink-0">→</span>
-                  {item}
-                </li>
-              ))}
+            <ul className="font-mono text-xs font-bold text-slate-800 space-y-3">
+              <li className="flex items-start gap-2"><span>✕</span> We do NOT inspect internal model weights or neural representations</li>
+              <li className="flex items-start gap-2"><span>✕</span> We do NOT claim 100% mathematical knowledge deletion</li>
+              <li className="flex items-start gap-2"><span>✕</span> We do NOT guarantee theoretical machine unlearning proofs</li>
+              <li className="flex items-start gap-2"><span>✕</span> Results are empirical and based strictly on probe performance</li>
             </ul>
           </div>
+
         </div>
+
       </div>
     </section>
   );
 }
 
-/* ════════════ CTA ════════════ */
+/* ════════════ CTA & FOOTER ════════════ */
 function CTASection() {
   return (
-    <section className="py-32 bg-[#f5f5f0] border-b-2 border-black">
-      <div className="container mx-auto text-center">
-        <span className="section-label">Get Started</span>
-        <h2 className="text-5xl md:text-6xl font-black tracking-tighter mb-6 leading-tight">
-          Ready to Unlearn?
-        </h2>
-        <p className="text-base text-black/60 max-w-lg mx-auto leading-relaxed mb-10">
-          Upload a model. Establish a baseline. Run unlearning. Verify results.
-          Start experimenting for free today.
-        </p>
-        <div className="flex flex-wrap gap-3 justify-center">
-          <Link href="/signup" className="btn-primary">
-            Get Started Free <ArrowRight size={14} />
-          </Link>
-          <Link href="/#how-it-works" className="btn-outline">
-            See How It Works
-          </Link>
+    <section className="py-20 bg-[#f4efe4] border-b-3 border-[#0f172a]">
+      <div className="w-full max-w-[1000px] px-4 mx-auto text-center">
+        
+        <div className="sticky-note bg-[#fef08a] p-8 md:p-12 rotate-1 relative">
+          <div className="pushpin"></div>
+          
+          <h2 className="text-3xl md:text-5xl font-black text-[#0f172a] leading-tight">
+            Ready to Unlearn Your Models?
+          </h2>
+          
+          <p className="font-mono text-sm md:text-base font-bold text-slate-800 mt-4 max-w-xl mx-auto">
+            Upload your model checkpoint, run probe baseline, select target capability, and verify unlearning within minutes.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
+            <Link href="/signup" className="btn-sticky text-base py-3 px-8">
+              Start Free Trial 📌
+            </Link>
+            <Link href="/#how-it-works" className="btn-tape text-base py-3 px-8">
+              Read Documentation 📖
+            </Link>
+          </div>
         </div>
+
       </div>
     </section>
   );
 }
 
-/* ════════════ FOOTER ════════════ */
 function Footer() {
   return (
-    <footer className="py-10 bg-black text-white">
-      <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-[#f0ff00] flex items-center justify-center">
-            <span className="text-black font-black text-xs">N</span>
-          </div>
-          <span className="font-black text-base tracking-tight">NULLMIND</span>
+    <footer className="py-8 bg-[#0f172a] text-white">
+      <div className="w-full max-w-[1300px] px-4 md:px-8 mx-auto flex flex-col md:flex-row justify-between items-center gap-4 font-mono text-xs">
+        <div className="flex items-center gap-3">
+          <span className="bg-[#fef08a] text-[#0f172a] font-black px-2 py-0.5">NULLMIND</span>
+          <span>Open Research Platform for LLM Capability Reduction</span>
         </div>
-        <p className="text-xs font-mono text-white/40 uppercase tracking-widest text-center">
+        <div className="text-slate-400">
           Built with PyTorch · HuggingFace · FastAPI · Next.js
-        </p>
-        <p className="text-xs font-mono text-white/40 uppercase tracking-widest">
-          © 2026 NullMind
-        </p>
+        </div>
+        <div>
+          © 2026 NullMind Studio
+        </div>
       </div>
     </footer>
   );
 }
 
-/* ════════════ PAGE ════════════ */
+/* ════════════ MAIN PAGE ════════════ */
 export default function Home() {
   return (
-    <main className="pt-[64px]">
+    <main className="pt-[68px]">
       <Header />
       <Hero />
       <ProblemSection />

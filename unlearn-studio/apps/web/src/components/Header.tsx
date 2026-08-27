@@ -11,66 +11,78 @@ export default function Header() {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b-2 border-black">
-      <div className="container mx-auto flex items-center justify-between h-[64px]">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 bg-black flex items-center justify-center group-hover:bg-[#f0ff00] transition-colors">
-            <span className="text-white group-hover:text-black font-bold text-sm tracking-tighter">N</span>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[#f4efe4] border-b-3 border-[#0f172a] shadow-sm">
+      {/* Scotch tape on left & right of header */}
+      <div className="tape top-1 left-4 w-20 h-5 rotate-2 hidden md:block"></div>
+      <div className="tape top-1 right-4 w-20 h-5 -rotate-2 hidden md:block"></div>
+
+      <div className="w-full max-w-[1400px] px-4 md:px-8 mx-auto flex items-center justify-between h-[68px]">
+        {/* Logo as an Index Label / Sticky Tag */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="relative bg-[#fef08a] border-2 border-[#0f172a] px-3 py-1 -rotate-2 group-hover:rotate-0 transition-transform shadow-[3px_3px_0_0_#0f172a]">
+            <span className="font-mono font-black text-lg text-[#0f172a]">NULLMIND</span>
+            <span className="absolute -top-2 -right-2 bg-[#ef4444] text-white text-[9px] font-mono font-black px-1 border border-[#0f172a] rotate-12">v1.0</span>
           </div>
-          <span className="font-black text-lg tracking-tight">NULLMIND</span>
+          <span className="font-hand text-xl font-bold text-slate-700 hidden sm:inline-block">
+            ~ AI Unlearning Studio ~
+          </span>
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden lg:flex items-center gap-8">
+        {/* Desktop Nav as Sticky Tags */}
+        <nav className="hidden lg:flex items-center gap-6">
           {[
-            { href: "/#how-it-works", label: "How It Works" },
-            { href: "/#features", label: "Features" },
-            { href: "/#research", label: "Research" },
+            { href: "/#how-it-works", label: "How It Works", bg: "bg-[#bae6fd]", rot: "-rotate-1" },
+            { href: "/#features", label: "Features", bg: "bg-[#bbf7d0]", rot: "rotate-1" },
+            { href: "/#research", label: "Research", bg: "bg-[#fbcfe8]", rot: "-rotate-2" },
           ].map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="text-xs font-mono font-bold text-black/60 hover:text-black uppercase tracking-widest transition-colors"
+              className={`${item.bg} ${item.rot} hover:rotate-0 hover:scale-105 border-2 border-[#0f172a] px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-[#0f172a] shadow-[2px_2px_0_0_#0f172a] transition-all`}
             >
               {item.label}
             </Link>
           ))}
 
-          <div className="w-px h-5 bg-black/20 mx-2" />
+          <div className="w-0.5 h-6 bg-[#0f172a]/30 mx-2" />
 
           <div className="flex items-center gap-3">
             {isLoading ? (
-              <div className="w-6 h-6 border-2 border-black border-t-transparent animate-spin" />
+              <div className="w-6 h-6 border-2 border-[#0f172a] border-t-transparent animate-spin" />
             ) : isAuthenticated && user ? (
               <div className="relative">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 px-3 py-1.5 border-2 border-black hover:bg-[#f0ff00] transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 border-2 border-[#0f172a] bg-[#fef08a] hover:bg-[#fde047] shadow-[3px_3px_0_0_#0f172a] transition-all"
                 >
-                  <div className="w-6 h-6 bg-black flex items-center justify-center">
-                    <span className="text-white text-xs font-bold font-mono">
-                      {user.name?.charAt(0)?.toUpperCase() || "N"}
-                    </span>
+                  <div className="w-6 h-6 bg-[#0f172a] text-white flex items-center justify-center font-mono font-bold text-xs">
+                    {user.name?.charAt(0)?.toUpperCase() || "U"}
                   </div>
-                  <span className="text-xs font-bold font-mono uppercase tracking-wide hidden xl:block">{user.name}</span>
-                  <ChevronDown size={12} className="text-black stroke-[3px]" />
+                  <span className="text-xs font-mono font-bold uppercase truncate max-w-[100px]">{user.name}</span>
+                  <ChevronDown size={14} className="stroke-[3px]" />
                 </button>
 
                 {showUserMenu && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white border-2 border-black shadow-[4px_4px_0_0_#000] z-50">
-                      <div className="p-3 border-b-2 border-black bg-[#f0ff00]">
+                    <div className="absolute right-0 top-full mt-2 w-52 bg-white border-2 border-[#0f172a] shadow-[5px_5px_0_0_#0f172a] z-50 p-2 space-y-2">
+                      <div className="p-2 border border-[#0f172a] bg-[#fef08a]">
                         <div className="text-xs font-bold uppercase truncate">{user.name}</div>
-                        <div className="text-[10px] font-mono text-black/60 truncate mt-0.5">{user.email}</div>
+                        <div className="text-[10px] font-mono text-slate-600 truncate">{user.email}</div>
                       </div>
-                      <Link href="/dashboard" className="flex items-center gap-2 px-3 py-2.5 text-xs font-bold font-mono uppercase hover:bg-black hover:text-white transition-colors" onClick={() => setShowUserMenu(false)}>
-                        <LayoutDashboard size={12} />
+                      <Link
+                        href="/dashboard"
+                        className="flex items-center gap-2 p-2 text-xs font-mono font-bold uppercase hover:bg-[#bae6fd] border border-transparent hover:border-[#0f172a] transition-all"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <LayoutDashboard size={14} />
                         Dashboard
                       </Link>
-                      <button onClick={() => { setShowUserMenu(false); logout(); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-bold font-mono uppercase bg-[#dc2626] text-white hover:bg-black transition-colors border-t-2 border-black">
-                        <LogOut size={12} />
+                      <button
+                        onClick={() => { setShowUserMenu(false); logout(); }}
+                        className="w-full flex items-center gap-2 p-2 text-xs font-mono font-bold uppercase bg-[#fbcfe8] text-[#0f172a] hover:bg-[#ef4444] hover:text-white border border-[#0f172a] transition-all"
+                      >
+                        <LogOut size={14} />
                         Log Out
                       </button>
                     </div>
@@ -79,49 +91,53 @@ export default function Header() {
               </div>
             ) : (
               <>
-                <Link href="/login" className="text-xs font-mono font-bold uppercase tracking-widest text-black/60 hover:text-black transition-colors">
+                <Link
+                  href="/login"
+                  className="text-xs font-mono font-bold uppercase text-[#0f172a] hover:underline px-2 py-1"
+                >
                   Log In
                 </Link>
-                <Link href="/signup" className="btn-primary">
-                  Get Started
+                <Link href="/signup" className="btn-sticky text-xs py-1.5 px-4">
+                  Get Started 📌
                 </Link>
               </>
             )}
           </div>
         </nav>
 
-        {/* Mobile toggle */}
-        <button className="lg:hidden p-2 border-2 border-black" onClick={() => setMenuOpen(!menuOpen)}>
-          {menuOpen ? <X size={18} /> : <Menu size={18} />}
+        {/* Mobile menu toggle */}
+        <button
+          className="lg:hidden p-2 border-2 border-[#0f172a] bg-[#fef08a] shadow-[2px_2px_0_0_#0f172a]"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          {menuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile dropdown */}
       {menuOpen && (
-        <div className="lg:hidden bg-white border-t-2 border-black">
-          <div className="container mx-auto flex flex-col py-4 gap-1">
-            {[
-              { href: "/#how-it-works", label: "How It Works" },
-              { href: "/#features", label: "Features" },
-              { href: "/#research", label: "Research" },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="text-sm font-mono font-bold uppercase py-3 px-3 hover:bg-[#f0ff00] transition-colors tracking-wide border-b border-black/10"
-                onClick={() => setMenuOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <div className="pt-3 flex flex-col gap-2">
-              <Link href="/login" className="text-sm font-mono font-bold uppercase py-3 px-3 border-2 border-black text-center" onClick={() => setMenuOpen(false)}>
-                Log In
-              </Link>
-              <Link href="/signup" className="btn-primary text-center" onClick={() => setMenuOpen(false)}>
-                Get Started
-              </Link>
-            </div>
+        <div className="lg:hidden bg-[#fef08a] border-t-2 border-b-2 border-[#0f172a] p-4 space-y-3">
+          {[
+            { href: "/#how-it-works", label: "How It Works" },
+            { href: "/#features", label: "Features" },
+            { href: "/#research", label: "Research" },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="block p-2 bg-white border-2 border-[#0f172a] text-xs font-mono font-bold uppercase shadow-[2px_2px_0_0_#0f172a]"
+              onClick={() => setMenuOpen(false)}
+            >
+              {item.label}
+            </Link>
+          ))}
+          <div className="pt-2 flex flex-col gap-2">
+            <Link href="/login" className="block text-center p-2 bg-[#bae6fd] border-2 border-[#0f172a] text-xs font-mono font-bold uppercase shadow-[2px_2px_0_0_#0f172a]" onClick={() => setMenuOpen(false)}>
+              Log In
+            </Link>
+            <Link href="/signup" className="block text-center p-2 bg-[#fbcfe8] border-2 border-[#0f172a] text-xs font-mono font-bold uppercase shadow-[2px_2px_0_0_#0f172a]" onClick={() => setMenuOpen(false)}>
+              Get Started Free
+            </Link>
           </div>
         </div>
       )}
