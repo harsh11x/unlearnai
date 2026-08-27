@@ -3,7 +3,7 @@ import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
 
 export const metadata: Metadata = {
-  title: "NULLMIND — AI Model Unlearning Platform",
+  title: "NullMind — AI Model Unlearning Platform",
   description: "Selective unlearning, capability reduction, and model knowledge control. Forget what you need, keep what matters.",
 };
 
@@ -14,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="noise-overlay">
+      <body>
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>

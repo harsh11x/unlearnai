@@ -25,9 +25,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     const result = await login(email, password);
-
     if (result.error) {
       setError(result.error);
       setLoading(false);
@@ -37,102 +35,96 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-brutal-gray border-r-3 border-white flex-col justify-between p-12 grid-bg">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-brutal-accent flex items-center justify-center">
-            <span className="font-mono text-brutal-black font-bold text-lg">U</span>
-          </div>
-          <span className="font-display font-bold text-xl">
-            NULL<span className="text-brutal-accent">MIND</span>
-          </span>
-        </Link>
+      <div className="hidden lg:flex lg:w-[55%] bg-ink text-white flex-col justify-between p-12 xl:p-16 relative overflow-hidden">
+        {/* Decorative */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-highlight/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-white/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
 
-        <div>
-          <h1 className="font-display font-bold text-4xl leading-tight mb-4">
-            Welcome<br />Back
+        <div className="relative z-10">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
+              <span className="font-serif font-bold text-sm italic text-white">N</span>
+            </div>
+            <span className="font-serif font-bold text-xl text-white">
+              Null<span className="italic">Mind</span>
+            </span>
+          </Link>
+        </div>
+
+        <div className="relative z-10">
+          <h1 className="text-[clamp(2.5rem,4vw,4rem)] font-bold leading-[1.1] tracking-[-0.02em] mb-5">
+            Welcome<br />
+            <span className="font-serif italic text-highlight">Back</span>
           </h1>
-          <p className="text-brutal-mid text-lg">
+          <p className="text-white/50 text-lg max-w-md leading-relaxed">
             Continue your unlearning experiments.
-            <br />Pick up where you left off.
+            Pick up where you left off.
           </p>
         </div>
 
-        <div className="font-mono text-xs text-brutal-mid">
-          <div>Platform v1.0</div>
-          <div>ML Pipeline Active</div>
-          <div className="flex items-center gap-2 mt-2">
-            <div className="w-2 h-2 bg-brutal-green rounded-full animate-pulse-glow" />
-            <span>System Operational</span>
-          </div>
+        <div className="relative z-10 flex items-center gap-6 text-xs text-white/30 font-mono">
+          <span>Platform v1.0</span>
+          <span className="w-1 h-1 rounded-full bg-white/20" />
+          <span>ML Pipeline Active</span>
+          <span className="w-1 h-1 rounded-full bg-white/20" />
+          <span className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+            Operational
+          </span>
         </div>
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
-          <Link href="/" className="flex items-center gap-3 mb-12 lg:hidden">
-            <div className="w-10 h-10 bg-brutal-accent flex items-center justify-center">
-              <span className="font-mono text-brutal-black font-bold text-lg">U</span>
+      <div className="flex-1 flex items-center justify-center p-6 md:p-10">
+        <div className="w-full max-w-[400px]">
+          <Link href="/" className="flex items-center gap-2.5 mb-12 lg:hidden">
+            <div className="w-9 h-9 bg-ink rounded-lg flex items-center justify-center">
+              <span className="font-serif font-bold text-sm italic text-white">N</span>
             </div>
-            <span className="font-display font-bold text-xl">
-              NULL<span className="text-brutal-accent">MIND</span>
-            </span>
+            <span className="font-serif font-bold text-xl">Null<span className="italic">Mind</span></span>
           </Link>
 
-          <h2 className="font-display font-bold text-3xl mb-2">Log In</h2>
-          <p className="text-brutal-mid mb-6">Enter your credentials or use a provider.</p>
+          <h2 className="text-3xl font-bold tracking-[-0.02em] mb-2">Log In</h2>
+          <p className="text-ink-muted mb-6">Enter your credentials or use a provider.</p>
 
-          {/* Demo hint */}
-          <div className="border border-brutal-green/30 bg-brutal-green/5 p-3 mb-6 text-xs font-mono text-brutal-green">
+          <div className="text-xs font-mono text-success bg-success/5 border border-success/20 rounded-lg p-3 mb-6">
             Demo: demo@nullmind.dev / Password1
           </div>
 
-          {/* OAuth buttons */}
           <OAuthButtons mode="login" onError={setError} />
 
-          {/* Error */}
           {error && (
-            <div className="border border-brutal-accent bg-brutal-accent/10 p-3 mt-6 flex items-center gap-2 text-sm text-brutal-accent">
+            <div className="flex items-center gap-2 text-sm text-error mt-4 p-3 rounded-lg bg-error/5 border border-error/20">
               <AlertCircle size={16} />
               {error}
             </div>
           )}
 
-          {/* Email/password form */}
-          <form onSubmit={handleLogin} className="space-y-5 mt-6">
+          <form onSubmit={handleLogin} className="space-y-4 mt-6">
             <div>
-              <label className="font-mono text-xs text-brutal-mid uppercase tracking-widest block mb-2">
-                Email
-              </label>
+              <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-ink-muted block mb-2">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(""); }}
                 placeholder="you@example.com"
-                className="w-full bg-brutal-gray border-3 border-white px-4 py-3 font-body text-white placeholder:text-brutal-mid/50 focus:outline-none focus:border-brutal-accent transition-colors"
+                className="w-full bg-bg border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-ink focus:ring-1 focus:ring-ink/10 transition-all"
                 required
               />
             </div>
-
             <div>
-              <label className="font-mono text-xs text-brutal-mid uppercase tracking-widest block mb-2">
-                Password
-              </label>
+              <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-ink-muted block mb-2">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(""); }}
                   placeholder="••••••••"
-                  className="w-full bg-brutal-gray border-3 border-white px-4 py-3 font-body text-white placeholder:text-brutal-mid/50 focus:outline-none focus:border-brutal-accent transition-colors pr-12"
+                  className="w-full bg-bg border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-ink focus:ring-1 focus:ring-ink/10 transition-all pr-11"
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-brutal-mid hover:text-white"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink transition-colors">
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
@@ -140,23 +132,15 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || authLoading}
-              className="w-full btn-brutal bg-brutal-accent text-brutal-black text-lg flex items-center justify-center gap-3 disabled:opacity-50"
+              className="btn-primary w-full justify-center py-3.5 mt-2 disabled:opacity-50"
             >
-              {loading || authLoading ? (
-                <span className="animate-pulse">Authenticating...</span>
-              ) : (
-                <>
-                  Log In <ArrowRight size={20} />
-                </>
-              )}
+              {loading || authLoading ? <span className="animate-pulse">Authenticating...</span> : <>Log In <ArrowRight size={16} /></>}
             </button>
           </form>
 
-          <p className="mt-8 text-center text-brutal-mid text-sm">
+          <p className="mt-8 text-center text-sm text-ink-muted">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-brutal-accent hover:text-white transition-colors font-semibold">
-              Sign up
-            </Link>
+            <Link href="/signup" className="font-semibold text-ink hover:text-highlight transition-colors">Sign up</Link>
           </p>
         </div>
       </div>
