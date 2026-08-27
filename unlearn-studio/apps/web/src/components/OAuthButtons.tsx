@@ -2,6 +2,12 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
+import {
+  GoogleAuthProvider,
+  GithubAuthProvider,
+  signInWithPopup,
+} from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 function GoogleIcon() {
   return (
@@ -33,9 +39,24 @@ export default function OAuthButtons({ mode, onError }: OAuthButtonsProps) {
   const handleOAuth = async (provider: "google" | "github") => {
     setLoading(provider);
     try {
-      await signIn(provider, { callbackUrl: "/dashboard" });
-    } catch {
-      onError?.(`Failed to sign in with ${provider}.`);
+      const authProvider =
+        provider === "google"
+          ? new GoogleAuthProvider()
+          : new GithubAuthProvider();
+
+      const result = await signInWithPopup(auth, authProvider);
+      const idToken = await result.user.getIdToken();
+
+      // Sync with NextAuth session
+      await signIn("firebase", {
+        idToken,
+        callbackUrl: "/dashboard",
+      });
+    } catch (error: unknown) {
+      const firebaseError = error as { code?: string };
+      if (firebaseError.code !== "auth/popup-closed-by-user") {
+        onError?.(`Failed to sign in with ${provider}.`);
+      }
       setLoading(null);
     }
   };

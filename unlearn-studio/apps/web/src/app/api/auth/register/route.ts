@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createUser, findUserByEmail } from "@/auth";
+import { getFirebaseAuth } from "@/lib/firebase-admin";
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,30 +35,44 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user already exists
-    const existing = findUserByEmail(email);
-    if (existing) {
-      return NextResponse.json(
-        { error: "A user with this email already exists." },
-        { status: 409 }
-      );
-    }
-
-    // Create user
-    const user = await createUser(name, email, password);
+    // Create user in Firebase Auth
+    const auth = getFirebaseAuth();
+    const userRecord = await auth.createUser({
+      email,
+      password,
+      displayName: name,
+      emailVerified: false,
+    });
 
     return NextResponse.json(
       {
         message: "Account created successfully.",
         user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
+          uid: userRecord.uid,
+          name: userRecord.displayName,
+          email: userRecord.email,
         },
       },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: unknown) {
+    const firebaseError = error as { code?: string; message?: string };
+
+    if (firebaseError.code === "auth/email-already-exists") {
+      return NextResponse.json(
+        { error: "An account with this email already exists." },
+        { status: 409 }
+      );
+    }
+
+    // If Firebase Admin isn't configured, fall back to client-side registration
+    if (firebaseError.message?.includes("credentials not configured")) {
+      return NextResponse.json(
+        { error: "Server configuration error. Please try again later." },
+        { status: 503 }
+      );
+    }
+
     console.error("Registration error:", error);
     return NextResponse.json(
       { error: "Internal server error." },
