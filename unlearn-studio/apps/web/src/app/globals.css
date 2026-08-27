@@ -42,7 +42,7 @@ body {
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1.4;
+  line-height: 1.6;
   overflow-x: hidden;
   min-height: 100vh;
 }

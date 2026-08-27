@@ -12,7 +12,7 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b-[8px] border-black transition-none">
-      <div className="max-w-[1320px] mx-auto flex items-center justify-between px-6 md:px-10 h-[80px]">
+      <div className="max-w-[1320px] mx-auto flex items-center justify-between px-6 md:px-12 h-[100px]">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="w-10 h-10 bg-black border-2 border-black flex items-center justify-center group-hover:bg-highlight group-hover:text-black transition-none">
