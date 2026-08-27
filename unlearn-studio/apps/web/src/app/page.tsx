@@ -11,9 +11,9 @@ import {
 /* ════════════ HERO SECTION ════════════ */
 function Hero() {
   return (
-    <section className="relative pt-36 sm:pt-44 md:pt-56 lg:pt-64 pb-32 md:pb-44 lg:pb-56 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a] overflow-hidden">
+    <section className="relative pt-[160px] md:pt-[220px] pb-[140px] md:pb-[200px] bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a] overflow-hidden">
       {/* Background Floating Decorative Sticky Notes */}
-      <div className="absolute top-36 right-12 w-36 h-36 bg-[#fef08a] border-2 border-[#0f172a] rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
+      <div className="absolute top-[180px] right-12 w-36 h-36 bg-[#fef08a] border-2 border-[#0f172a] rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
         <div className="p-3 font-hand text-xl text-slate-800">unlearn_v1.py</div>
       </div>
       <div className="absolute bottom-20 right-1/3 w-32 h-32 bg-[#fbcfe8] border-2 border-[#0f172a] -rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
@@ -23,7 +23,7 @@ function Hero() {
       <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto relative z-10">
         
         {/* Top Tag Label */}
-        <div className="inline-flex items-center gap-2 bg-[#ffffff] border-2 border-[#0f172a] px-4 py-2 shadow-[3px_3px_0_0_#0f172a] mb-12 -rotate-1">
+        <div className="inline-flex items-center gap-2 bg-[#ffffff] border-2 border-[#0f172a] px-4 py-2 shadow-[3px_3px_0_0_#0f172a] mb-14 -rotate-1">
           <span className="w-2.5 h-2.5 bg-[#ef4444] rounded-full border border-[#0f172a]" />
           <span className="font-mono text-xs md:text-sm font-bold uppercase tracking-widest text-[#0f172a]">
             📌 RESEARCH BULLETIN — NULLMIND PLATFORM V1.0
@@ -46,7 +46,7 @@ function Hero() {
             </h1>
 
             {/* Sticky Card Note Subtitle */}
-            <div className="mt-12 relative bg-white border-2 border-[#0f172a] p-6 md:p-10 shadow-[6px_6px_0_0_#0f172a] rotate-1 w-full">
+            <div className="mt-14 relative bg-white border-2 border-[#0f172a] p-6 md:p-10 shadow-[6px_6px_0_0_#0f172a] rotate-1 w-full">
               <div className="pushpin"></div>
               <p className="font-mono text-sm md:text-base lg:text-lg font-bold text-slate-800 leading-relaxed">
                 A production platform for{" "}
@@ -64,7 +64,7 @@ function Hero() {
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-5 mt-12">
+            <div className="flex flex-wrap items-center gap-5 mt-14">
               <Link href="/signup" className="btn-sticky text-base py-4 px-8">
                 Start Experimenting <ArrowRight size={18} />
               </Link>
@@ -127,7 +127,7 @@ function Hero() {
 /* ════════════ PROBLEM SECTION ════════════ */
 function ProblemSection() {
   return (
-    <section className="py-32 md:py-44 lg:py-56 bg-[#e5dec9] border-b-4 border-[#0f172a]">
+    <section className="py-[160px] md:py-[220px] bg-[#e5dec9] border-b-4 border-[#0f172a]">
       <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
         
         {/* Folder / Cardboard Wrapper */}
@@ -200,7 +200,7 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="py-32 md:py-44 lg:py-56 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a]">
+    <section id="how-it-works" className="py-[160px] md:py-[220px] bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a]">
       <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
         
         {/* Header Tag */}
@@ -257,7 +257,7 @@ function HowItWorks() {
 /* ════════════ VISUAL PIPELINE / CHART PAPER LAB ════════════ */
 function VisualPipeline() {
   return (
-    <section className="py-32 md:py-44 lg:py-56 bg-[#f4efe4] border-b-4 border-[#0f172a]">
+    <section className="py-[160px] md:py-[220px] bg-[#f4efe4] border-b-4 border-[#0f172a]">
       <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
         
         <div className="text-center mb-16">
@@ -352,7 +352,7 @@ function Features() {
   ];
 
   return (
-    <section id="features" className="py-32 md:py-44 lg:py-56 bg-[#e5dec9] border-b-4 border-[#0f172a]">
+    <section id="features" className="py-[160px] md:py-[220px] bg-[#e5dec9] border-b-4 border-[#0f172a]">
       <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
         
         <div className="mb-16">
@@ -400,7 +400,7 @@ function Results() {
   ];
 
   return (
-    <section className="py-32 md:py-44 lg:py-56 bg-[#fef08a] border-b-4 border-[#0f172a] chart-grid">
+    <section className="py-[160px] md:py-[220px] bg-[#fef08a] border-b-4 border-[#0f172a] chart-grid">
       <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
@@ -473,7 +473,7 @@ function Results() {
 /* ════════════ RESEARCH TRANSPARENCY MEMO ════════════ */
 function ResearchSection() {
   return (
-    <section id="research" className="py-32 md:py-44 lg:py-56 bg-[#eae5d9] border-b-4 border-[#0f172a]">
+    <section id="research" className="py-[160px] md:py-[220px] bg-[#eae5d9] border-b-4 border-[#0f172a]">
       <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
         
         <div className="text-center mb-16">
@@ -525,7 +525,7 @@ function ResearchSection() {
 /* ════════════ CTA & FOOTER ════════════ */
 function CTASection() {
   return (
-    <section className="py-32 md:py-44 lg:py-56 bg-[#f4efe4] border-b-4 border-[#0f172a]">
+    <section className="py-[160px] md:py-[220px] bg-[#f4efe4] border-b-4 border-[#0f172a]">
       <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto text-center">
         
         <div className="sticky-note bg-[#fef08a] p-10 md:p-16 rotate-1 relative w-full">
