@@ -23,12 +23,6 @@ export default function Header() {
           <a href="/#how-it-works" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium">
             How it works
           </a>
-          <a href="/#sandbox" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium">
-            Sandbox
-          </a>
-          <a href="/#calculator" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium">
-            Calculator
-          </a>
           <a href="/pricing" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium">
             Pricing
           </a>
@@ -38,8 +32,8 @@ export default function Header() {
           <a href="/about" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium">
             About
           </a>
-          <a href="/#cta" className="btn-primary text-sm py-2.5 px-5 no-underline">
-            Get Early Access
+          <a href="/downloads" className="bg-accent text-accent-inv text-sm font-display font-semibold py-2 px-5 no-underline hover:opacity-85 transition-opacity">
+            ↓ Download
           </a>
         </nav>
 
@@ -59,12 +53,10 @@ export default function Header() {
       {mobileOpen && (
         <nav className="md:hidden border-t border-border bg-bg px-6 py-4 flex flex-col gap-3">
           <a href="/#how-it-works" className="text-sm text-text-muted no-underline py-2" onClick={() => setMobileOpen(false)}>How it works</a>
-          <a href="/#sandbox" className="text-sm text-text-muted no-underline py-2" onClick={() => setMobileOpen(false)}>Sandbox</a>
-          <a href="/#calculator" className="text-sm text-text-muted no-underline py-2" onClick={() => setMobileOpen(false)}>Calculator</a>
           <a href="/pricing" className="text-sm text-text-muted no-underline py-2" onClick={() => setMobileOpen(false)}>Pricing</a>
           <a href="/docs" className="text-sm text-text-muted no-underline py-2" onClick={() => setMobileOpen(false)}>Docs</a>
           <a href="/about" className="text-sm text-text-muted no-underline py-2" onClick={() => setMobileOpen(false)}>About</a>
-          <a href="/#cta" className="btn-primary text-sm py-2.5 px-5 no-underline text-center" onClick={() => setMobileOpen(false)}>Get Early Access</a>
+          <a href="/downloads" className="btn-primary text-sm py-2.5 px-5 no-underline text-center" onClick={() => setMobileOpen(false)}>↓ Download</a>
         </nav>
       )}
     </header>
