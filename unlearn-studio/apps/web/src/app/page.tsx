@@ -11,16 +11,16 @@ import {
 /* ════════════ HERO SECTION ════════════ */
 function Hero() {
   return (
-    <section className="relative pt-24 sm:pt-32 md:pt-40 lg:pt-48 pb-20 sm:pb-28 md:pb-36 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a] overflow-hidden">
+    <section className="relative min-h-[90vh] flex flex-col justify-center pt-32 sm:pt-40 md:pt-48 pb-20 sm:pb-28 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a] overflow-hidden">
       {/* Background Floating Decorative Sticky Notes */}
-      <div className="absolute top-28 right-12 w-36 h-36 bg-[#fef08a] border-2 border-[#0f172a] rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
+      <div className="absolute top-32 right-12 w-36 h-36 bg-[#fef08a] border-2 border-[#0f172a] rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
         <div className="p-3 font-hand text-xl text-slate-800">unlearn_v1.py</div>
       </div>
       <div className="absolute bottom-16 right-1/3 w-32 h-32 bg-[#fbcfe8] border-2 border-[#0f172a] -rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
         <div className="p-3 font-hand text-lg text-slate-800">python = 0%</div>
       </div>
 
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto relative z-10 my-6">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto relative z-10 my-auto">
         
         {/* Top Tag Label */}
         <div className="inline-flex items-center gap-2 bg-[#ffffff] border-2 border-[#0f172a] px-4 py-2 shadow-[3px_3px_0_0_#0f172a] mb-12 -rotate-1">
@@ -30,7 +30,7 @@ function Hero() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center my-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           
           {/* Left Column: Headline & Subtitle */}
           <div className="w-full">
@@ -75,7 +75,7 @@ function Hero() {
           </div>
 
           {/* Right Column: Interactive Sticky Note Grid Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full my-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
             
             {/* Sticky 1 */}
             <div className="sticky-note bg-[#fef08a] p-7 -rotate-2 w-full">
@@ -127,11 +127,11 @@ function Hero() {
 /* ════════════ PROBLEM SECTION ════════════ */
 function ProblemSection() {
   return (
-    <section className="py-24 sm:py-32 md:py-40 bg-[#e5dec9] border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
+    <section className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-40 bg-[#e5dec9] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
         
         {/* Folder / Cardboard Wrapper */}
-        <div className="cardboard p-6 sm:p-10 md:p-14 relative w-full my-4">
+        <div className="cardboard p-6 sm:p-10 md:p-14 relative w-full">
           {/* Header Badge seated cleanly inside without negative top bleeding */}
           <div className="inline-block bg-[#ef4444] text-white px-4 py-1.5 font-mono font-black text-xs uppercase tracking-widest border-2 border-[#0f172a] shadow-[2px_2px_0_0_#0f172a] mb-8">
             ⚠️ CASE FILE #409: THE PERMANENCE PROBLEM
@@ -200,8 +200,8 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="py-24 sm:py-32 md:py-40 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
+    <section id="how-it-works" className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-40 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
         
         {/* Header Tag */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
@@ -219,7 +219,7 @@ function HowItWorks() {
         </div>
 
         {/* 6 Sticky Notes Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 my-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
           {steps.map((step) => (
             <div
               key={step.num}
@@ -257,8 +257,8 @@ function HowItWorks() {
 /* ════════════ VISUAL PIPELINE / CHART PAPER LAB ════════════ */
 function VisualPipeline() {
   return (
-    <section className="py-24 sm:py-32 md:py-40 bg-[#f4efe4] border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
+    <section className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-40 bg-[#f4efe4] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
         
         <div className="text-center mb-16">
           <div className="stamp stamp-green mb-4">SCIENTIFIC DUAL LOSS</div>
@@ -268,7 +268,7 @@ function VisualPipeline() {
         </div>
 
         {/* Blueprint Chart Board */}
-        <div className="bg-white border-3 border-[#0f172a] p-6 md:p-10 lg:p-14 shadow-[10px_10px_0_0_#0f172a] chart-grid-dense relative w-full my-6">
+        <div className="bg-white border-3 border-[#0f172a] p-6 md:p-10 lg:p-14 shadow-[10px_10px_0_0_#0f172a] chart-grid-dense relative w-full">
           <div className="pushpin"></div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
@@ -352,8 +352,8 @@ function Features() {
   ];
 
   return (
-    <section id="features" className="py-24 sm:py-32 md:py-40 bg-[#e5dec9] border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
+    <section id="features" className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-40 bg-[#e5dec9] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
         
         <div className="mb-16">
           <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-3">
@@ -364,7 +364,7 @@ function Features() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 my-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
           {features.map((f, i) => (
             <div
               key={f.title}
@@ -400,8 +400,8 @@ function Results() {
   ];
 
   return (
-    <section className="py-24 sm:py-32 md:py-40 bg-[#fef08a] border-b-4 border-[#0f172a] chart-grid">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
+    <section className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-40 bg-[#fef08a] border-b-4 border-[#0f172a] chart-grid">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
           
@@ -473,8 +473,8 @@ function Results() {
 /* ════════════ RESEARCH TRANSPARENCY MEMO ════════════ */
 function ResearchSection() {
   return (
-    <section id="research" className="py-24 sm:py-32 md:py-40 bg-[#eae5d9] border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
+    <section id="research" className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-40 bg-[#eae5d9] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
         
         <div className="text-center mb-16">
           <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-3">
@@ -485,7 +485,7 @@ function ResearchSection() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 w-full my-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 w-full">
           
           {/* Memo 1: What We Do */}
           <div className="sticky-note bg-[#bbf7d0] p-8 md:p-10 -rotate-1 w-full">
@@ -525,8 +525,8 @@ function ResearchSection() {
 /* ════════════ CTA & FOOTER ════════════ */
 function CTASection() {
   return (
-    <section className="py-24 sm:py-32 md:py-40 bg-[#f4efe4] border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto text-center my-6">
+    <section className="relative min-h-[70vh] flex flex-col justify-center py-24 sm:py-32 md:py-40 bg-[#f4efe4] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto text-center my-auto">
         
         <div className="sticky-note bg-[#fef08a] p-10 md:p-16 rotate-1 relative w-full">
           <div className="pushpin"></div>
