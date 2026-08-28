@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import {
   loginWithGoogle,
   loginWithApple,
@@ -8,6 +8,7 @@ import {
   signupWithEmail,
   logout,
   updatePlan,
+  isFirebaseConfigured,
   type UserData,
 } from "@/lib/firebase";
 import { useAuth } from "./AuthProvider";
@@ -57,7 +58,9 @@ const PLANS = [
 export default function AuthModal({ open, onClose, initialMode = "login", initialPlan }: AuthModalProps) {
   const { user, userData, refreshUser, firebaseReady } = useAuth();
   const [view, setView] = useState<"auth" | "plan" | "profile">("auth");
-  const [mode, setMode] = useState<"login" | "signup">(initialMode === "signup" || initialMode === "login" ? initialMode : "login");
+  const [mode, setMode] = useState<"login" | "signup">(
+    initialMode === "signup" ? "signup" : "login"
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -66,7 +69,6 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
   const [selectedPlan, setSelectedPlan] = useState<UserData["plan"]>(initialPlan || "free");
   const [signingUp, setSigningUp] = useState(false);
 
-  // Reset state when modal opens
   useEffect(() => {
     if (open) {
       setView("auth");
@@ -81,7 +83,6 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
     }
   }, [open, initialMode, initialPlan]);
 
-  // If user is logged in, show profile
   useEffect(() => {
     if (open && user && !signingUp) {
       setView("profile");
@@ -89,6 +90,39 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
   }, [open, user, signingUp]);
 
   if (!open) return null;
+
+  // ══ FIREBASE NOT CONFIGURED ══
+  if (!firebaseReady) {
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div className="relative bg-bg border border-border w-full max-w-md animate-fade-up" onClick={(e) => e.stopPropagation()}>
+          <button onClick={onClose} className="absolute top-4 right-4 text-text-subtle hover:text-text text-xl z-10 bg-transparent border-none cursor-pointer">×</button>
+          <div className="p-8 text-center">
+            <div className="w-12 h-12 bg-accent flex items-center justify-center mx-auto mb-4">
+              <span className="text-accent-inv text-lg font-bold font-display">R</span>
+            </div>
+            <h2 className="font-display font-bold text-xl mb-2">Authentication Setup Required</h2>
+            <p className="body-sm mb-4">
+              Firebase authentication is not yet configured for this deployment.
+              To enable login and subscriptions, add your Firebase environment variables to Vercel.
+            </p>
+            <div className="bg-surface border border-border p-4 text-left mb-4">
+              <p className="mono text-[10px] text-text-subtle mb-2 uppercase tracking-wider">Quick Setup</p>
+              <ol className="text-xs text-text-muted space-y-1.5 list-decimal pl-4">
+                <li>Go to <span className="text-text">Vercel Dashboard → Settings → Environment Variables</span></li>
+                <li>Add <span className="mono text-text">NEXT_PUBLIC_FIREBASE_API_KEY</span> and all Firebase config values</li>
+                <li>Click <span className="text-text">Save</span> then <span className="text-text">Redeploy</span></li>
+              </ol>
+            </div>
+            <p className="text-[10px] text-text-subtle">
+              Or run locally with <span className="mono">npm run dev</span> — .env.local works out of the box.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ══ PLAN SELECTION VIEW ══
   if (view === "plan") {
@@ -117,9 +151,7 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
                     : "hover:bg-surface/50"
                 } ${plan.highlight && selectedPlan !== plan.id ? "relative" : ""}`}
               >
-                {plan.highlight && (
-                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-highlight" />
-                )}
+                {plan.highlight && <div className="absolute top-0 left-0 right-0 h-0.5 bg-highlight" />}
                 <div className="flex items-baseline justify-between mb-2">
                   <span className="font-display font-bold text-lg">{plan.name}</span>
                   <span className="font-display font-bold text-xl">
@@ -132,15 +164,11 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
                   }`}>
                     {selectedPlan === plan.id && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </span>
-                  <span className="text-xs">
-                    {selectedPlan === plan.id ? "Selected" : "Select this plan"}
-                  </span>
+                  <span className="text-xs">{selectedPlan === plan.id ? "Selected" : "Select this plan"}</span>
                 </div>
                 <ul className="mt-3 space-y-1">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-xs opacity-70">
-                      <span>✓</span> {f}
-                    </li>
+                    <li key={f} className="flex items-center gap-2 text-xs opacity-70"><span>✓</span> {f}</li>
                   ))}
                 </ul>
               </button>
@@ -148,9 +176,7 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
           </div>
 
           <div className="p-6 flex gap-3">
-            <button onClick={() => setView("auth")} className="btn-outline text-sm py-2.5 px-5 flex-shrink-0">
-              Back
-            </button>
+            <button onClick={() => setView("auth")} className="btn-outline text-sm py-2.5 px-5 flex-shrink-0">Back</button>
             <button
               onClick={async () => {
                 if (!user) return;
@@ -159,11 +185,8 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
                   await updatePlan(user.uid, selectedPlan);
                   await refreshUser();
                   onClose();
-                } catch (e: any) {
-                  setError(e.message);
-                } finally {
-                  setLoading(false);
-                }
+                } catch (e: any) { setError(e.message); }
+                finally { setLoading(false); }
               }}
               disabled={loading}
               className="btn-primary flex-1 disabled:opacity-50"
@@ -171,7 +194,6 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
               {loading ? "Setting up..." : `Start with ${PLANS.find(p => p.id === selectedPlan)?.name}`}
             </button>
           </div>
-
           {error && <p className="px-6 pb-4 text-xs text-[#ef4444]">{error}</p>}
         </div>
       </div>
@@ -188,22 +210,17 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
           <button onClick={onClose} className="absolute top-4 right-4 text-text-subtle hover:text-text text-xl z-10 bg-transparent border-none cursor-pointer">×</button>
 
           <div className="p-8 text-center">
-            {user.photoURL && (
-              <img src={user.photoURL} alt="" className="w-16 h-16 rounded-full mx-auto mb-3 border border-border" />
-            )}
+            {user.photoURL && <img src={user.photoURL} alt="" className="w-16 h-16 rounded-full mx-auto mb-3 border border-border" />}
             <h2 className="font-display font-bold text-xl">{userData?.displayName || user.displayName || "User"}</h2>
             <p className="body-sm mt-1">{user.email}</p>
           </div>
 
-          {/* Current Plan */}
           <div className="mx-8 p-4 border border-border mb-4">
             <div className="flex items-center justify-between mb-2">
               <span className="mono text-[10px] text-text-subtle uppercase tracking-wider">Current Plan</span>
               <span className={`mono text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 ${
                 plan.highlight ? "bg-highlight/10 text-highlight border border-highlight/30" : "border border-border text-text-subtle"
-              }`}>
-                {plan.name}
-              </span>
+              }`}>{plan.name}</span>
             </div>
             <div className="flex items-baseline gap-1">
               <span className="font-display text-2xl font-bold">{plan.price}</span>
@@ -215,10 +232,7 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
                 <span className="mono text-text">{userData?.modelsUsed || 0} / {userData?.modelsLimit || 1}</span>
               </div>
               <div className="w-full h-1.5 bg-surface border border-border">
-                <div
-                  className="h-full bg-accent"
-                  style={{ width: `${Math.min(100, ((userData?.modelsUsed || 0) / (userData?.modelsLimit || 1)) * 100)}%` }}
-                />
+                <div className="h-full bg-accent" style={{ width: `${Math.min(100, ((userData?.modelsUsed || 0) / (userData?.modelsLimit || 1)) * 100)}%` }} />
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-text-muted">Training steps limit</span>
@@ -227,24 +241,13 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
             </div>
           </div>
 
-          {/* Actions */}
           <div className="px-8 pb-8 space-y-2">
-            <button
-              onClick={() => setView("plan")}
-              className="btn-primary w-full text-sm"
-            >
+            <button onClick={() => setView("plan")} className="btn-primary w-full text-sm">
               {userData?.plan === "free" ? "Upgrade Plan" : "Change Plan"}
             </button>
-            <a href="/downloads" className="btn-outline block text-center no-underline w-full text-sm">
-              Download Desktop App
-            </a>
-            <button
-              onClick={async () => {
-                await logout();
-                onClose();
-              }}
-              className="w-full py-3 text-sm text-text-subtle hover:text-text transition-colors bg-transparent border-none cursor-pointer font-display"
-            >
+            <a href="/downloads" className="btn-outline block text-center no-underline w-full text-sm">Download Desktop App</a>
+            <button onClick={async () => { await logout(); onClose(); }}
+              className="w-full py-3 text-sm text-text-subtle hover:text-text transition-colors bg-transparent border-none cursor-pointer font-display">
               Sign out
             </button>
           </div>
@@ -255,56 +258,33 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
 
   // ══ LOGIN / SIGNUP VIEW ══
   const handleGoogle = async () => {
-    setError("");
-    setLoading(true);
+    setError(""); setLoading(true);
     try {
-      if (!firebaseReady) { setError("Firebase is not configured. Add NEXT_PUBLIC_FIREBASE_API_KEY to your environment."); setLoading(false); return; }
-      await loginWithGoogle();
-      setSigningUp(false);
-      setView("plan");
+      await loginWithGoogle(); setSigningUp(false); setView("plan");
     } catch (e: any) {
-      if (e.code !== "auth/popup-closed-by-user") {
-        setError(e.message || "Google sign-in failed");
-      }
-    } finally {
-      setLoading(false);
-    }
+      if (e.code !== "auth/popup-closed-by-user") setError(e.message || "Google sign-in failed");
+    } finally { setLoading(false); }
   };
 
   const handleApple = async () => {
-    setError("");
-    setLoading(true);
+    setError(""); setLoading(true);
     try {
-      if (!firebaseReady) { setError("Firebase is not configured."); setLoading(false); return; }
-      await loginWithApple();
-      setSigningUp(false);
-      setView("plan");
+      await loginWithApple(); setSigningUp(false); setView("plan");
     } catch (e: any) {
-      if (e.code !== "auth/popup-closed-by-user") {
-        setError(e.message || "Apple sign-in failed");
-      }
-    } finally {
-      setLoading(false);
-    }
+      if (e.code !== "auth/popup-closed-by-user") setError(e.message || "Apple sign-in failed");
+    } finally { setLoading(false); }
   };
 
   const handleEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+    e.preventDefault(); setError(""); setLoading(true);
     try {
-      if (!firebaseReady) { setError("Firebase is not configured. Add NEXT_PUBLIC_FIREBASE_API_KEY to your environment."); setLoading(false); return; }
       if (mode === "login") {
-        await loginWithEmail(email, password);
-        setSigningUp(false);
-        setView("plan");
+        await loginWithEmail(email, password); setSigningUp(false); setView("plan");
       } else {
         setSigningUp(true);
-        const result = await signupWithEmail(email, password, displayName || undefined);
-        setView("plan");
+        await signupWithEmail(email, password, displayName || undefined); setView("plan");
       }
     } catch (e: any) {
-      const code = e.code || "";
       const errors: Record<string, string> = {
         "auth/user-not-found": "No account found with this email",
         "auth/wrong-password": "Incorrect password",
@@ -314,10 +294,8 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
         "auth/too-many-requests": "Too many attempts. Try again later.",
         "auth/invalid-credential": "Invalid email or password",
       };
-      setError(errors[code] || e.message || "Authentication failed");
-    } finally {
-      setLoading(false);
-    }
+      setError(errors[e.code] || e.message || "Authentication failed");
+    } finally { setLoading(false); }
   };
 
   return (
@@ -326,22 +304,14 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
       <div className="relative bg-bg border border-border w-full max-w-md animate-fade-up" onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-4 right-4 text-text-subtle hover:text-text text-xl z-10 bg-transparent border-none cursor-pointer">×</button>
 
-        {/* Header */}
         <div className="p-8 pb-4 text-center">
           <div className="w-10 h-10 bg-accent flex items-center justify-center mx-auto mb-4">
             <span className="text-accent-inv text-sm font-bold font-display">R</span>
           </div>
-          <h2 className="font-display font-bold text-2xl">
-            {mode === "login" ? "Welcome back" : "Create your account"}
-          </h2>
-          <p className="body-sm mt-1">
-            {mode === "login"
-              ? "Sign in to access your models and unlearning jobs"
-              : "Start unlearning — free tier included"}
-          </p>
+          <h2 className="font-display font-bold text-2xl">{mode === "login" ? "Welcome back" : "Create your account"}</h2>
+          <p className="body-sm mt-1">{mode === "login" ? "Sign in to access your models" : "Start unlearning — free tier included"}</p>
         </div>
 
-        {/* Social logins */}
         <div className="px-8 space-y-3">
           <button onClick={handleGoogle} disabled={loading}
             className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-border bg-bg hover:bg-surface transition-colors text-sm font-display font-medium text-text cursor-pointer disabled:opacity-50">
@@ -355,7 +325,6 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
           </button>
         </div>
 
-        {/* Divider */}
         <div className="px-8 py-4">
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-border" />
@@ -364,7 +333,6 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
           </div>
         </div>
 
-        {/* Email form */}
         <form onSubmit={handleEmail} className="px-8 pb-8 space-y-3">
           {mode === "signup" && (
             <input type="text" placeholder="Full name" value={displayName}
@@ -378,12 +346,9 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
             onChange={(e) => setPassword(e.target.value)}
             className="w-full py-3 px-4 border border-border bg-bg text-text text-sm font-body outline-none focus:border-[#525252] transition-colors placeholder:text-text-subtle" />
 
-          {error && (
-            <p className="text-xs text-[#ef4444] bg-[#450a0a] border border-[#7f1d1d] p-2">{error}</p>
-          )}
+          {error && <p className="text-xs text-[#ef4444] bg-[#450a0a] border border-[#7f1d1d] p-2">{error}</p>}
 
-          <button type="submit" disabled={loading}
-            className="btn-primary w-full disabled:opacity-50">
+          <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
             {loading ? "Please wait..." : mode === "login" ? "Sign In" : "Create Account"}
           </button>
 
@@ -398,7 +363,6 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
                   className="text-text hover:underline bg-transparent border-none cursor-pointer text-xs font-display">Sign in</button></>
             )}
           </p>
-
           <p className="text-center text-[10px] text-text-subtle pt-1 leading-relaxed">
             By continuing, you agree to our <a href="#" className="underline">Terms</a> and <a href="#" className="underline">Privacy Policy</a>
           </p>
