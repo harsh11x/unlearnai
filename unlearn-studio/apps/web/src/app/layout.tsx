@@ -1,8 +1,29 @@
+import type { Metadata } from "next";
+import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-export const metadata = {
-  title: "NullMind AI | LLM Unlearning & Selective Retraining Platform",
-  description: "Open-source LLM unlearning engine. Surgically erase copyrighted code, PII, and unsafe data without spending $100k+ to retrain full model weights from scratch.",
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+});
+
+export const metadata: Metadata = {
+  title: "Unlearn Studio — Make AI Models Smaller, Faster, Smarter",
+  description:
+    "Unlearn unnecessary knowledge from AI models. Reduce compute costs, shrink model size, and retrain leaner — without losing accuracy.",
 };
 
 export default function RootLayout({
@@ -11,7 +32,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+    >
       <body>{children}</body>
     </html>
   );
