@@ -1,5 +1,8 @@
+"use client";
+
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useAuthModal } from "@/components/AppShell";
 
 const TIERS = [
   {
@@ -89,6 +92,8 @@ const TIERS = [
 ];
 
 export default function PricingPage() {
+  const { openAuth } = useAuthModal();
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -145,9 +150,9 @@ export default function PricingPage() {
                   </p>
                 </div>
 
-                <a
-                  href={tier.ctaHref}
-                  className={`block text-center py-3 px-6 no-underline font-display font-semibold text-sm mb-8 ${
+                <button
+                  onClick={() => openAuth("signup")}
+                  className={`block text-center py-3 px-6 no-underline font-display font-semibold text-sm mb-8 w-full cursor-pointer border-none ${
                     tier.highlight
                       ? "bg-bg text-text hover:opacity-90"
                       : tier.name === "Free"
@@ -156,7 +161,7 @@ export default function PricingPage() {
                   }`}
                 >
                   {tier.cta}
-                </a>
+                </button>
 
                 <ul className="space-y-3 list-none">
                   {tier.features.map((feature, i) => (

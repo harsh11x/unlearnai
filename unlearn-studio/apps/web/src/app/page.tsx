@@ -1,5 +1,8 @@
+"use client";
+
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useAuthModal } from "@/components/AppShell";
 import NeuralNetworkCanvas from "@/components/NeuralNetworkCanvas";
 import NodeErasureSandbox from "@/components/NodeErasureSandbox";
 import ComputeCalculator from "@/components/ComputeCalculator";
@@ -191,17 +194,7 @@ export default function Home() {
             Remap Studios is in early access. Download the desktop app or join
             the waitlist for API access.
           </p>
-          <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <a href="/downloads" className="btn-primary no-underline">
-              ↓ Download Desktop App
-            </a>
-            <a href="/pricing" className="btn-outline no-underline">
-              View Pricing
-            </a>
-            <a href="mailto:hello@remapstudios.ai" className="btn-outline no-underline">
-              Contact Sales
-            </a>
-          </div>
+          <CTAButtons />
 
           {/* Trust signals */}
           <div className="flex flex-wrap justify-center gap-8 mt-12">
@@ -222,6 +215,23 @@ export default function Home() {
       </section>
 
       <Footer />
+    </div>
+  );
+}
+
+function CTAButtons() {
+  const { openAuth } = useAuthModal();
+  return (
+    <div className="flex flex-wrap justify-center gap-4 mt-8">
+      <button onClick={() => openAuth("signup")} className="btn-primary no-underline cursor-pointer border-none font-display font-semibold">
+        Get Started Free
+      </button>
+      <a href="/downloads" className="btn-outline no-underline">
+        ↓ Download Desktop App
+      </a>
+      <a href="/pricing" className="btn-outline no-underline">
+        View Pricing
+      </a>
     </div>
   );
 }
