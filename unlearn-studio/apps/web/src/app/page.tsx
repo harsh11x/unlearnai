@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import {
   ArrowRight, Target, CheckCircle2, XCircle,
   FlaskConical, BarChart3, Shield, GitBranch, Database, Cpu,
@@ -576,25 +577,6 @@ function CTASection() {
 
       </div>
     </section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="py-16 bg-[#0f172a] text-white">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto flex flex-col md:flex-row justify-between items-center gap-6 font-mono text-xs md:text-sm">
-        <div className="flex items-center gap-3">
-          <span className="bg-[#fef08a] text-[#0f172a] font-black px-2 py-0.5">NULLMIND</span>
-          <span>Open Research Platform for LLM Capability Reduction</span>
-        </div>
-        <div className="text-slate-400">
-          Built with PyTorch · HuggingFace · FastAPI · Next.js
-        </div>
-        <div>
-          © 2026 NullMind Studio
-        </div>
-      </div>
-    </footer>
   );
 }
 

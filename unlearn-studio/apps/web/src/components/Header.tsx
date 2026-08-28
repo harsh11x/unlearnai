@@ -12,11 +12,10 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#f4efe4] border-b-3 border-[#0f172a] shadow-sm">
-      {/* Scotch tape on left & right of header */}
+      {/* Scotch tape on left of header */}
       <div className="tape top-1 left-4 w-20 h-5 rotate-2 hidden md:block"></div>
-      <div className="tape top-1 right-4 w-20 h-5 -rotate-2 hidden md:block"></div>
 
-      <div className="w-full max-w-[1400px] px-4 md:px-8 mx-auto flex items-center justify-between h-[68px]">
+      <div className="w-full max-w-[1400px] pl-5 md:pl-8 pr-0 mx-auto flex items-center justify-between h-[68px]">
         {/* Logo as an Index Label / Sticky Tag */}
         <Link href="/" className="flex items-center gap-3 group">
           <div className="relative bg-[#fef08a] border-2 border-[#0f172a] px-3 py-1 -rotate-2 group-hover:rotate-0 transition-transform shadow-[3px_3px_0_0_#0f172a]">
@@ -46,11 +45,11 @@ export default function Header() {
 
           <div className="w-0.5 h-6 bg-[#0f172a]/30 mx-2" />
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 pr-0">
             {isLoading ? (
-              <div className="w-6 h-6 border-2 border-[#0f172a] border-t-transparent animate-spin" />
+              <div className="w-6 h-6 border-2 border-[#0f172a] border-t-transparent animate-spin mr-4" />
             ) : isAuthenticated && user ? (
-              <div className="relative">
+              <div className="relative pr-4">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className="flex items-center gap-2 px-3 py-1.5 border-2 border-[#0f172a] bg-[#fef08a] hover:bg-[#fde047] shadow-[3px_3px_0_0_#0f172a] transition-all"
@@ -97,7 +96,7 @@ export default function Header() {
                 >
                   Log In
                 </Link>
-                <Link href="/signup" className="btn-sticky text-xs py-1.5 px-4">
+                <Link href="/signup" className="btn-sticky text-xs py-1.5 px-4 mr-0">
                   Get Started 📌
                 </Link>
               </>
@@ -107,7 +106,7 @@ export default function Header() {
 
         {/* Mobile menu toggle */}
         <button
-          className="lg:hidden p-2 border-2 border-[#0f172a] bg-[#fef08a] shadow-[2px_2px_0_0_#0f172a]"
+          className="lg:hidden p-2 border-2 border-[#0f172a] bg-[#fef08a] shadow-[2px_2px_0_0_#0f172a] mr-2"
           onClick={() => setMenuOpen(!menuOpen)}
         >
           {menuOpen ? <X size={20} /> : <Menu size={20} />}
