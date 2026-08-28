@@ -1,22 +1,18 @@
-import type { Metadata } from "next";
 import "./globals.css";
-import SessionProvider from "@/components/SessionProvider";
 
-export const metadata: Metadata = {
-  title: "NullMind — AI Model Unlearning Platform",
-  description: "Selective unlearning, capability reduction, and model knowledge control. Forget what you need, keep what matters.",
+export const metadata = {
+  title: "NullMind AI",
+  description: "AI Unlearning & Retraining Platform",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body>
-        <SessionProvider>{children}</SessionProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
