@@ -25,12 +25,12 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 200px;
+  scroll-padding-top: 120px;
   font-size: 16px;
 }
 
 section {
-  scroll-margin-top: 200px;
+  scroll-margin-top: 120px;
 }
 
 body {
@@ -149,6 +149,26 @@ body {
   border-color: #16a34a;
   color: #16a34a;
   transform: rotate(4deg);
+}
+
+/* Comic Speech Bubble Badge */
+.comic-bubble {
+  position: relative;
+  background: #ffffff;
+  border: 2px solid #0f172a;
+  box-shadow: 4px 4px 0 0 #0f172a;
+}
+
+.comic-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 20px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #0f172a;
 }
 
 /* Handwritten font helper */
