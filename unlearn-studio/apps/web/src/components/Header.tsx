@@ -8,7 +8,8 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
   const { openAuth } = useAuthModal();
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
+  const planBadge = userData?.plan && userData.plan !== "free" ? userData.plan.toUpperCase() : null;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-bg/80 backdrop-blur-md border-b border-border">
@@ -90,9 +91,24 @@ export default function Header() {
 
           {/* CTA */}
           {user ? (
-            <a href="/pricing" className="bg-accent text-accent-inv text-sm font-display font-semibold py-2 px-5 no-underline hover:opacity-85 transition-opacity">
-              Dashboard
-            </a>
+            <div className="flex items-center gap-2">
+              {planBadge && (
+                <span className="mono text-[9px] font-bold tracking-widest text-highlight border border-highlight/30 px-2 py-0.5">
+                  {planBadge}
+                </span>
+              )}
+              <button
+                onClick={() => openAuth("profile")}
+                className="flex items-center gap-2 bg-surface border border-border py-1.5 px-3 cursor-pointer hover:bg-surface/80 transition-colors"
+              >
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="" className="w-5 h-5 rounded-full" />
+                ) : (
+                  <span className="w-5 h-5 bg-accent text-accent-inv flex items-center justify-center text-[10px] font-bold">{(userData?.displayName || user.email || "U")[0].toUpperCase()}</span>
+                )}
+                <span className="text-sm text-text-muted font-medium hidden xl:inline">{userData?.displayName || user.displayName || "Account"}</span>
+              </button>
+            </div>
           ) : (
             <button
               onClick={() => openAuth("signup")}
