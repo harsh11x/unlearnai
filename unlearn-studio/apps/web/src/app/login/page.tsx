@@ -33,68 +33,63 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-[#f7f6f2] font-sans">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-[55%] bg-ink text-white flex-col justify-between p-12 xl:p-16 relative overflow-hidden">
-        {/* Decorative */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-highlight/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-white/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
-
-        <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
-              <span className="font-serif font-bold text-sm italic text-white">N</span>
+      <div className="hidden lg:flex lg:w-[48%] bg-[#09090b] text-white flex-col justify-between p-12 xl:p-16 border-r-2 border-[#09090b]">
+        <div>
+          <Link href="/" className="flex items-center gap-3">
+            <div className="bg-white text-[#09090b] border-2 border-white px-3 py-1 font-mono font-black text-lg">
+              NULLMIND
             </div>
-            <span className="font-serif font-bold text-xl text-white">
-              Null<span className="italic">Mind</span>
+            <span className="font-mono text-xs font-bold text-zinc-400 uppercase tracking-widest">
+              // STUDIO v1.0
             </span>
           </Link>
         </div>
 
-        <div className="relative z-10">
-          <h1 className="text-[clamp(2.5rem,4vw,4rem)] font-bold leading-[1.1] tracking-[-0.02em] mb-5">
-            Welcome<br />
-            <span className="font-serif italic text-highlight">Back</span>
+        <div className="space-y-6">
+          <div className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-400">
+            [ AUTHENTICATION GATEWAY ]
+          </div>
+          <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight uppercase leading-tight font-sans">
+            LOG IN TO <br />
+            <span className="bg-white text-[#09090b] px-3 py-1 inline-block mt-2">
+              UNLEARN STUDIO
+            </span>
           </h1>
-          <p className="text-white/50 text-lg max-w-md leading-relaxed">
-            Continue your unlearning experiments.
-            Pick up where you left off.
+          <p className="font-mono text-xs text-zinc-400 leading-relaxed max-w-md">
+            Resume your LLM capability unlearning experiments. Probe baseline performance, run gradient ascent, and verify targeted erasure.
           </p>
         </div>
 
-        <div className="relative z-10 flex items-center gap-6 text-xs text-white/30 font-mono">
-          <span>Platform v1.0</span>
-          <span className="w-1 h-1 rounded-full bg-white/20" />
-          <span>ML Pipeline Active</span>
-          <span className="w-1 h-1 rounded-full bg-white/20" />
-          <span className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-            Operational
-          </span>
+        <div className="flex items-center gap-4 text-xs text-zinc-500 font-mono border-t border-zinc-800 pt-6">
+          <span>// PLATFORM: ACTIVE</span>
+          <span>·</span>
+          <span>PROBE SUITE: 89 TESTS</span>
         </div>
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-10">
-        <div className="w-full max-w-[400px]">
-          <Link href="/" className="flex items-center gap-2.5 mb-12 lg:hidden">
-            <div className="w-9 h-9 bg-ink rounded-lg flex items-center justify-center">
-              <span className="font-serif font-bold text-sm italic text-white">N</span>
+      <div className="flex-1 flex items-center justify-center p-6 md:p-10 bg-[#f7f6f2] arch-grid">
+        <div className="w-full max-w-[420px] brutalist-card p-8 bg-white">
+          <Link href="/" className="flex items-center gap-2 mb-8 lg:hidden">
+            <div className="bg-[#09090b] text-white border-2 border-[#09090b] px-3 py-1 font-mono font-black text-sm">
+              NULLMIND
             </div>
-            <span className="font-serif font-bold text-xl">Null<span className="italic">Mind</span></span>
           </Link>
 
-          <h2 className="text-3xl font-bold tracking-[-0.02em] mb-2">Log In</h2>
-          <p className="text-ink-muted mb-6">Enter your credentials or use a provider.</p>
+          <div className="brutalist-badge mb-2">ACCOUNT LOG IN</div>
+          <h2 className="text-2xl font-extrabold uppercase font-sans tracking-tight mb-1 text-[#09090b]">Log In</h2>
+          <p className="font-mono text-xs text-[#52525b] mb-6">Enter your credentials or use an OAuth provider.</p>
 
-          <div className="text-xs font-mono text-success bg-success/5 border border-success/20 rounded-lg p-3 mb-6">
-            Demo: demo@nullmind.dev / Password1
+          <div className="font-mono text-xs font-bold text-[#09090b] bg-[#f7f6f2] border-2 border-[#09090b] p-3 mb-6">
+            Demo Credentials: demo@nullmind.dev / Password1
           </div>
 
           <OAuthButtons mode="login" onError={setError} />
 
           {error && (
-            <div className="flex items-center gap-2 text-sm text-error mt-4 p-3 rounded-lg bg-error/5 border border-error/20">
+            <div className="flex items-center gap-2 font-mono text-xs text-[#09090b] mt-4 p-3 bg-red-50 border-2 border-[#09090b]">
               <AlertCircle size={16} />
               {error}
             </div>
@@ -102,28 +97,32 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4 mt-6">
             <div>
-              <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-ink-muted block mb-2">Email</label>
+              <label className="font-mono text-[11px] font-bold tracking-wider uppercase text-[#09090b] block mb-1.5">
+                Email Address
+              </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(""); }}
                 placeholder="you@example.com"
-                className="w-full bg-bg border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-ink focus:ring-1 focus:ring-ink/10 transition-all"
+                className="w-full bg-[#f7f6f2] border-2 border-[#09090b] px-4 py-3 font-mono text-xs text-[#09090b] focus:outline-none focus:bg-white transition-all"
                 required
               />
             </div>
             <div>
-              <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-ink-muted block mb-2">Password</label>
+              <label className="font-mono text-[11px] font-bold tracking-wider uppercase text-[#09090b] block mb-1.5">
+                Password
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(""); }}
                   placeholder="••••••••"
-                  className="w-full bg-bg border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-ink focus:ring-1 focus:ring-ink/10 transition-all pr-11"
+                  className="w-full bg-[#f7f6f2] border-2 border-[#09090b] px-4 py-3 font-mono text-xs text-[#09090b] focus:outline-none focus:bg-white transition-all pr-11"
                   required
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink transition-colors">
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#09090b]">
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -132,15 +131,15 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || authLoading}
-              className="btn-primary w-full justify-center py-3.5 mt-2 disabled:opacity-50"
+              className="brutalist-btn-primary w-full py-3.5 mt-2 text-xs"
             >
-              {loading || authLoading ? <span className="animate-pulse">Authenticating...</span> : <>Log In <ArrowRight size={16} /></>}
+              {loading || authLoading ? <span className="animate-pulse">Authenticating...</span> : <>Log In <ArrowRight size={14} /></>}
             </button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-ink-muted">
+          <p className="mt-8 text-center font-mono text-xs text-[#52525b]">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-semibold text-ink hover:text-highlight transition-colors">Sign up</Link>
+            <Link href="/signup" className="font-extrabold text-[#09090b] hover:underline">Sign up →</Link>
           </p>
         </div>
       </div>

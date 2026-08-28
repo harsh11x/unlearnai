@@ -2,376 +2,237 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
-  Upload, Play, BarChart3, Settings, Brain, Database,
-  ChevronRight, FileCode2, Layers, Zap, CheckCircle2,
-  Clock, Terminal, Eye, ArrowRight, Cpu, Target, Shield
+  Upload, Play, BarChart3, Settings, Brain,
+  ChevronRight, Terminal, CheckCircle2, Target,
+  Cpu, ArrowRight, Shield, Database, Plus, Layers
 } from "lucide-react";
 
-type Tab = "upload" | "explore" | "configure" | "train" | "results";
+/* ─── Dashboard Sidebar ─── */
+export function DashboardSidebar() {
+  const pathname = usePathname();
 
-/* ─── Sidebar ─── */
-function Sidebar({ activeTab, onTabChange }: { activeTab: Tab; onTabChange: (t: Tab) => void }) {
-  const tabs: { id: Tab; icon: React.ElementType; label: string }[] = [
-    { id: "upload", icon: Upload, label: "Upload" },
-    { id: "explore", icon: Eye, label: "Explore" },
-    { id: "configure", icon: Settings, label: "Configure" },
-    { id: "train", icon: Brain, label: "Train" },
-    { id: "results", icon: BarChart3, label: "Results" },
+  const navItems = [
+    { href: "/dashboard", icon: LayoutOverview, label: "00. Overview", exact: true },
+    { href: "/dashboard/models", icon: Upload, label: "01. Model Registry" },
+    { href: "/dashboard/explorer", icon: Brain, label: "02. Probe Explorer" },
+    { href: "/dashboard/configure", icon: Settings, label: "03. Configuration" },
+    { href: "/dashboard/train", icon: Cpu, label: "04. Training Run" },
+    { href: "/dashboard/results", icon: BarChart3, label: "05. Audit Results" },
+    { href: "/dashboard/settings", icon: Shield, label: "06. Settings" },
   ];
 
   return (
-    <aside className="w-16 lg:w-56 border-r border-border bg-white flex flex-col shrink-0">
-      <div className="p-4 border-b border-border hidden lg:block">
-        <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-ink-subtle mb-1">Workspace</div>
-        <div className="font-semibold text-sm truncate">My Project</div>
+    <aside className="w-16 lg:w-64 border-r-2 border-[#09090b] bg-white flex flex-col shrink-0">
+      <div className="p-4 border-b-2 border-[#09090b] hidden lg:block bg-[#f7f6f2]">
+        <div className="text-[10px] font-mono font-bold tracking-[0.1em] uppercase text-[#71717a] mb-1">
+          // WORKSPACE
+        </div>
+        <div className="font-mono font-extrabold text-sm truncate text-[#09090b]">
+          NULLMIND STUDIO
+        </div>
       </div>
-      <nav className="flex-1 py-3">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200 ${
-              activeTab === tab.id
-                ? "bg-ink text-white"
-                : "text-ink-muted hover:text-ink hover:bg-bg-alt"
-            }`}
-          >
-            <tab.icon size={17} />
-            <span className="text-sm font-medium hidden lg:block">{tab.label}</span>
-          </button>
-        ))}
+
+      <nav className="flex-1 py-4 space-y-1.5 px-3">
+        {navItems.map((tab) => {
+          const isActive = tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 font-mono transition-all border-2 ${
+                isActive
+                  ? "bg-[#09090b] text-white border-[#09090b] shadow-[2px_2px_0_0_#09090b]"
+                  : "bg-white text-[#09090b] border-transparent hover:border-[#09090b] hover:bg-[#f7f6f2]"
+              }`}
+            >
+              <tab.icon size={16} />
+              <span className="text-xs font-bold uppercase hidden lg:block">{tab.label}</span>
+            </Link>
+          );
+        })}
       </nav>
-      <div className="p-4 border-t border-border hidden lg:block">
-        <div className="flex items-center gap-2 text-xs text-ink-subtle">
-          <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-          <span>GPU Ready</span>
+
+      <div className="p-4 border-t-2 border-[#09090b] hidden lg:block bg-[#f7f6f2]">
+        <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#09090b]">
+          <div className="w-2 h-2 bg-emerald-600 rounded-full animate-pulse" />
+          <span>GPU TELEMETRY: READY</span>
         </div>
       </div>
     </aside>
   );
 }
 
-/* ─── Top Bar ─── */
-function TopBar({ activeTab }: { activeTab: Tab }) {
-  const titles: Record<Tab, string> = {
-    upload: "Upload Model", explore: "Capability Explorer",
-    configure: "Unlearning Config", train: "Training", results: "Results",
-  };
+function LayoutOverview(props: { size?: number; className?: string }) {
+  return <Layers size={props.size || 16} className={props.className} />;
+}
 
+/* ─── Dashboard Header ─── */
+export function DashboardHeader({ title }: { title: string }) {
   return (
-    <header className="h-14 border-b border-border bg-white flex items-center justify-between px-5 shrink-0">
-      <div className="flex items-center gap-2.5 text-sm">
-        <span className="font-mono text-ink-subtle text-xs">nullmind</span>
-        <ChevronRight size={12} className="text-ink-subtle" />
-        <span className="font-semibold">{titles[activeTab]}</span>
+    <header className="h-16 border-b-2 border-[#09090b] bg-[#f7f6f2] flex items-center justify-between px-6 shrink-0">
+      <div className="flex items-center gap-3 text-xs md:text-sm font-mono">
+        <Link href="/" className="font-extrabold uppercase text-[#09090b] bg-white border border-[#09090b] px-2 py-0.5 shadow-[1px_1px_0_0_#09090b]">
+          NULLMIND
+        </Link>
+        <ChevronRight size={14} className="text-[#09090b]" />
+        <span className="font-bold text-[#09090b] uppercase">{title}</span>
       </div>
-      <div className="w-8 h-8 bg-ink rounded-full flex items-center justify-center">
-        <span className="text-white text-xs font-semibold">H</span>
+      <div className="flex items-center gap-3">
+        <Link href="/dashboard/models" className="brutalist-btn-primary text-xs py-1.5 px-3">
+          <Plus size={14} /> New Model Run
+        </Link>
+        <div className="w-8 h-8 bg-[#09090b] text-white border-2 border-[#09090b] font-mono font-bold text-xs flex items-center justify-center shadow-[2px_2px_0_0_#09090b]">
+          H
+        </div>
       </div>
     </header>
   );
 }
 
-/* ─── Upload Tab ─── */
-function UploadTab({ model, onModelUpload }: { model: { name: string; architecture: string; params: string; format: string; size: string; hash: string } | null; onModelUpload: (m: typeof model) => void }) {
-  const [dragOver, setDragOver] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-
-  const handleUpload = async () => {
-    setUploading(true);
-    for (let i = 0; i <= 100; i += 5) {
-      await new Promise((r) => setTimeout(r, 40));
-      setProgress(i);
-    }
-    onModelUpload({ name: "codegen-350M-multi", architecture: "CodeGenForCausalLM", params: "304.1M", format: "safetensors", size: "760 MB", hash: "f8d24b7b..." });
-    setUploading(false);
-  };
-
-  if (model) {
-    return (
-      <div className="p-6 lg:p-8 space-y-6">
-        <div className="flex items-center gap-3">
-          <CheckCircle2 size={22} className="text-success" />
-          <h2 className="text-2xl font-bold">Model Ready</h2>
-        </div>
-        <div className="rounded-xl border border-border overflow-hidden bg-white">
-          <div className="px-5 py-3 bg-bg-alt border-b border-border text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Model Information</div>
-          <div className="divide-y divide-border/50">
-            {[["Name", model.name], ["Architecture", model.architecture], ["Parameters", model.params], ["Format", model.format], ["Size", model.size], ["Hash", model.hash]].map(([l, v]) => (
-              <div key={l} className="grid grid-cols-[140px_1fr] px-5 py-3">
-                <span className="text-xs font-mono text-ink-subtle uppercase">{l}</span>
-                <span className="text-sm font-mono">{v}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-6 lg:p-8 space-y-6">
-      <h2 className="text-2xl font-bold">Upload Model</h2>
-      <p className="text-ink-muted text-sm">Upload an open-weight language model to get started.</p>
-      <div
-        className={`border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer transition-all duration-300 ${dragOver ? "border-ink bg-bg-alt" : "border-border hover:border-ink/30"}`}
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => { e.preventDefault(); setDragOver(false); handleUpload(); }}
-        onClick={handleUpload}
-      >
-        {uploading ? (
-          <div className="space-y-4">
-            <div className="font-semibold text-lg">Uploading...</div>
-            <div className="w-64 mx-auto h-1.5 bg-border rounded-full overflow-hidden">
-              <div className="h-full bg-ink transition-all duration-300" style={{ width: `${progress}%` }} />
-            </div>
-            <div className="font-mono text-xs text-ink-muted">{progress}%</div>
-          </div>
-        ) : (
-          <>
-            <Upload size={40} className="text-ink-subtle mx-auto mb-4" />
-            <div className="font-semibold text-lg mb-1">Drop model here or click to browse</div>
-            <div className="text-ink-muted text-sm">.safetensors · .bin · HuggingFace directories</div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Explore Tab ─── */
-function ExploreTab() {
-  const cats = [
-    { name: "Syntax", score: 50 }, { name: "Functions", score: 75 }, { name: "Classes", score: 25 },
-    { name: "Iterators", score: 67 }, { name: "Generators", score: 33 }, { name: "Decorators", score: 67 },
-    { name: "Debugging", score: 33 }, { name: "Algorithms", score: 29 },
-  ];
-  const retain = [
-    { name: "JavaScript", score: 50 }, { name: "TypeScript", score: 100 },
-    { name: "C++", score: 75 }, { name: "General Prog.", score: 17 },
-  ];
-
-  return (
-    <div className="p-6 lg:p-8 space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Capability Explorer</h2>
-          <p className="text-ink-muted text-sm mt-1">89 probes · 24 categories</p>
-        </div>
-        <button className="btn-primary text-xs px-5 py-2.5"><Play size={14} /> Run Evaluation</button>
-      </div>
-
-      <div>
-        <div className="flex items-center gap-2 mb-3"><Target size={14} className="text-highlight" /><span className="text-xs font-semibold uppercase tracking-[0.1em]">Python (Target)</span></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {cats.map((c) => (
-            <div key={c.name} className="border border-border rounded-xl p-4 bg-white hover:shadow-sm transition-all">
-              <div className="flex justify-between mb-2"><span className="text-sm font-semibold">{c.name}</span><span className="font-mono text-xs text-ink-subtle">{c.score}%</span></div>
-              <div className="h-1.5 bg-bg-alt rounded-full overflow-hidden"><div className="h-full bg-ink rounded-full" style={{ width: `${c.score}%` }} /></div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <div className="flex items-center gap-2 mb-3"><CheckCircle2 size={14} className="text-success" /><span className="text-xs font-semibold uppercase tracking-[0.1em]">Retained</span></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {retain.map((c) => (
-            <div key={c.name} className="border border-border rounded-xl p-4 bg-white">
-              <div className="flex justify-between mb-2"><span className="text-sm font-semibold">{c.name}</span><span className="font-mono text-xs text-ink-subtle">{c.score}%</span></div>
-              <div className="h-1.5 bg-bg-alt rounded-full overflow-hidden"><div className="h-full bg-success rounded-full" style={{ width: `${c.score}%` }} /></div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="p-5 rounded-xl border border-border bg-white flex items-center justify-between">
-        <span className="font-semibold">Overall Score</span>
-        <span className="text-2xl font-bold">40.4%</span>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Configure Tab ─── */
-function ConfigureTab({ onTrain }: { onTrain: () => void }) {
-  const [method, setMethod] = useState<"retain_aware" | "gradient">("retain_aware");
-
-  return (
-    <div className="p-6 lg:p-8 space-y-6">
-      <h2 className="text-2xl font-bold">Configuration</h2>
-
-      <div className="rounded-xl border border-border bg-white">
-        <div className="px-5 py-3 border-b border-border text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Target</div>
-        <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-          {["Python", "JavaScript", "TypeScript", "C++"].map((l) => (
-            <button key={l} className={`border rounded-lg py-2.5 text-sm font-medium transition-all ${l === "Python" ? "border-ink bg-ink text-white" : "border-border hover:border-ink/30 text-ink-muted"}`}>{l}</button>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-border bg-white">
-        <div className="px-5 py-3 border-b border-border text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Method</div>
-        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[{ id: "retain_aware" as const, name: "Retain-Aware", desc: "Balances forgetting with preservation." }, { id: "gradient" as const, name: "Gradient Forgetting", desc: "Simple baseline without retention." }].map((m) => (
-            <button key={m.id} onClick={() => setMethod(m.id)} className={`border-2 p-4 text-left rounded-xl transition-all ${method === m.id ? "border-ink" : "border-border hover:border-ink/30"}`}>
-              <div className="font-semibold text-sm mb-1">{m.name}</div>
-              <div className="text-ink-muted text-xs">{m.desc}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-border bg-white">
-        <div className="px-5 py-3 border-b border-border text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Hyperparameters</div>
-        <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[{ l: "Learning Rate", v: "1e-5" }, { l: "Steps", v: "200" }, { l: "Batch Size", v: "2" }, { l: "Retain Weight", v: "2.0" }].map((p) => (
-            <div key={p.l}>
-              <label className="text-[10px] font-semibold tracking-[0.1em] uppercase text-ink-subtle block mb-1.5">{p.l}</label>
-              <div className="bg-bg border border-border rounded-lg px-3 py-2 text-sm font-mono">{p.v}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <button onClick={onTrain} className="btn-primary w-full justify-center py-3.5"><Play size={16} /> Start Unlearning</button>
-    </div>
-  );
-}
-
-/* ─── Train Tab ─── */
-function TrainTab() {
-  const [step, setStep] = useState(0);
-  const [running, setRunning] = useState(false);
-
-  const start = async () => {
-    setRunning(true);
-    for (let i = 0; i <= 200; i += 10) {
-      await new Promise((r) => setTimeout(r, 80));
-      setStep(i);
-    }
-    setRunning(false);
-  };
-
-  return (
-    <div className="p-6 lg:p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Training</h2>
-        {!running && step === 0 && <button onClick={start} className="btn-primary text-xs px-5 py-2.5"><Play size={14} /> Start</button>}
-      </div>
-
-      <div className="rounded-xl border border-border bg-white p-5">
-        <div className="flex justify-between mb-3 text-sm">
-          <span className="font-semibold">{running ? "Training..." : step > 0 ? "Complete" : "Ready"}</span>
-          <span className="font-mono text-ink-muted text-xs">{step}/200</span>
-        </div>
-        <div className="h-2 bg-bg-alt rounded-full overflow-hidden">
-          <div className={`h-full rounded-full transition-all duration-300 ${running ? "bg-highlight" : step > 0 ? "bg-success" : "bg-border"}`} style={{ width: `${(step / 200) * 100}%` }} />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[{ l: "Forget Loss", v: "52.88", c: "text-highlight" }, { l: "Retain Loss", v: "28.91", c: "text-success" }, { l: "GPU Util", v: "87%", c: "text-ink" }, { l: "Elapsed", v: "3m 12s", c: "text-ink-muted" }].map((m) => (
-          <div key={m.l} className="border border-border rounded-xl p-4 bg-white">
-            <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-ink-subtle mb-1">{m.l}</div>
-            <div className={`text-xl font-bold ${m.c}`}>{m.v}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="rounded-xl border border-border bg-white">
-        <div className="px-5 py-3 border-b border-border flex items-center gap-2">
-          <Terminal size={14} className="text-success" />
-          <span className="text-xs font-semibold uppercase tracking-[0.1em]">Logs</span>
-        </div>
-        <div className="p-4 font-mono text-xs space-y-1 max-h-40 overflow-y-auto">
-          {[{ t: "16:41:38", m: "Starting retain_aware unlearning" }, { t: "16:41:39", m: "Step 10: forget=29.32 retain=25.09" }, { t: "16:41:45", m: "Step 50: forget=45.12 retain=27.33" }].map((l, i) => (
-            <div key={i} className="flex gap-3"><span className="text-ink-subtle shrink-0">{l.t}</span><span className="text-ink/70">{l.m}</span></div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Results Tab ─── */
-function ResultsTab() {
-  const results = [
-    { cap: "Python", before: 50.0, after: 0.0, isTarget: true },
-    { cap: "JavaScript", before: 50.0, after: 50.0, isTarget: false },
-    { cap: "TypeScript", before: 100.0, after: 100.0, isTarget: false },
-    { cap: "C++", before: 75.0, after: 75.0, isTarget: false },
-  ];
-
-  return (
-    <div className="p-6 lg:p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Results</h2>
-        <button className="btn-outline text-xs px-5 py-2.5">Export Report</button>
-      </div>
-
-      <div className="rounded-xl border border-border overflow-hidden bg-white">
-        <div className="grid grid-cols-4 bg-ink text-white text-[11px] font-semibold uppercase tracking-[0.1em]">
-          <div className="p-4">Capability</div>
-          <div className="p-4 text-center">Before</div>
-          <div className="p-4 text-center">After</div>
-          <div className="p-4 text-center">Change</div>
-        </div>
-        {results.map((r) => {
-          const d = r.after - r.before;
-          return (
-            <div key={r.cap} className={`grid grid-cols-4 border-t border-border/50 ${r.isTarget ? "bg-highlight/[0.03]" : ""}`}>
-              <div className="p-4 text-sm font-semibold flex items-center gap-2">
-                {r.isTarget && <Target size={13} className="text-highlight" />}{r.cap}
-                {r.isTarget && <span className="text-[9px] font-mono text-highlight border border-highlight/30 px-1.5 py-0.5 rounded">TARGET</span>}
-              </div>
-              <div className="p-4 text-center font-mono text-sm text-ink-muted">{r.before}%</div>
-              <div className="p-4 text-center font-mono text-sm text-ink-muted">{r.after}%</div>
-              <div className={`p-4 text-center font-mono text-sm font-bold ${r.isTarget ? "text-highlight" : d === 0 ? "text-success" : "text-error"}`}>{d >= 0 ? "+" : ""}{d.toFixed(1)}</div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[{ l: "Forgetting", v: "50%", c: "text-highlight" }, { l: "Retention", v: "100%", c: "text-success" }, { l: "Collateral", v: "LOW", c: "text-success" }, { l: "Verdict", v: "PASS", c: "text-success" }].map((s) => (
-          <div key={s.l} className="border border-border rounded-xl p-4 bg-white text-center">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-subtle mb-1">{s.l}</div>
-            <div className={`text-2xl font-bold ${s.c}`}>{s.v}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="p-6 rounded-2xl border border-success/20 bg-success/[0.03] flex items-start gap-4">
-        <CheckCircle2 size={22} className="text-success shrink-0 mt-0.5" />
-        <div>
-          <div className="font-bold text-lg text-success">Verdict: PASS</div>
-          <p className="text-ink-muted text-sm mt-1">Target capability successfully reduced. Retained capabilities preserved.</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Main ─── */
+/* ─── Dashboard Overview Content ─── */
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("upload");
-  const [model, setModel] = useState<{ name: string; architecture: string; params: string; format: string; size: string; hash: string } | null>(null);
-
   return (
-    <div className="h-screen flex flex-col bg-bg">
-      <TopBar activeTab={activeTab} />
+    <div className="h-screen flex flex-col bg-[#f7f6f2] font-sans">
+      <DashboardHeader title="Workspace Overview & Activity" />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-        <main className="flex-1 overflow-y-auto">
-          {activeTab === "upload" && <UploadTab model={model} onModelUpload={setModel} />}
-          {activeTab === "explore" && <ExploreTab />}
-          {activeTab === "configure" && <ConfigureTab onTrain={() => setActiveTab("train")} />}
-          {activeTab === "train" && <TrainTab />}
-          {activeTab === "results" && <ResultsTab />}
+        <DashboardSidebar />
+        
+        <main className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-8">
+          
+          {/* Welcome Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="brutalist-badge mb-2">WORKSPACE HUB</div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold uppercase font-sans tracking-tight">
+                Model Unlearning & Retraining Studio
+              </h1>
+              <p className="font-mono text-xs text-[#52525b] mt-1">
+                Active Checkpoints: 4 · Probe Batteries: 89 Probes · GPU Status: Operational
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3 font-mono text-xs">
+              <Link href="/dashboard/configure" className="brutalist-btn-primary py-2.5 px-4">
+                <Play size={14} /> Launch Unlearning Run
+              </Link>
+            </div>
+          </div>
+
+          {/* Quick Metrics Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
+            <div className="brutalist-card p-5 bg-white">
+              <div className="text-[10px] font-bold uppercase text-[#71717a] mb-1">01 // REGISTERED MODELS</div>
+              <div className="text-3xl font-extrabold text-[#09090b]">4</div>
+              <div className="text-xs text-[#52525b] mt-2 border-t border-zinc-200 pt-2">CodeGen, Llama-2, Mistral</div>
+            </div>
+
+            <div className="brutalist-card p-5 bg-white">
+              <div className="text-[10px] font-bold uppercase text-[#71717a] mb-1">02 // UNLEARNING RUNS</div>
+              <div className="text-3xl font-extrabold text-[#09090b]">12</div>
+              <div className="text-xs text-[#52525b] mt-2 border-t border-zinc-200 pt-2">Dual Loss Ascent Runs</div>
+            </div>
+
+            <div className="brutalist-card p-5 bg-white">
+              <div className="text-[10px] font-bold uppercase text-[#71717a] mb-1">03 // VERIFIED AUDITS</div>
+              <div className="text-3xl font-extrabold text-[#09090b]">100%</div>
+              <div className="text-xs text-[#52525b] mt-2 border-t border-zinc-200 pt-2">Cryptographic PDF Certificates</div>
+            </div>
+
+            <div className="brutalist-card p-5 bg-white">
+              <div className="text-[10px] font-bold uppercase text-[#71717a] mb-1">04 // COLLATERAL LOSS</div>
+              <div className="text-3xl font-extrabold text-[#09090b]">0.0%</div>
+              <div className="text-xs text-[#52525b] mt-2 border-t border-zinc-200 pt-2">Retained Skills Preserved</div>
+            </div>
+          </div>
+
+          {/* Navigation Feature Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div className="brutalist-card p-6 bg-white flex flex-col justify-between">
+              <div>
+                <div className="w-9 h-9 bg-[#09090b] text-white flex items-center justify-center mb-4">
+                  <Upload size={18} />
+                </div>
+                <h3 className="font-mono text-base font-extrabold text-[#09090b] uppercase">1. Model Registry</h3>
+                <p className="font-mono text-xs text-[#52525b] mt-2 leading-relaxed">
+                  Upload Safetensors / PyTorch models or import directly from HuggingFace repositories.
+                </p>
+              </div>
+              <Link href="/dashboard/models" className="brutalist-btn-secondary text-xs py-2.5 mt-6">
+                Manage Models →
+              </Link>
+            </div>
+
+            <div className="brutalist-card p-6 bg-white flex flex-col justify-between">
+              <div>
+                <div className="w-9 h-9 bg-[#09090b] text-white flex items-center justify-center mb-4">
+                  <Brain size={18} />
+                </div>
+                <h3 className="font-mono text-base font-extrabold text-[#09090b] uppercase">2. Probe Explorer</h3>
+                <p className="font-mono text-xs text-[#52525b] mt-2 leading-relaxed">
+                  Run 89-probe evaluation battery across Syntax, Safety, PII, and Algorithmic categories.
+                </p>
+              </div>
+              <Link href="/dashboard/explorer" className="brutalist-btn-secondary text-xs py-2.5 mt-6">
+                Explore Probes →
+              </Link>
+            </div>
+
+            <div className="brutalist-card p-6 bg-white flex flex-col justify-between">
+              <div>
+                <div className="w-9 h-9 bg-[#09090b] text-white flex items-center justify-center mb-4">
+                  <Settings size={18} />
+                </div>
+                <h3 className="font-mono text-base font-extrabold text-[#09090b] uppercase">3. Unlearn Config</h3>
+                <p className="font-mono text-xs text-[#52525b] mt-2 leading-relaxed">
+                  Set target capabilities, dual-loss weight scaling ($\lambda$), batch size, and learning rate bounds.
+                </p>
+              </div>
+              <Link href="/dashboard/configure" className="brutalist-btn-secondary text-xs py-2.5 mt-6">
+                Configure Loss →
+              </Link>
+            </div>
+
+          </div>
+
+          {/* Recent Runs Table */}
+          <div className="brutalist-card overflow-hidden bg-white">
+            <div className="p-4 bg-[#09090b] text-white font-mono text-xs font-extrabold uppercase flex justify-between items-center">
+              <span>RECENT EXPERIMENT RUNS</span>
+              <span>LIVE TELEMETRY</span>
+            </div>
+
+            <div className="divide-y-2 divide-[#09090b] font-mono text-xs">
+              <div className="grid grid-cols-5 p-3.5 bg-[#f7f6f2] font-extrabold text-[#71717a]">
+                <div className="col-span-2">RUN ID & MODEL</div>
+                <div>TARGET DOMAIN</div>
+                <div className="text-center">PROBE DELTA</div>
+                <div className="text-center">VERDICT</div>
+              </div>
+
+              {[
+                { id: "RUN-9041", model: "Salesforce/codegen-350M-multi", target: "Python Code", delta: "50% → 0%", status: "PASS" },
+                { id: "RUN-8922", model: "meta-llama/Llama-2-7b-chat", target: "PII Extraction", delta: "82% → 1%", status: "PASS" },
+                { id: "RUN-8810", model: "mistralai/Mistral-7B-v0.1", target: "Toxic Alignment", delta: "64% → 0%", status: "PASS" },
+              ].map((run) => (
+                <div key={run.id} className="grid grid-cols-5 p-4 items-center hover:bg-[#f7f6f2]">
+                  <div className="col-span-2 font-bold text-[#09090b]">
+                    <span>{run.id}</span> · <span className="font-semibold text-[#52525b]">{run.model}</span>
+                  </div>
+                  <div className="font-semibold text-[#52525b]">{run.target}</div>
+                  <div className="text-center font-extrabold text-[#09090b]">{run.delta}</div>
+                  <div className="text-center font-extrabold">
+                    <span className="bg-[#09090b] text-white px-2 py-0.5 border border-[#09090b]">
+                      {run.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </main>
       </div>
     </div>

@@ -5,142 +5,117 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
   ArrowRight, Target, CheckCircle2, XCircle,
-  FlaskConical, BarChart3, Shield, GitBranch, Database, Cpu,
-  Layers, Zap, Brain
+  Shield, GitBranch, Database, Cpu,
+  Layers, ArrowUpRight, Lock, Zap, RefreshCw, Scale, Terminal
 } from "lucide-react";
 
 /* ════════════ HERO SECTION ════════════ */
 function Hero() {
   return (
-    <section className="relative min-h-[90vh] flex flex-col justify-center pt-32 sm:pt-40 md:pt-48 pb-24 md:pb-32 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a] overflow-hidden">
-      
-      {/* Decorative Comic Action Badges */}
-      <div className="absolute top-28 right-10 rotate-12 hidden xl:block z-20">
-        <div className="comic-burst text-xl font-black shadow-[4px_4px_0_0_#0f172a]">
-          POW! ⚡
-        </div>
-      </div>
-      <div className="absolute bottom-20 left-10 -rotate-12 hidden xl:block z-20">
-        <div className="comic-burst bg-[#3b82f6] text-white text-lg font-black shadow-[4px_4px_0_0_#0f172a]">
-          BOOM! 💥
-        </div>
-      </div>
-
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto relative z-10 my-auto">
+    <section className="relative min-h-[90vh] flex flex-col justify-center pt-32 sm:pt-36 md:pt-40 pb-20 md:pb-28 bg-[#f7f6f2] arch-grid border-b-2 border-[#09090b] overflow-hidden">
+      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto my-auto relative z-10">
         
-        {/* Top Tag Label */}
+        {/* Top Badges */}
         <div className="flex flex-wrap items-center gap-3 mb-8">
-          <div className="inline-flex items-center gap-2 bg-[#ffffff] border-3 border-[#0f172a] px-4 py-2 shadow-[4px_4px_0_0_#0f172a] -rotate-1">
-            <span className="w-3 h-3 bg-[#ef4444] rounded-full border border-[#0f172a]" />
-            <span className="font-mono text-xs md:text-sm font-bold uppercase tracking-widest text-[#0f172a]">
-              📌 NULLMIND V1.0 — LLM CAPABILITY UNLEARNING STUDIO
-            </span>
+          <div className="brutalist-badge-outline text-[#09090b]">
+            <span className="w-2 h-2 bg-[#09090b] rounded-full animate-pulse" />
+            <span>NULLMIND V1.0 // LLM UNLEARNING & RETRAIN ENGINE</span>
           </div>
-          <div className="bg-[#fef08a] border-3 border-[#0f172a] px-3 py-1 font-mono text-xs font-black uppercase tracking-wider shadow-[3px_3px_0_0_#0f172a] rotate-2">
-            🔥 OPEN-SOURCE MACHINE UNLEARNING
+          <div className="brutalist-badge bg-[#09090b] text-white font-mono">
+            OPEN-SOURCE PRODUCTION FRAMEWORK
           </div>
         </div>
 
-        {/* Headline & Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        {/* Main Headline */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
           
-          {/* Left Column */}
-          <div className="w-full">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.15] text-[#0f172a]">
+          <div className="lg:col-span-7">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] text-[#09090b] uppercase font-sans">
               SELECTIVELY <br />
-              <span className="relative inline-block my-4">
-                <span className="bg-[#fef08a] border-4 border-[#0f172a] px-5 py-2.5 shadow-[6px_6px_0_0_#0f172a] inline-block -rotate-1">
-                  UNLEARN
-                </span>
-                <div className="tape tape-top-right"></div>
+              <span className="bg-[#09090b] text-white px-4 py-1 inline-block my-2 border-2 border-[#09090b] shadow-[4px_4px_0_0_#09090b]">
+                UNLEARN & RETRAIN
               </span> <br />
               AI MODELS.
             </h1>
 
-            {/* Informative Mission & Architecture Note */}
-            <div className="mt-8 relative bg-white border-3 border-[#0f172a] p-6 md:p-8 shadow-[6px_6px_0_0_#0f172a] rotate-1 w-full">
-              <div className="pushpin"></div>
-              
-              <p className="font-mono text-sm md:text-base font-bold text-slate-800 leading-relaxed">
-                NullMind is an open research platform for{" "}
-                <span className="bg-[#bae6fd] px-2 py-0.5 border border-[#0f172a]">
-                  measured LLM capability reduction
-                </span>. Forget copyrighted code, PII, and unsafe data without retraining from scratch.
+            {/* Mission Card */}
+            <div className="mt-8 brutalist-card p-6 md:p-8 bg-white">
+              <p className="font-mono text-sm md:text-base font-semibold text-[#09090b] leading-relaxed">
+                NullMind is an open production platform for{" "}
+                <span className="bg-[#efeeea] px-2 py-0.5 border border-[#09090b] font-bold">
+                  measured LLM capability reduction & targeted retraining
+                </span>. Surgically erase copyrighted code, PII, and unsafe data without spending $100k+ to retrain full model weights from scratch.
               </p>
 
               {/* 4 Pillars Summary */}
-              <div className="mt-5 pt-4 border-t-2 border-dashed border-[#0f172a]/30 grid grid-cols-2 gap-3 font-mono text-xs font-bold">
-                <div className="flex items-center gap-1.5 text-slate-800">
-                  <span className="text-red-600 font-black">🔥</span> Targeted Ascent
+              <div className="mt-6 pt-4 border-t-2 border-zinc-200 grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs font-bold text-[#09090b]">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[#09090b]">■</span> Target Ascent
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-800">
-                  <span className="text-green-600 font-black">🛡️</span> Retain Protection
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[#09090b]">■</span> Retain Loss
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-800">
-                  <span className="text-blue-600 font-black">🔬</span> 89 Empirical Probes
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[#09090b]">■</span> 89 Probes
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-800">
-                  <span className="text-pink-600 font-black">📜</span> Weight Lineage
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[#09090b]">■</span> PDF Audit
                 </div>
-              </div>
-
-              <div className="mt-4 text-right font-hand text-xl font-bold text-[#ef4444]">
-                ~ Reproducible & Production Ready
               </div>
             </div>
 
-            {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-5 mt-8">
-              <Link href="/signup" className="btn-sticky text-base py-3.5 px-7">
-                Start Experimenting <ArrowRight size={18} />
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-4 mt-8">
+              <Link href="/signup" className="brutalist-btn-primary text-sm py-3.5 px-8">
+                Start Experiment <ArrowRight size={16} />
               </Link>
-              <Link href="/#how-it-works" className="btn-tape text-base py-3.5 px-7">
-                See Pipeline 📋
+              <Link href="/dashboard" className="brutalist-btn-secondary text-sm py-3.5 px-8">
+                Launch Workspace <ArrowUpRight size={16} />
               </Link>
             </div>
           </div>
 
-          {/* Right Column: Interactive Sticky Note Grid Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
+          {/* Telemetry Display */}
+          <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             
-            {/* Sticky 1 */}
-            <div className="sticky-note bg-[#fef08a] p-7 -rotate-2 w-full">
-              <div className="tape tape-top-center"></div>
-              <div className="font-mono text-4xl md:text-5xl font-black text-[#0f172a]">20+</div>
-              <div className="font-mono text-xs md:text-sm font-bold uppercase tracking-wider text-slate-700 mt-4 border-t-2 border-[#0f172a]/30 pt-3">
-                Probe Categories
+            <div className="brutalist-card p-6 bg-white">
+              <div className="font-mono text-xs font-bold uppercase tracking-widest text-[#71717a]">
+                01 // CATEGORIES
               </div>
-              <div className="font-hand text-xl text-slate-700 mt-1">Code, Safety, Math...</div>
+              <div className="font-mono text-4xl font-extrabold text-[#09090b] mt-3">20+</div>
+              <div className="font-mono text-xs font-semibold text-[#52525b] mt-2 border-t border-zinc-200 pt-2">
+                Code, PII, Safety, Reasoning
+              </div>
             </div>
 
-            {/* Sticky 2 */}
-            <div className="sticky-note bg-[#bae6fd] p-7 rotate-2 w-full">
-              <div className="tape tape-top-right"></div>
-              <div className="font-mono text-4xl md:text-5xl font-black text-[#0f172a]">89</div>
-              <div className="font-mono text-xs md:text-sm font-bold uppercase tracking-wider text-slate-700 mt-4 border-t-2 border-[#0f172a]/30 pt-3">
-                Evaluation Probes
+            <div className="brutalist-card p-6 bg-white">
+              <div className="font-mono text-xs font-bold uppercase tracking-widest text-[#71717a]">
+                02 // EVALUATION
               </div>
-              <div className="font-hand text-xl text-slate-700 mt-1">Targeted test battery</div>
+              <div className="font-mono text-4xl font-extrabold text-[#09090b] mt-3">89</div>
+              <div className="font-mono text-xs font-semibold text-[#52525b] mt-2 border-t border-zinc-200 pt-2">
+                Empirical probe battery
+              </div>
             </div>
 
-            {/* Sticky 3 */}
-            <div className="sticky-note bg-[#fbcfe8] p-7 rotate-2 w-full">
-              <div className="tape tape-top-left"></div>
-              <div className="font-mono text-4xl md:text-5xl font-black text-[#0f172a]">2</div>
-              <div className="font-mono text-xs md:text-sm font-bold uppercase tracking-wider text-slate-700 mt-4 border-t-2 border-[#0f172a]/30 pt-3">
-                Unlearn Methods
+            <div className="brutalist-card p-6 bg-white">
+              <div className="font-mono text-xs font-bold uppercase tracking-widest text-[#71717a]">
+                03 // LOSS OBJECTIVE
               </div>
-              <div className="font-hand text-xl text-slate-700 mt-1">Ascent + Retain Loss</div>
+              <div className="font-mono text-3xl font-extrabold text-[#09090b] mt-3">DUAL</div>
+              <div className="font-mono text-xs font-semibold text-[#52525b] mt-2 border-t border-zinc-200 pt-2">
+                Ascent + Retain Loss
+              </div>
             </div>
 
-            {/* Sticky 4 */}
-            <div className="sticky-note bg-[#bbf7d0] p-7 -rotate-2 w-full">
-              <div className="tape tape-top-center"></div>
-              <div className="font-mono text-4xl md:text-5xl font-black text-[#0f172a]">5</div>
-              <div className="font-mono text-xs md:text-sm font-bold uppercase tracking-wider text-slate-700 mt-4 border-t-2 border-[#0f172a]/30 pt-3">
-                Languages Tested
+            <div className="brutalist-card p-6 bg-white">
+              <div className="font-mono text-xs font-bold uppercase tracking-widest text-[#71717a]">
+                04 // RESIDUAL
               </div>
-              <div className="font-hand text-xl text-slate-700 mt-1">Python, JS, TS, C++</div>
+              <div className="font-mono text-4xl font-extrabold text-[#09090b] mt-3">0.0%</div>
+              <div className="font-mono text-xs font-semibold text-[#52525b] mt-2 border-t border-zinc-200 pt-2">
+                Target capability erasure
+              </div>
             </div>
 
           </div>
@@ -150,126 +125,59 @@ function Hero() {
   );
 }
 
-/* ════════════ PROBLEM SECTION ════════════ */
-function ProblemSection() {
-  return (
-    <section className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#e5dec9] border-b-4 border-[#0f172a] halftone-dots">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
-        
-        {/* Folder / Cardboard Wrapper */}
-        <div className="cardboard p-6 sm:p-10 md:p-14 relative w-full">
-          {/* Header Badge seated cleanly inside */}
-          <div className="inline-block bg-[#ef4444] text-white px-4 py-1.5 font-mono font-black text-xs uppercase tracking-widest border-2 border-[#0f172a] shadow-[3px_3px_0_0_#0f172a] mb-8">
-            ⚠️ CASE FILE #409: THE PERMANENCE PROBLEM
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            
-            {/* Left Box */}
-            <div className="w-full">
-              <div className="stamp mb-6">CONFIDENTIAL</div>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-[#0f172a] leading-tight">
-                AI Models Cannot <br />
-                <span className="bg-[#fef08a] px-3 py-1 border-2 border-[#0f172a] inline-block my-3">Selectively Forget</span>
-              </h2>
-              <p className="mt-6 font-mono text-sm md:text-base text-slate-800 leading-relaxed">
-                Once trained, LLMs permanently memorize code, PII, and copyrighted content across millions of parameters.
-              </p>
-
-              <div className="mt-8 p-6 bg-white border-2 border-[#0f172a] shadow-[5px_5px_0_0_#0f172a] rotate-1">
-                <span className="font-hand text-2xl md:text-3xl font-bold text-[#ef4444]">
-                  "Retraining from scratch costs $100k+ every time a removal request arrives."
-                </span>
-              </div>
-            </div>
-
-            {/* Right Sticky Card Stack */}
-            <div className="space-y-6 w-full">
-              {[
-                { title: "Permanent Memorization", color: "bg-[#fef08a]", text: "Training data is baked directly into neural network weights." },
-                { title: "No Erase Button", color: "bg-[#bae6fd]", text: "Standard RLHF or fine-tuning only suppresses output — data remains accessible via jailbreaks." },
-                { title: "Prohibitive Retraining Cost", color: "bg-[#fbcfe8]", text: "Re-cleansing data and retraining full parameters is economically unfeasible." },
-                { title: "Right to be Forgotten", color: "bg-[#bbf7d0]", text: "Privacy compliance (GDPR/CCPA) requires verifiable data removal." },
-              ].map((item, idx) => (
-                <div 
-                  key={idx} 
-                  className={`sticky-note ${item.color} p-6 flex items-start gap-4 transition-all hover:translate-x-2 w-full`}
-                >
-                  <span className="font-mono font-black text-xl bg-[#0f172a] text-white w-8 h-8 flex items-center justify-center shrink-0">
-                    {idx + 1}
-                  </span>
-                  <div>
-                    <h3 className="font-mono text-sm md:text-base font-bold uppercase text-[#0f172a]">{item.title}</h3>
-                    <p className="font-mono text-xs md:text-sm text-slate-800 mt-1">{item.text}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-          </div>
-        </div>
-
-      </div>
-    </section>
-  );
-}
-
-/* ════════════ HOW IT WORKS ════════════ */
-function HowItWorks() {
-  const steps = [
-    { num: "01", title: "Upload Model", desc: "Upload any open-weight model (HuggingFace / Safetensors). System validates metadata & GPU specs.", tag: "Safetensors · HF", color: "bg-[#fef08a]", rot: "-rotate-2" },
-    { num: "02", title: "Explore Baseline", desc: "Run probing suite across 20 categories and 89 probes to record starting capabilities.", tag: "89 Probes Battery", color: "bg-[#bae6fd]", rot: "rotate-1" },
-    { num: "03", title: "Select Target", desc: "Define capability target (e.g. Python code generation) to selectively unlearn.", tag: "Target: Python", color: "bg-[#fbcfe8]", rot: "-rotate-1" },
-    { num: "04", title: "Run Unlearning", desc: "Execute gradient ascent on target dataset combined with gradient descent on retain set.", tag: "Dual Objective Loss", color: "bg-[#bbf7d0]", rot: "rotate-2" },
-    { num: "05", title: "Verify Results", desc: "Re-evaluate exact probes. Verify target dropped to ~0% while collateral skills remained intact.", tag: "Paraphrase Tests", color: "bg-[#fed7aa]", rot: "-rotate-2" },
-    { num: "06", title: "Audit Report", desc: "Generate reproducible PDF audit report with model weights diff and pass/fail verdict.", tag: "PASS / FAIL Audit", color: "bg-[#fef08a]", rot: "rotate-1" },
+/* ════════════ WHY IT MATTERS & IMPACT SECTION ════════════ */
+function ImpactSection() {
+  const impacts = [
+    {
+      title: "GDPR Article 17 & CCPA Model Erasure",
+      desc: "Privacy legislation mandates that individuals can request full data removal. Traditional fine-tuning fails compliance because weights retain training data.",
+      icon: Scale,
+    },
+    {
+      title: "Cost & Energy Efficiency ($100k+ Saved)",
+      desc: "Retraining a frontier model from scratch uses thousands of GPU hours and costs over $100,000. NullMind performs targeted unlearning in minutes.",
+      icon: Zap,
+    },
+    {
+      title: "Jailbreak Resilience vs. Fine-Tuning",
+      desc: "Standard RLHF or fine-tuning only suppresses output — jailbreaks easily extract hidden knowledge. Gradient unlearning alters weight representations.",
+      icon: Lock,
+    },
+    {
+      title: "Targeted Retraining & Knowledge Replacement",
+      desc: "Unlearn outdated or toxic capabilities, then seamlessly retrain with fresh, sanitized datasets while keeping retain sets intact.",
+      icon: RefreshCw,
+    },
   ];
 
   return (
-    <section id="how-it-works" className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
+    <section className="relative py-24 sm:py-32 bg-[#efeeea] border-b-2 border-[#09090b]">
+      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto">
         
-        {/* Header Tag */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-          <div>
-            <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-4">
-              📋 PROTOCOL PIPELINE
-            </div>
-            <h2 className="text-3xl md:text-5xl font-black text-[#0f172a] tracking-tight">
-              Six Steps to Verified Unlearning
-            </h2>
+        <div className="max-w-3xl mb-12">
+          <div className="brutalist-badge mb-3">
+            01 // WHY UNLEARNING MATTERS & OUR REAL IMPACT
           </div>
-          <div className="font-hand text-2xl md:text-3xl font-bold text-slate-700 bg-[#fef08a] px-5 py-2 border-2 border-[#0f172a] -rotate-2">
-            ~ Fully Reproducible Pipeline ~
-          </div>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#09090b] uppercase tracking-tight leading-tight">
+            The Model Memory Problem <br />& Why Retraining Breaks Down
+          </h2>
+          <p className="font-mono text-xs sm:text-sm text-[#52525b] mt-3 leading-relaxed">
+            Neural networks permanently bake training data across billions of parameters. Once trained, erasing specific data requires a dedicated optimization framework.
+          </p>
         </div>
 
-        {/* 6 Sticky Notes Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
-          {steps.map((step) => (
-            <div
-              key={step.num}
-              className={`sticky-note ${step.color} ${step.rot} p-7 md:p-9 flex flex-col justify-between min-h-[290px] w-full`}
-            >
-              <div className="tape tape-top-center"></div>
-
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {impacts.map((item) => (
+            <div key={item.title} className="brutalist-card p-6 md:p-8 bg-white flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between border-b-2 border-[#0f172a]/20 pb-3 mb-4">
-                  <span className="font-mono text-xs font-bold uppercase bg-[#0f172a] text-white px-2 py-0.5">
-                    STEP {step.num}
-                  </span>
-                  <span className="font-hand text-2xl font-bold text-slate-700">#probe</span>
+                <div className="w-10 h-10 bg-[#09090b] text-white flex items-center justify-center mb-4 border border-[#09090b]">
+                  <item.icon size={20} />
                 </div>
-
-                <h3 className="font-mono text-lg md:text-xl font-black text-[#0f172a] uppercase">{step.title}</h3>
-                <p className="font-mono text-xs md:text-sm font-bold text-slate-800 leading-relaxed mt-3">{step.desc}</p>
+                <h3 className="font-mono text-base font-extrabold text-[#09090b] uppercase">{item.title}</h3>
+                <p className="font-mono text-xs font-semibold text-[#52525b] leading-relaxed mt-2">{item.desc}</p>
               </div>
-
-              <div className="mt-6 pt-3 border-t-2 border-dashed border-[#0f172a]/30 flex items-center justify-between">
-                <span className="font-mono text-[11px] font-black uppercase text-slate-700 bg-white/70 px-2 py-1 border border-[#0f172a]/40">
-                  {step.tag}
-                </span>
-                <span className="text-base">📌</span>
+              <div className="font-mono text-[11px] text-[#71717a] mt-6 border-t border-zinc-200 pt-2">
+                // IMPACT SPECIFICATION
               </div>
             </div>
           ))}
@@ -280,83 +188,145 @@ function HowItWorks() {
   );
 }
 
-/* ════════════ VISUAL PIPELINE ════════════ */
+/* ════════════ PIPELINE SECTION ════════════ */
+function HowItWorks() {
+  const steps = [
+    { num: "01", title: "UPLOAD MODEL", desc: "Upload Safetensors or HuggingFace checkpoint. System parses model metadata, architecture & GPU requirements.", tag: "Safetensors · HF" },
+    { num: "02", title: "BASELINE PROBE", desc: "Run probing battery across 20+ categories & 89 tests to record starting capability baseline.", tag: "89 Probe Battery" },
+    { num: "03", title: "SELECT TARGET", desc: "Specify target capability domain (e.g. Python code generation, PII domain) to selectively erase.", tag: "Target Specification" },
+    { num: "04", title: "DUAL OPTIMIZE", desc: "Execute gradient ascent on forget set combined with gradient descent on retain set.", tag: "Dual Loss Objective" },
+    { num: "05", title: "SELECTIVE RETRAIN", desc: "Optionally retrain model on updated, sanitized replacement data without affecting preserved skills.", tag: "Targeted Retrain" },
+    { num: "06", title: "AUDIT REPORT", desc: "Generate reproducible PDF audit certificate detailing model weights diff and cryptographic hash.", tag: "PDF Audit Certificate" },
+  ];
+
+  return (
+    <section id="how-it-works" className="relative py-24 sm:py-32 bg-[#f7f6f2] arch-grid border-b-2 border-[#09090b]">
+      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto">
+        
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+          <div>
+            <div className="brutalist-badge mb-3">
+              02 // PROTOCOL PIPELINE
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#09090b] tracking-tight uppercase">
+              Six Steps to Verified Unlearning & Retraining
+            </h2>
+          </div>
+          <div className="font-mono text-xs font-bold uppercase text-[#52525b] border-2 border-[#09090b] px-3 py-1.5 bg-white shadow-[2px_2px_0_0_#09090b]">
+            // REPRODUCIBLE PIPELINE
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {steps.map((step) => (
+            <div key={step.num} className="brutalist-card p-6 md:p-8 flex flex-col justify-between min-h-[260px] bg-white">
+              <div>
+                <div className="flex items-center justify-between border-b-2 border-[#09090b] pb-3 mb-4">
+                  <span className="font-mono text-xs font-extrabold bg-[#09090b] text-white px-2 py-0.5">
+                    STEP {step.num}
+                  </span>
+                  <span className="font-mono text-xs font-bold text-[#71717a]">#PIPELINE</span>
+                </div>
+
+                <h3 className="font-mono text-lg font-extrabold text-[#09090b] uppercase">{step.title}</h3>
+                <p className="font-mono text-xs font-semibold text-[#52525b] leading-relaxed mt-3">{step.desc}</p>
+              </div>
+
+              <div className="mt-6 pt-3 border-t border-zinc-200 flex items-center justify-between">
+                <span className="font-mono text-[11px] font-bold uppercase text-[#09090b] bg-[#efeeea] px-2 py-0.5 border border-[#09090b]">
+                  {step.tag}
+                </span>
+                <span className="font-mono text-xs text-[#71717a]">→</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
+/* ════════════ SCIENTIFIC LOSS ARCHITECTURE ════════════ */
 function VisualPipeline() {
   return (
-    <section className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#f4efe4] border-b-4 border-[#0f172a] chart-grid-dense">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
+    <section className="relative py-24 sm:py-32 bg-[#efeeea] arch-grid-dense border-b-2 border-[#09090b]">
+      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto">
         
-        <div className="text-center mb-16">
-          <div className="stamp stamp-green mb-4">SCIENTIFIC DUAL LOSS</div>
-          <h2 className="text-3xl md:text-5xl font-black text-[#0f172a]">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <div className="brutalist-badge mb-3">
+            03 // MATHEMATICAL FORMULATION
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#09090b] uppercase tracking-tight">
             Retention-Aware Loss Architecture
           </h2>
         </div>
 
-        {/* Blueprint Chart Board */}
-        <div className="bg-white border-3 border-[#0f172a] p-6 md:p-10 lg:p-14 shadow-[10px_10px_0_0_#0f172a] relative w-full">
-          <div className="pushpin"></div>
+        <div className="brutalist-card p-6 md:p-10 bg-white">
+          
+          <div className="brutalist-card-dark p-6 text-center mb-8">
+            <div className="font-mono text-xs font-bold text-[#71717a] uppercase tracking-widest mb-2">
+              DUAL OPTIMIZATION LOSS FUNCTION
+            </div>
+            <div className="font-mono text-xl sm:text-2xl md:text-3xl font-extrabold text-white">
+              L_total = L_forget(θ) + λ · L_retain(θ)
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            {/* Phase 1 */}
-            <div className="bg-[#fef08a] border-2 border-[#0f172a] p-7 md:p-9 shadow-[5px_5px_0_0_#0f172a] relative -rotate-1 w-full">
-              <div className="absolute top-2 right-2 font-mono text-xs font-bold bg-[#0f172a] text-white px-2 py-0.5">
-                PHASE A
+            <div className="brutalist-card p-6 bg-[#f7f6f2]">
+              <div className="font-mono text-xs font-bold bg-[#09090b] text-white px-2 py-0.5 inline-block mb-3">
+                PHASE A // BASELINE
               </div>
-              <h3 className="font-mono text-lg md:text-xl font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4">
-                1. Baseline Score
+              <h3 className="font-mono text-base font-extrabold text-[#09090b] uppercase border-b border-zinc-300 pb-2 mb-3">
+                1. Capability Probe
               </h3>
-              <ul className="font-mono text-xs md:text-sm font-bold text-slate-800 space-y-3">
-                <li className="flex items-center gap-2">✓ Python Probes: 50.0%</li>
-                <li className="flex items-center gap-2">✓ JavaScript: 50.0%</li>
-                <li className="flex items-center gap-2">✓ TypeScript: 100.0%</li>
-                <li className="flex items-center gap-2">✓ C++ Probes: 75.0%</li>
+              <ul className="font-mono text-xs font-semibold text-[#52525b] space-y-2">
+                <li>✓ Python Accuracy: 50.0%</li>
+                <li>✓ JavaScript Accuracy: 50.0%</li>
+                <li>✓ TypeScript Accuracy: 100.0%</li>
+                <li>✓ C++ Accuracy: 75.0%</li>
               </ul>
             </div>
 
-            {/* Phase 2 */}
-            <div className="bg-[#fbcfe8] border-2 border-[#0f172a] p-7 md:p-9 shadow-[5px_5px_0_0_#0f172a] relative rotate-1 w-full">
-              <div className="absolute top-2 right-2 font-mono text-xs font-bold bg-[#0f172a] text-white px-2 py-0.5">
-                PHASE B
+            <div className="brutalist-card p-6 bg-[#f7f6f2]">
+              <div className="font-mono text-xs font-bold bg-[#09090b] text-white px-2 py-0.5 inline-block mb-3">
+                PHASE B // DUAL UNLEARN
               </div>
-              <h3 className="font-mono text-lg md:text-xl font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4">
-                2. Dual Unlearn
+              <h3 className="font-mono text-base font-extrabold text-[#09090b] uppercase border-b border-zinc-300 pb-2 mb-3">
+                2. Gradient Ascent
               </h3>
-              <div className="font-mono text-xs md:text-sm font-bold text-slate-800 space-y-3">
-                <div className="p-2.5 bg-white border border-[#0f172a]">
-                  🔥 Gradient Ascent: Target (Python)
+              <div className="font-mono text-xs font-semibold text-[#52525b] space-y-2">
+                <div className="p-2 bg-white border border-[#09090b]">
+                  ▲ Ascent: Target Set (Python)
                 </div>
-                <div className="p-2.5 bg-white border border-[#0f172a]">
-                  🛡️ Gradient Descent: Retain Set
-                </div>
-                <div className="font-hand text-2xl text-slate-700 text-center mt-3">
-                  L_total = L_forget + λ L_retain
+                <div className="p-2 bg-white border border-[#09090b]">
+                  ▼ Descent: Retain Set (JS/TS/C++)
                 </div>
               </div>
             </div>
 
-            {/* Phase 3 */}
-            <div className="bg-[#bbf7d0] border-2 border-[#0f172a] p-7 md:p-9 shadow-[5px_5px_0_0_#0f172a] relative -rotate-1 w-full">
-              <div className="absolute top-2 right-2 font-mono text-xs font-bold bg-[#0f172a] text-white px-2 py-0.5">
-                PHASE C
+            <div className="brutalist-card p-6 bg-[#f7f6f2]">
+              <div className="font-mono text-xs font-bold bg-[#09090b] text-white px-2 py-0.5 inline-block mb-3">
+                PHASE C // VERIFICATION
               </div>
-              <h3 className="font-mono text-lg md:text-xl font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-2 mb-4">
-                3. Verification
+              <h3 className="font-mono text-base font-extrabold text-[#09090b] uppercase border-b border-zinc-300 pb-2 mb-3">
+                3. Post-Edit Probe
               </h3>
-              <ul className="font-mono text-xs md:text-sm font-bold text-slate-800 space-y-3">
-                <li className="flex items-center gap-2 text-red-600 font-black">🎯 Python: 50% → 0.0% (UNLEARNED)</li>
-                <li className="flex items-center gap-2">✅ JavaScript: 50.0% (PRESERVED)</li>
-                <li className="flex items-center gap-2">✅ TypeScript: 100.0% (PRESERVED)</li>
-                <li className="flex items-center gap-2">✅ C++: 75.0% (PRESERVED)</li>
+              <ul className="font-mono text-xs font-semibold text-[#52525b] space-y-2">
+                <li className="text-[#09090b] font-bold">🎯 Python: 50% → 0.0% (UNLEARNED)</li>
+                <li>✓ JavaScript: 50.0% (PRESERVED)</li>
+                <li>✓ TypeScript: 100.0% (PRESERVED)</li>
+                <li>✓ C++: 75.0% (PRESERVED)</li>
               </ul>
             </div>
 
           </div>
 
-          <div className="mt-12 text-center">
-            <span className="inline-block bg-[#0f172a] text-[#fef08a] font-mono text-xs md:text-sm font-bold uppercase tracking-widest px-6 py-4 border-2 border-[#0f172a] shadow-[4px_4px_0_0_#0f172a]">
-              ⚡ RESULT: TARGET CAPABILITY REDUCED WHILE PRESERVING RETAINED SKILLS
+          <div className="mt-8 text-center">
+            <span className="inline-block font-mono text-xs font-extrabold uppercase text-[#09090b] bg-[#efeeea] border-2 border-[#09090b] px-4 py-2 shadow-[2px_2px_0_0_#09090b]">
+              RESULT: TARGET CAPABILITY REDUCED TO 0% WHILE PRESERVING RETENTION DOMAINS
             </span>
           </div>
         </div>
@@ -366,45 +336,42 @@ function VisualPipeline() {
   );
 }
 
-/* ════════════ FEATURES SECTION ════════════ */
+/* ════════════ ENGINE FEATURES ════════════ */
 function Features() {
   const features = [
-    { title: "Evidence-Based", desc: "No opaque internal model weight claims. All unlearning is validated via controlled probing.", color: "bg-[#fef08a]", icon: Shield },
-    { title: "Version Lineage", desc: "Every experiment creates an immutable checkpoint version. Original models are untouched.", color: "bg-[#bae6fd]", icon: GitBranch },
-    { title: "Dual Objective", desc: "Retain-aware loss prevents model degradation while erasing targeted capability domains.", color: "bg-[#fbcfe8]", icon: Layers },
-    { title: "GPU Worker Queue", desc: "Async Celery background tasks handle model loading and gradient computation seamlessly.", color: "bg-[#bbf7d0]", icon: Cpu },
-    { title: "Full Provenance", desc: "Complete reproducibility log with dataset hashes, learning rates, and seed tracking.", color: "bg-[#fed7aa]", icon: Database },
-    { title: "Robustness Suite", desc: "Paraphrase and adversarial prompt tests ensure unlearning resists simple jailbreaks.", color: "bg-[#fef08a]", icon: FlaskConical },
+    { title: "EVIDENCE-BASED", desc: "No opaque weight assertions. All unlearning is validated via controlled probe batteries.", icon: Shield },
+    { title: "VERSION LINEAGE", desc: "Every experiment produces an immutable checkpoint version. Original models remain untouched.", icon: GitBranch },
+    { title: "DUAL OBJECTIVE", desc: "Retain-aware loss prevents model degradation while removing targeted capability domains.", icon: Layers },
+    { title: "ASYNC WORKERS", desc: "Background Celery task queues handle model loading and gradient computation seamlessly.", icon: Cpu },
+    { title: "FULL PROVENANCE", desc: "Complete reproducibility log with dataset hashes, learning rates, and seed tracking.", icon: Database },
+    { title: "ROBUSTNESS SUITE", desc: "Paraphrase and adversarial prompt tests verify unlearning resists jailbreak prompts.", icon: Terminal },
   ];
 
   return (
-    <section id="features" className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#e5dec9] border-b-4 border-[#0f172a] halftone-dots">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
+    <section id="features" className="relative py-24 sm:py-32 bg-[#f7f6f2] arch-grid border-b-2 border-[#09090b]">
+      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto">
         
-        <div className="mb-16">
-          <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-3">
-            ⚙️ ENGINE CAPABILITIES
+        <div className="mb-12">
+          <div className="brutalist-badge mb-3">
+            04 // ENGINE CAPABILITIES
           </div>
-          <h2 className="text-3xl md:text-5xl font-black text-[#0f172a]">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#09090b] uppercase tracking-tight">
             Built for Rigorous ML Research
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((f, i) => (
-            <div
-              key={f.title}
-              className={`sticky-note ${f.color} p-7 md:p-9 flex flex-col justify-between w-full`}
-            >
+            <div key={f.title} className="brutalist-card p-6 md:p-8 flex flex-col justify-between bg-white">
               <div>
-                <div className="w-12 h-12 bg-[#0f172a] text-white flex items-center justify-center mb-5 border border-[#0f172a]">
-                  <f.icon size={22} />
+                <div className="w-10 h-10 bg-[#09090b] text-white flex items-center justify-center mb-4 border border-[#09090b]">
+                  <f.icon size={20} />
                 </div>
-                <h3 className="font-mono text-lg font-black text-[#0f172a] uppercase">{f.title}</h3>
-                <p className="font-mono text-xs md:text-sm font-bold text-slate-800 leading-relaxed mt-3">{f.desc}</p>
+                <h3 className="font-mono text-base font-extrabold text-[#09090b] uppercase">{f.title}</h3>
+                <p className="font-mono text-xs font-semibold text-[#52525b] leading-relaxed mt-2">{f.desc}</p>
               </div>
-              <div className="font-hand text-xl text-slate-600 mt-6 text-right">
-                #feature-{i + 1}
+              <div className="font-mono text-[11px] text-[#71717a] mt-6 border-t border-zinc-200 pt-2">
+                // SPEC-0{i + 1}
               </div>
             </div>
           ))}
@@ -415,7 +382,7 @@ function Features() {
   );
 }
 
-/* ════════════ REAL RESULTS SCORECARD ════════════ */
+/* ════════════ RESULTS SCORECARD ════════════ */
 function Results() {
   const results = [
     { cap: "Python", before: "50.0%", after: "0.0%", delta: "-50.0%", isTarget: true },
@@ -426,41 +393,41 @@ function Results() {
   ];
 
   return (
-    <section className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#fef08a] border-b-4 border-[#0f172a] chart-grid">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
+    <section id="results" className="relative py-24 sm:py-32 bg-[#efeeea] border-b-2 border-[#09090b]">
+      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto">
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           
-          {/* Left Column */}
-          <div className="w-full">
-            <div className="stamp stamp-green mb-4">PROOFS OF CONCEPT</div>
-            <h2 className="text-3xl md:text-5xl font-black text-[#0f172a] leading-tight">
+          <div className="lg:col-span-5">
+            <div className="brutalist-badge mb-3">
+              05 // BENCHMARK SCORECARD
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#09090b] uppercase tracking-tight leading-tight">
               Real Evaluation Scorecard
             </h2>
-            <p className="font-mono text-sm md:text-base text-slate-800 leading-relaxed mt-4">
-              Tested on <span className="bg-black text-white px-2 py-0.5 font-mono text-xs md:text-sm">Salesforce/codegen-350M</span>.
+            <p className="font-mono text-xs sm:text-sm text-[#52525b] leading-relaxed mt-3">
+              Tested on <span className="font-bold text-[#09090b]">Salesforce/codegen-350M</span> checkpoint.
             </p>
 
-            <div className="mt-8 p-6 md:p-8 bg-white border-2 border-[#0f172a] shadow-[6px_6px_0_0_#0f172a] -rotate-1 w-full">
-              <div className="flex items-center gap-4">
-                <CheckCircle2 size={32} className="text-green-600 shrink-0" />
+            <div className="mt-6 brutalist-card p-6 bg-white">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 size={24} className="text-[#09090b] shrink-0" />
                 <div>
-                  <div className="font-mono text-base md:text-lg font-black text-[#0f172a] uppercase">VERDICT: PASS</div>
-                  <div className="font-mono text-xs md:text-sm text-slate-700 mt-1">Target Python capability eliminated with 0 collateral damage on JS/TS/C++.</div>
+                  <div className="font-mono text-sm font-extrabold text-[#09090b] uppercase">VERDICT: PASS AUDIT</div>
+                  <div className="font-mono text-xs text-[#52525b] mt-1">Target Python capability eliminated with zero collateral loss on JS/TS/C++.</div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Chart Table */}
-          <div className="bg-white border-3 border-[#0f172a] shadow-[8px_8px_0_0_#0f172a] p-5 md:p-7 rotate-1 w-full">
-            <div className="font-mono text-xs md:text-sm font-black uppercase bg-[#0f172a] text-white p-4 flex justify-between items-center mb-4">
+          <div className="lg:col-span-7 brutalist-card p-5 bg-white">
+            <div className="font-mono text-xs font-extrabold uppercase bg-[#09090b] text-white p-3 flex justify-between items-center mb-3">
               <span>EVALUATION METRICS TABLE</span>
-              <span className="text-[#fef08a]">codegen-350m-v2</span>
+              <span>codegen-350m-v2</span>
             </div>
 
-            <div className="divide-y-2 divide-[#0f172a]">
-              <div className="grid grid-cols-4 font-mono text-xs font-black text-slate-600 p-3 bg-[#f4efe4]">
+            <div className="divide-y-2 divide-[#09090b]">
+              <div className="grid grid-cols-4 font-mono text-xs font-extrabold text-[#71717a] p-3 bg-[#f7f6f2]">
                 <div>CAPABILITY</div>
                 <div className="text-center">BEFORE</div>
                 <div className="text-center">AFTER</div>
@@ -470,18 +437,18 @@ function Results() {
               {results.map((r) => (
                 <div 
                   key={r.cap} 
-                  className={`grid grid-cols-4 font-mono text-xs md:text-sm font-bold p-4 items-center ${
-                    r.isTarget ? "bg-[#fbcfe8]" : "hover:bg-[#f4efe4]"
+                  className={`grid grid-cols-4 font-mono text-xs sm:text-sm font-semibold p-3.5 items-center ${
+                    r.isTarget ? "bg-[#f7f6f2] font-bold" : "hover:bg-[#f7f6f2]/50"
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 font-black text-[#0f172a]">
-                    {r.isTarget && <Target size={16} className="text-red-600 shrink-0" />}
+                  <div className="flex items-center gap-1.5 font-bold text-[#09090b]">
+                    {r.isTarget && <Target size={14} className="text-[#09090b] shrink-0" />}
                     {r.cap}
-                    {r.isTarget && <span className="text-[9px] bg-red-600 text-white px-1 ml-1 hidden sm:inline-block">TARGET</span>}
+                    {r.isTarget && <span className="text-[9px] bg-[#09090b] text-white px-1 ml-1 hidden sm:inline-block">TARGET</span>}
                   </div>
-                  <div className="text-center text-slate-700">{r.before}</div>
-                  <div className="text-center text-slate-700">{r.after}</div>
-                  <div className={`text-center font-black ${r.isTarget ? "text-red-600" : "text-slate-500"}`}>
+                  <div className="text-center text-[#52525b]">{r.before}</div>
+                  <div className="text-center text-[#52525b]">{r.after}</div>
+                  <div className={`text-center font-extrabold ${r.isTarget ? "text-[#09090b]" : "text-[#71717a]"}`}>
                     {r.delta}
                   </div>
                 </div>
@@ -496,48 +463,44 @@ function Results() {
   );
 }
 
-/* ════════════ RESEARCH TRANSPARENCY MEMO ════════════ */
+/* ════════════ RESEARCH TRANSPARENCY ════════════ */
 function ResearchSection() {
   return (
-    <section id="research" className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#eae5d9] border-b-4 border-[#0f172a] halftone-dots">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
+    <section id="research" className="relative py-24 sm:py-32 bg-[#f7f6f2] arch-grid border-b-2 border-[#09090b]">
+      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto">
         
-        <div className="text-center mb-16">
-          <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-3">
-            🔬 TRANSPARENCY NOTICE
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <div className="brutalist-badge mb-3">
+            06 // TRANSPARENCY NOTICE
           </div>
-          <h2 className="text-3xl md:text-5xl font-black text-[#0f172a]">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#09090b] uppercase tracking-tight">
             What We Do (And Don't Claim)
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
-          {/* Memo 1: What We Do */}
-          <div className="sticky-note bg-[#bbf7d0] p-8 md:p-10 -rotate-1 w-full">
-            <div className="tape tape-top-left"></div>
-            <h3 className="font-mono text-lg md:text-xl font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-3 mb-5 flex items-center gap-2">
-              <CheckCircle2 size={22} className="text-green-700" /> WHAT WE DO
+          <div className="brutalist-card p-6 md:p-8 bg-white">
+            <h3 className="font-mono text-base font-extrabold text-[#09090b] uppercase border-b-2 border-[#09090b] pb-3 mb-4 flex items-center gap-2">
+              <CheckCircle2 size={20} className="text-[#09090b]" /> WHAT WE DO
             </h3>
-            <ul className="font-mono text-xs md:text-sm font-bold text-slate-800 space-y-4">
-              <li className="flex items-start gap-2.5"><span>✓</span> Gradient-based model editing to reduce specific capabilities</li>
-              <li className="flex items-start gap-2.5"><span>✓</span> Controlled probing battery to measure output differences</li>
-              <li className="flex items-start gap-2.5"><span>✓</span> Retain-aware optimization to preserve un-targeted skills</li>
-              <li className="flex items-start gap-2.5"><span>✓</span> Robustness tests against paraphrased and indirect prompts</li>
+            <ul className="font-mono text-xs sm:text-sm font-semibold text-[#52525b] space-y-3">
+              <li className="flex items-start gap-2"><span>■</span> Gradient-based model editing to reduce specific capability domains</li>
+              <li className="flex items-start gap-2"><span>■</span> Controlled probing battery to empirically measure output delta</li>
+              <li className="flex items-start gap-2"><span>■</span> Retain-aware optimization loss to preserve collateral skills</li>
+              <li className="flex items-start gap-2"><span>■</span> Robustness tests against paraphrased and indirect prompts</li>
             </ul>
           </div>
 
-          {/* Memo 2: What We Don't Claim */}
-          <div className="sticky-note bg-[#fbcfe8] p-8 md:p-10 rotate-1 w-full">
-            <div className="tape tape-top-right"></div>
-            <h3 className="font-mono text-lg md:text-xl font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-3 mb-5 flex items-center gap-2">
-              <XCircle size={22} className="text-red-600" /> WHAT WE DON'T CLAIM
+          <div className="brutalist-card p-6 md:p-8 bg-white">
+            <h3 className="font-mono text-base font-extrabold text-[#09090b] uppercase border-b-2 border-[#09090b] pb-3 mb-4 flex items-center gap-2">
+              <XCircle size={20} className="text-[#09090b]" /> WHAT WE DON'T CLAIM
             </h3>
-            <ul className="font-mono text-xs md:text-sm font-bold text-slate-800 space-y-4">
-              <li className="flex items-start gap-2.5"><span>✕</span> We do NOT inspect internal model weights or neural representations</li>
-              <li className="flex items-start gap-2.5"><span>✕</span> We do NOT claim 100% mathematical knowledge deletion</li>
-              <li className="flex items-start gap-2.5"><span>✕</span> We do NOT guarantee theoretical machine unlearning proofs</li>
-              <li className="flex items-start gap-2.5"><span>✕</span> Results are empirical and based strictly on probe performance</li>
+            <ul className="font-mono text-xs sm:text-sm font-semibold text-[#52525b] space-y-3">
+              <li className="flex items-start gap-2"><span>□</span> We do NOT inspect internal model weights or neural representations</li>
+              <li className="flex items-start gap-2"><span>□</span> We do NOT claim 100% mathematical knowledge deletion guarantees</li>
+              <li className="flex items-start gap-2"><span>□</span> We do NOT guarantee theoretical unlearning proofs across all jailbreaks</li>
+              <li className="flex items-start gap-2"><span>□</span> Results are empirical and evaluated strictly on probe performance</li>
             </ul>
           </div>
 
@@ -548,29 +511,27 @@ function ResearchSection() {
   );
 }
 
-/* ════════════ CTA & FOOTER ════════════ */
+/* ════════════ CTA SECTION ════════════ */
 function CTASection() {
   return (
-    <section className="relative min-h-[70vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#f4efe4] border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto text-center my-auto">
+    <section className="relative py-20 sm:py-28 bg-[#efeeea]">
+      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto">
         
-        <div className="sticky-note bg-[#fef08a] p-10 md:p-16 rotate-1 relative w-full">
-          <div className="pushpin"></div>
-          
-          <h2 className="text-3xl md:text-5xl font-black text-[#0f172a] leading-tight">
-            Ready to Unlearn Your Models?
+        <div className="brutalist-card p-10 md:p-14 text-center bg-white">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#09090b] uppercase tracking-tight leading-tight max-w-3xl mx-auto">
+            Ready to Unlearn & Retrain Your Models?
           </h2>
           
-          <p className="font-mono text-sm md:text-base lg:text-lg font-bold text-slate-800 mt-4 max-w-2xl mx-auto">
+          <p className="font-mono text-xs sm:text-sm font-semibold text-[#52525b] mt-4 max-w-xl mx-auto">
             Upload your model checkpoint, run probe baseline, select target capability, and verify unlearning within minutes.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-5 mt-12">
-            <Link href="/signup" className="btn-sticky text-base py-4 px-9">
-              Start Free Trial 📌
+          <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
+            <Link href="/signup" className="brutalist-btn-primary text-sm py-3.5 px-8">
+              Start Free Trial →
             </Link>
-            <Link href="/#how-it-works" className="btn-tape text-base py-4 px-9">
-              Read Documentation 📖
+            <Link href="/docs" className="brutalist-btn-secondary text-sm py-3.5 px-8">
+              Read Documentation ↗
             </Link>
           </div>
         </div>
@@ -580,13 +541,13 @@ function CTASection() {
   );
 }
 
-/* ════════════ MAIN PAGE ════════════ */
+/* ════════════ MAIN HOME PAGE ════════════ */
 export default function Home() {
   return (
-    <main className="pt-[72px]">
+    <main className="pt-[68px] bg-[#f7f6f2] min-h-screen">
       <Header />
       <Hero />
-      <ProblemSection />
+      <ImpactSection />
       <HowItWorks />
       <VisualPipeline />
       <Features />

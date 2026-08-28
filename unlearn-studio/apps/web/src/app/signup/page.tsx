@@ -42,114 +42,126 @@ export default function SignupPage() {
   const isFormValid = name.length > 0 && email.length > 0 && passwordChecks.every((c) => c.met);
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-[#f7f6f2] font-sans">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-[55%] bg-ink text-white flex-col justify-between p-12 xl:p-16 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-highlight/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-white/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
-
-        <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
-              <span className="font-serif font-bold text-sm italic text-white">N</span>
+      <div className="hidden lg:flex lg:w-[48%] bg-[#09090b] text-white flex-col justify-between p-12 xl:p-16 border-r-2 border-[#09090b]">
+        <div>
+          <Link href="/" className="flex items-center gap-3">
+            <div className="bg-white text-[#09090b] border-2 border-white px-3 py-1 font-mono font-black text-lg">
+              NULLMIND
             </div>
-            <span className="font-serif font-bold text-xl text-white">
-              Null<span className="italic">Mind</span>
+            <span className="font-mono text-xs font-bold text-zinc-400 uppercase tracking-widest">
+              // STUDIO v1.0
             </span>
           </Link>
         </div>
 
-        <div className="relative z-10">
-          <h1 className="text-[clamp(2.5rem,4vw,4rem)] font-bold leading-[1.1] tracking-[-0.02em] mb-5">
-            Start<br />
-            <span className="font-serif italic text-highlight">Unlearning</span>
+        <div className="space-y-6">
+          <div className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-400">
+            [ REGISTRATION GATEWAY ]
+          </div>
+          <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight uppercase leading-tight font-sans">
+            START <br />
+            <span className="bg-white text-[#09090b] px-3 py-1 inline-block mt-2">
+              UNLEARNING MODELS
+            </span>
           </h1>
-          <p className="text-white/50 text-lg max-w-md leading-relaxed">
-            Upload models, explore capabilities,
-            run experiments, verify results.
+          <p className="font-mono text-xs text-zinc-400 leading-relaxed max-w-md">
+            Create an account to access the model evaluation engine, define custom probe categories, and generate audit reports.
           </p>
+
+          <div className="space-y-3 font-mono text-xs border-t border-zinc-800 pt-6">
+            {[
+              "Full access to the 89-probe evaluation engine",
+              "Dual objective unlearning (Ascent + Retain loss)",
+              "Safetensors & HuggingFace integration",
+              "PDF audit report generation with weights diff",
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-2 text-zinc-300">
+                <CheckCircle2 size={14} className="text-white shrink-0" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="relative z-10 space-y-3">
-          {[
-            "Full access to the evaluation engine",
-            "Two unlearning methods included",
-            "89-probe evaluation suite",
-            "Detailed experiment reports",
-          ].map((item) => (
-            <div key={item} className="flex items-center gap-3 text-white/40 text-sm">
-              <CheckCircle2 size={15} className="text-success shrink-0" />
-              <span>{item}</span>
-            </div>
-          ))}
+        <div className="flex items-center gap-4 text-xs text-zinc-500 font-mono">
+          <span>// OPEN-SOURCE RESEARCH PLATFORM</span>
         </div>
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-10">
-        <div className="w-full max-w-[400px]">
-          <Link href="/" className="flex items-center gap-2.5 mb-12 lg:hidden">
-            <div className="w-9 h-9 bg-ink rounded-lg flex items-center justify-center">
-              <span className="font-serif font-bold text-sm italic text-white">N</span>
+      <div className="flex-1 flex items-center justify-center p-6 md:p-10 bg-[#f7f6f2] arch-grid">
+        <div className="w-full max-w-[420px] brutalist-card p-8 bg-white">
+          <Link href="/" className="flex items-center gap-2 mb-8 lg:hidden">
+            <div className="bg-[#09090b] text-white border-2 border-[#09090b] px-3 py-1 font-mono font-black text-sm">
+              NULLMIND
             </div>
-            <span className="font-serif font-bold text-xl">Null<span className="italic">Mind</span></span>
           </Link>
 
-          <h2 className="text-3xl font-bold tracking-[-0.02em] mb-2">Sign Up</h2>
-          <p className="text-ink-muted mb-6">Create your account or use a provider.</p>
+          <div className="brutalist-badge mb-2">CREATE ACCOUNT</div>
+          <h2 className="text-2xl font-extrabold uppercase font-sans tracking-tight mb-1 text-[#09090b]">Sign Up</h2>
+          <p className="font-mono text-xs text-[#52525b] mb-6">Create your account or continue with an OAuth provider.</p>
 
           <OAuthButtons mode="signup" onError={setError} />
 
           {error && (
-            <div className="flex items-center gap-2 text-sm text-error mt-4 p-3 rounded-lg bg-error/5 border border-error/20">
-              <AlertCircle size={16} />{error}
+            <div className="flex items-center gap-2 font-mono text-xs text-[#09090b] mt-4 p-3 bg-red-50 border-2 border-[#09090b]">
+              <AlertCircle size={16} />
+              {error}
             </div>
           )}
 
           <form onSubmit={handleSignup} className="space-y-4 mt-6">
             <div>
-              <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-ink-muted block mb-2">Name</label>
+              <label className="font-mono text-[11px] font-bold tracking-wider uppercase text-[#09090b] block mb-1.5">
+                Full Name
+              </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => { setName(e.target.value); setError(""); }}
-                placeholder="Your name"
-                className="w-full bg-bg border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-ink focus:ring-1 focus:ring-ink/10 transition-all"
+                placeholder="Researcher Name"
+                className="w-full bg-[#f7f6f2] border-2 border-[#09090b] px-4 py-3 font-mono text-xs text-[#09090b] focus:outline-none focus:bg-white transition-all"
                 required
               />
             </div>
             <div>
-              <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-ink-muted block mb-2">Email</label>
+              <label className="font-mono text-[11px] font-bold tracking-wider uppercase text-[#09090b] block mb-1.5">
+                Email Address
+              </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(""); }}
                 placeholder="you@example.com"
-                className="w-full bg-bg border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-ink focus:ring-1 focus:ring-ink/10 transition-all"
+                className="w-full bg-[#f7f6f2] border-2 border-[#09090b] px-4 py-3 font-mono text-xs text-[#09090b] focus:outline-none focus:bg-white transition-all"
                 required
               />
             </div>
             <div>
-              <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-ink-muted block mb-2">Password</label>
+              <label className="font-mono text-[11px] font-bold tracking-wider uppercase text-[#09090b] block mb-1.5">
+                Password
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(""); }}
                   placeholder="••••••••"
-                  className="w-full bg-bg border border-border rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-ink focus:ring-1 focus:ring-ink/10 transition-all pr-11"
+                  className="w-full bg-[#f7f6f2] border-2 border-[#09090b] px-4 py-3 font-mono text-xs text-[#09090b] focus:outline-none focus:bg-white transition-all pr-11"
                   required
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-subtle hover:text-ink transition-colors">
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#09090b]">
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {password.length > 0 && (
                 <div className="mt-2.5 space-y-1.5">
                   {passwordChecks.map((check) => (
-                    <div key={check.label} className="flex items-center gap-2 text-xs font-mono">
-                      <CheckCircle2 size={12} className={check.met ? "text-success" : "text-border"} />
-                      <span className={check.met ? "text-success" : "text-ink-subtle"}>{check.label}</span>
+                    <div key={check.label} className="flex items-center gap-2 font-mono text-xs">
+                      <CheckCircle2 size={13} className={check.met ? "text-[#09090b]" : "text-zinc-300"} />
+                      <span className={check.met ? "text-[#09090b] font-bold" : "text-[#71717a]"}>{check.label}</span>
                     </div>
                   ))}
                 </div>
@@ -159,15 +171,15 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading || authLoading || !isFormValid}
-              className="btn-primary w-full justify-center py-3.5 mt-2 disabled:opacity-50"
+              className="brutalist-btn-primary w-full py-3.5 mt-2 text-xs disabled:opacity-50"
             >
-              {loading || authLoading ? <span className="animate-pulse">Creating account...</span> : <>Create Account <ArrowRight size={16} /></>}
+              {loading || authLoading ? <span className="animate-pulse">Creating Account...</span> : <>Create Account <ArrowRight size={14} /></>}
             </button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-ink-muted">
+          <p className="mt-8 text-center font-mono text-xs text-[#52525b]">
             Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-ink hover:text-highlight transition-colors">Log in</Link>
+            <Link href="/login" className="font-extrabold text-[#09090b] hover:underline">Log in →</Link>
           </p>
         </div>
       </div>
