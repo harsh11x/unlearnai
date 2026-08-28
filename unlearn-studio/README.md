@@ -1,45 +1,29 @@
 <div align="center">
 
-<!-- ── Logo ── -->
-<img src="https://img.shields.io/badge/NULLMIND-Black?style=for-the-badge&labelColor=111111&color=c8a44e&labelColor=111111" width="400" />
+# Unlearn Studio
+
+### Make AI Models Smaller, Faster, Smarter
+
+*Analyze → Identify → Erase → Retrain → Verify → Deploy*
 
 <br />
-<br />
-
-<!-- ── Tagline ── -->
-
-### Selective AI Model Unlearning Platform
-
-*Understand → Edit → Forget → Learn → Verify → Version → Deploy*
-
-<br />
-
-<!-- ── Badges ── -->
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
 ![License](https://img.shields.io/badge/license-Research%20Only-gray?style=flat-square)
 ![Status](https://img.shields.io/badge/status-V1%20Proof%20of%20Concept-yellow?style=flat-square)
-
-<br />
-
-<!-- ── Quick Links ── -->
-
-[![Documentation](https://img.shields.io/badge/📖-Documentation-c8a44e?style=for-the-badge)](#-documentation)
-[![Quick Start](https://img.shields.io/badge/⚡-Quick%20Start-111111?style=for-the-badge)](#-quick-start)
-[![API Reference](https://img.shields.io/badge/🔌-API%20Reference-111111?style=for-the-badge)](#-api-reference)
-[![Research](https://img.shields.io/badge/🔬-Research-111111?style=for-the-badge)](#-scientific-methodology)
 
 </div>
 
 ---
 
-## What is NullMind?
+## What is Unlearn Studio?
 
-NullMind is an **evidence-based platform** for selectively reducing specific capabilities in language models while preserving unrelated knowledge.
+Unlearn Studio is an **evidence-based platform** for selectively reducing specific capabilities in language models while preserving unrelated knowledge.
 
 It is **not** a theoretical machine unlearning system. It does **not** inspect or modify knowledge stored in neural network weights directly. Instead, it uses **controlled probing experiments** to measure, edit, and verify observed model capabilities.
 
@@ -56,11 +40,11 @@ It is **not** a theoretical machine unlearning system. It does **not** inspect o
 
 ---
 
-## Why NullMind?
+## Why Unlearn Studio?
 
 Modern AI models encode knowledge as distributed representations across billions of parameters. There is currently no reliable way to surgically remove a single fact or capability from a trained model.
 
-**NullMind addresses this gap** by providing:
+**Unlearn Studio addresses this gap** by providing:
 
 - **Capability Explorer** — Probe and measure what a model can do across 20+ categories
 - **Selective Unlearning** — Gradient-based methods to reduce specific capabilities
@@ -77,7 +61,7 @@ Modern AI models encode knowledge as distributed representations across billions
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     NULLMIND PIPELINE                           │
+│                   UNLEARN STUDIO PIPELINE                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐ │
@@ -140,7 +124,7 @@ Tested with **Salesforce/codegen-350M-multi** (304M parameters):
 
 | Layer | Technology | Purpose |
 |:---|:---|:---|
-| **Frontend** | Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 | Premium web UI with IDE-like workspace |
+| **Frontend** | Next.js 15 · React 19 · TypeScript · Tailwind CSS 4 | Landing page with interactive visualizations |
 | **Authentication** | NextAuth.js 5 · Firebase Auth · Google & GitHub OAuth | Secure multi-provider auth |
 | **Backend** | Python 3.11 · FastAPI · Pydantic | REST API with structured validation |
 | **ML Pipeline** | PyTorch 2.x · HuggingFace Transformers & Datasets | Model loading, probing, unlearning |
@@ -196,7 +180,7 @@ Starts all services:
 
 | Service | Port | Description |
 |:---|:---:|:---|
-| Next.js Frontend | `3000` | Web UI with IDE workspace |
+| Next.js Landing Page | `3000` | Landing page with interactive visualizations |
 | FastAPI Backend | `8000` | REST API |
 | PostgreSQL | `5432` | Primary database |
 | Redis | `6379` | Job queue |
@@ -262,7 +246,7 @@ curl -X POST http://localhost:8000/api/v1/models/1/unlearn \
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         NULLMIND SYSTEM                             │
+│                       UNLEARN STUDIO SYSTEM                       │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │  ┌─────────────────────┐         ┌─────────────────────────┐       │
@@ -312,7 +296,7 @@ curl -X POST http://localhost:8000/api/v1/models/1/unlearn \
 
 ### Evaluation Framework
 
-NullMind uses **controlled probing experiments** — not internal weight inspection — to measure observed capabilities.
+Unlearn Studio uses **controlled probing experiments** — not internal weight inspection — to measure observed capabilities.
 
 <div align="center">
 
@@ -391,15 +375,25 @@ The `retain_weight` parameter controls how aggressively the model preserves non-
 ## Project Structure
 
 ```
-nullmind/
+unlearn-studio/
 ├── apps/
-│   └── web/                          # Next.js frontend
+│   └── web/                          # Next.js landing page & web app
 │       ├── src/
-│       │   ├── app/                  # Pages: /, /login, /signup, /dashboard
-│       │   ├── components/           # Header, OAuthButtons, SessionProvider
-│       │   ├── lib/                  # Firebase, auth helpers
-│       │   └── auth.ts              # NextAuth configuration
-│       └── vercel.json              # Vercel deployment config
+│       │   ├── app/                  # App router: page.tsx, layout.tsx
+│       │   │   ├── globals.css       # Tailwind v4 theme, design tokens
+│       │   │   ├── layout.tsx       # Root layout with fonts
+│       │   │   └── page.tsx         # Landing page
+│       │   └── components/           # UI & interactive visualizations
+│       │       ├── Header.tsx       # Sticky nav
+│       │       ├── Footer.tsx       # Site footer
+│       │       ├── NeuralNetworkCanvas.tsx   # Canvas neural net viz
+│       │       ├── NodeErasureSandbox.tsx    # Interactive sandbox
+│       │       ├── ComputeCalculator.tsx     # Savings calculator
+│       │       └── HowItWorks.tsx            # 4-step pipeline viz
+│       ├── package.json
+│       ├── tsconfig.json
+│       ├── next.config.ts
+│       └── postcss.config.mjs
 │
 ├── services/
 │   ├── api/                          # FastAPI backend
@@ -530,10 +524,6 @@ Research use only. See [LICENSE](LICENSE) for details.
 
 ### Built with scientific rigor.
 
-**[NullMind](https://github.com/harsh11x/unlearnai)** — Selective AI Model Unlearning
-
-<br />
-
-![Footer](https://img.shields.io/badge/NULLMIND-111111?style=for-the-badge&labelColor=111111&color=c8a44e&labelColor=111111)
+**[Unlearn Studio](https://github.com/harsh11x/unlearnai)** — Make AI Models Smaller, Faster, Smarter
 
 </div>
