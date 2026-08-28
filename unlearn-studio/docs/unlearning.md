@@ -2,7 +2,7 @@
 
 ## Overview
 
-NullMind implements gradient-based model editing methods. These methods modify model weights to reduce specific capabilities while attempting to preserve others.
+Remap Studios implements gradient-based model editing methods. These methods modify model weights to reduce specific capabilities while attempting to preserve others.
 
 **Important**: These are NOT theoretical machine unlearning methods. They perform empirical model editing that must be verified through evaluation.
 

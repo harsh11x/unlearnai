@@ -14,7 +14,7 @@ export default function Header() {
             <span className="text-accent-inv text-xs font-bold font-display">U</span>
           </div>
           <span className="font-display font-bold text-lg tracking-tight text-text">
-            unlearn<span className="text-text-subtle font-normal">studio</span>
+            text-remap<span className="text-text-subtle font-normal">studios</span>
           </span>
         </a>
 

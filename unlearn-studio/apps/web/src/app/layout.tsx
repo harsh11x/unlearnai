@@ -21,9 +21,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Unlearn Studio — Make AI Models Smaller, Faster, Smarter",
+  title: "Remap Studios — Make AI Models Smaller, Faster, Smarter",
   description:
-    "Unlearn unnecessary knowledge from AI models. Reduce compute costs, shrink model size, and retrain leaner — without losing accuracy.",
+    "Remap unnecessary knowledge from AI models. Reduce compute costs, shrink model size, and retrain leaner — without losing accuracy.",
 };
 
 export default function RootLayout({

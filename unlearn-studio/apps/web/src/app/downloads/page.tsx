@@ -14,7 +14,7 @@ const PLATFORMS = [
         name: "Apple Silicon",
         arch: "arm64",
         tag: "Recommended for M1/M2/M3/M4",
-        file: "Unlearn Studio-1.0.0-arm64.dmg",
+        file: "Remap Studios-1.0.0-arm64.dmg",
         size: "~94 MB",
         format: "DMG",
         primary: true,
@@ -23,7 +23,7 @@ const PLATFORMS = [
         name: "Intel Mac",
         arch: "x64",
         tag: "For 2019 and earlier Macs",
-        file: "Unlearn Studio-1.0.0-x64.dmg",
+        file: "Remap Studios-1.0.0-x64.dmg",
         size: "~102 MB",
         format: "DMG",
         primary: false,
@@ -42,7 +42,7 @@ const PLATFORMS = [
         name: "Windows x64",
         arch: "x64",
         tag: "For most Windows PCs",
-        file: "Unlearn Studio Setup 1.0.0.exe",
+        file: "Remap Studios Setup 1.0.0.exe",
         size: "~88 MB",
         format: "EXE Installer",
         primary: true,
@@ -51,7 +51,7 @@ const PLATFORMS = [
         name: "Windows x64 Portable",
         arch: "x64-portable",
         tag: "No installation required",
-        file: "Unlearn Studio-portable-1.0.0.exe",
+        file: "Remap Studios-portable-1.0.0.exe",
         size: "~82 MB",
         format: "Portable EXE",
         primary: false,
@@ -60,7 +60,7 @@ const PLATFORMS = [
         name: "Windows ARM64",
         arch: "arm64",
         tag: "For Surface Pro X, Snapdragon PCs",
-        file: "Unlearn Studio Setup 1.0.0-arm64.exe",
+        file: "Remap Studios Setup 1.0.0-arm64.exe",
         size: "~85 MB",
         format: "EXE Installer",
         primary: false,
@@ -79,7 +79,7 @@ const PLATFORMS = [
         name: "AppImage",
         arch: "x64",
         tag: "Universal — runs on any distro",
-        file: "Unlearn Studio-1.0.0-linux-x86_64.AppImage",
+        file: "Remap Studios-1.0.0-linux-x86_64.AppImage",
         size: "~96 MB",
         format: "AppImage",
         primary: true,
@@ -115,7 +115,7 @@ export default function DownloadsPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="section-label mb-4 inline-block">Download</span>
-            <h1 className="heading-xl mt-6">Get Unlearn Studio</h1>
+            <h1 className="heading-xl mt-6">Get Remap Studios</h1>
             <p className="body-lg mt-4">
               Desktop app for macOS, Windows, and Linux. Requires Python 3.9+ with PyTorch.
             </p>

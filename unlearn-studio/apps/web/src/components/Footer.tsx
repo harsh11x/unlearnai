@@ -10,7 +10,7 @@ export default function Footer() {
                 <span className="text-accent-inv text-[10px] font-bold font-display">U</span>
               </div>
               <span className="font-display font-bold text-base tracking-tight text-text">
-                unlearn<span className="text-text-subtle font-normal">studio</span>
+                text-remap<span className="text-text-subtle font-normal">studios</span>
               </span>
             </div>
             <p className="body-sm max-w-sm">
@@ -21,7 +21,7 @@ export default function Footer() {
               <a href="https://github.com/harsh11x/unlearnai" className="text-text-subtle hover:text-text transition-colors no-underline text-sm" target="_blank" rel="noopener noreferrer">
                 GitHub
               </a>
-              <a href="mailto:hello@unlearnstudio.ai" className="text-text-subtle hover:text-text transition-colors no-underline text-sm">
+              <a href="mailto:hello@remapstudios.ai" className="text-text-subtle hover:text-text transition-colors no-underline text-sm">
                 Contact
               </a>
             </div>
@@ -56,8 +56,8 @@ export default function Footer() {
             <ul className="space-y-2 list-none">
               <li><a href="/about" className="body-sm no-underline hover:text-text transition-colors">About</a></li>
               <li><a href="/about#research" className="body-sm no-underline hover:text-text transition-colors">Research</a></li>
-              <li><a href="mailto:hello@unlearnstudio.ai" className="body-sm no-underline hover:text-text transition-colors">Contact</a></li>
-              <li><a href="mailto:enterprise@unlearnstudio.ai" className="body-sm no-underline hover:text-text transition-colors">Enterprise</a></li>
+              <li><a href="mailto:hello@remapstudios.ai" className="body-sm no-underline hover:text-text transition-colors">Contact</a></li>
+              <li><a href="mailto:enterprise@remapstudios.ai" className="body-sm no-underline hover:text-text transition-colors">Enterprise</a></li>
               <li><a href="/pricing" className="body-sm no-underline hover:text-text transition-colors">Pricing</a></li>
             </ul>
           </div>
@@ -66,7 +66,7 @@ export default function Footer() {
         <hr className="divider my-8" />
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="body-sm">&copy; 2026 Unlearn Studio. All rights reserved.</p>
+          <p className="body-sm">&copy; 2026 Remap Studios. All rights reserved.</p>
           <div className="flex gap-6">
             <a href="#" className="body-sm no-underline hover:text-text transition-colors">Privacy Policy</a>
             <a href="#" className="body-sm no-underline hover:text-text transition-colors">Terms of Service</a>

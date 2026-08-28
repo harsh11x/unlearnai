@@ -1,4 +1,4 @@
-# Unlearn Studio — Desktop App
+# Remap Studios — Desktop App
 
 Cross-platform Electron IDE for AI model visualization and unlearning.
 

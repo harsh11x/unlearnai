@@ -1,7 +1,7 @@
 {
-  "appId": "com.unlearnstudio.desktop",
-  "productName": "Unlearn Studio",
-  "copyright": "Copyright © 2026 Unlearn Studio",
+  "appId": "com.remapstudios.desktop",
+  "productName": "Remap Studios",
+  "copyright": "Copyright © 2026 Remap Studios",
   "directories": {
     "output": "../../dist/win",
     "buildResources": "./build"
@@ -33,7 +33,7 @@
     "installerHeaderIcon": "./build/icon.ico",
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "Unlearn Studio",
+    "shortcutName": "Remap Studios",
     "include": "./installer.nsh"
   },
   "portable": {

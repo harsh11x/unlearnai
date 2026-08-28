@@ -2,7 +2,7 @@
 
 ## What "Unlearning" Means in This Implementation
 
-NullMind V1 implements **gradient-based model editing**, not theoretical machine unlearning.
+Remap Studios V1 implements **gradient-based model editing**, not theoretical machine unlearning.
 
 ### What We Do
 

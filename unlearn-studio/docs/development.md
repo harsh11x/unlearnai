@@ -1,6 +1,6 @@
 # Development Guide
 
-This guide covers setting up and developing NullMind locally.
+This guide covers setting up and developing Remap Studios locally.
 
 ## Prerequisites
 

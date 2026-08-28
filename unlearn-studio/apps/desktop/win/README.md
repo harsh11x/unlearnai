@@ -1,4 +1,4 @@
-# Unlearn Studio — Windows Build
+# Remap Studios — Windows Build
 
 ## Prerequisites
 
@@ -20,12 +20,12 @@ npm run build:win   # Production build
 
 Two builds are generated in `../../dist/win/`:
 
-1. **NSIS Installer** — `Unlearn Studio Setup x.x.x.exe`
+1. **NSIS Installer** — `Remap Studios Setup x.x.x.exe`
    - Standard Windows installer with install wizard
    - Creates Start Menu and Desktop shortcuts
    - Supports custom install directory
 
-2. **Portable** — `Unlearn Studio-portable-x.x.x.exe`
+2. **Portable** — `Remap Studios-portable-x.x.x.exe`
    - No installation required, runs from any directory
    - Good for USB drives or testing
 

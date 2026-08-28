@@ -32,7 +32,7 @@ const SECTIONS = [
     title: "API Reference",
     items: [
       { name: "REST API", desc: "HTTP endpoints for model management, unlearning, and evaluation", href: "#api" },
-      { name: "Python SDK", desc: "Programmatic access to Unlearn Studio from Python", href: "#sdk" },
+      { name: "Python SDK", desc: "Programmatic access to Remap Studios from Python", href: "#sdk" },
       { name: "Authentication", desc: "API keys, OAuth, and access control", href: "#auth" },
     ],
   },
@@ -57,7 +57,7 @@ export default function DocsPage() {
             <span className="section-label mb-4 inline-block">Documentation</span>
             <h1 className="heading-xl mt-6">Docs</h1>
             <p className="body-lg mt-4">
-              Everything you need to get started with Unlearn Studio — from installation to advanced usage.
+              Everything you need to get started with Remap Studios — from installation to advanced usage.
             </p>
           </div>
 

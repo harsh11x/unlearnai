@@ -1,7 +1,7 @@
 {
-  "name": "unlearn-studio-desktop",
+  "name": "remap-studios-desktop",
   "version": "1.0.0",
-  "description": "Unlearn Studio — IDE for AI Model Unlearning",
+  "description": "Remap Studios — IDE for AI Model Unlearning",
   "main": "main.js",
   "scripts": {
     "start": "electron .",

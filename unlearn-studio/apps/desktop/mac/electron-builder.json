@@ -1,7 +1,7 @@
 {
-  "appId": "com.unlearnstudio.desktop",
-  "productName": "Unlearn Studio",
-  "copyright": "Copyright © 2026 Unlearn Studio",
+  "appId": "com.remapstudios.desktop",
+  "productName": "Remap Studios",
+  "copyright": "Copyright © 2026 Remap Studios",
   "directories": {
     "output": "../dist/mac",
     "buildResources": "../mac/build"

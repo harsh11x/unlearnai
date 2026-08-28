@@ -1,4 +1,4 @@
-# Unlearn Studio — macOS Build
+# Remap Studios — macOS Build
 
 ## Prerequisites
 

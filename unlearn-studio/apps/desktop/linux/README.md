@@ -1,4 +1,4 @@
-# Unlearn Studio — Linux Build
+# Remap Studios — Linux Build
 
 ## Prerequisites
 
@@ -50,14 +50,14 @@ Three packages are generated in `../../dist/linux/`:
 
 | Format | File | Notes |
 |--------|------|-------|
-| **AppImage** | `Unlearn Studio-x.x.x-linux-x86_64.AppImage` | Universal — runs on any distro |
+| **AppImage** | `Remap Studios-x.x.x-linux-x86_64.AppImage` | Universal — runs on any distro |
 | **DEB** | `unlearn-studio_x.x.x_amd64.deb` | For Ubuntu/Debian |
 | **RPM** | `unlearn-studio-x.x.x.x86_64.rpm` | For Fedora/RHEL/openSUSE |
 
 ## Running the AppImage
 
 ```bash
-chmod +x "Unlearn Studio"*.AppImage
+chmod +x "Remap Studios"*.AppImage
 ./Unlearn-Studio-*.AppImage
 ```
 
@@ -85,7 +85,7 @@ If running in a sandboxed environment, you may need to grant filesystem access:
 sudo aa-complain /usr/bin/unlearn-studio
 
 # Flatpak (if building flatpak bundle)
-flatpak install flathub com.unlearnstudio.desktop
+flatpak install flathub com.remapstudios.desktop
 ```
 
 ## GPU Acceleration (NVIDIA)

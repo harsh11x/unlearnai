@@ -12,7 +12,7 @@ export default function AboutPage() {
             <span className="section-label mb-4 inline-block">About</span>
             <h1 className="heading-xl mt-6">Making AI models leaner.</h1>
             <p className="body-lg mt-6">
-              Unlearn Studio was built on a simple observation: AI models learn too much.
+              Remap Studios was built on a simple observation: AI models learn too much.
               They hoard redundant knowledge, overfit to noise, and carry biases they
               don&apos;t need. Every unnecessary parameter costs compute, money, and time.
             </p>
@@ -106,7 +106,7 @@ export default function AboutPage() {
             <a href="https://github.com/harsh11x/unlearnai" className="btn-outline no-underline" target="_blank" rel="noopener noreferrer">
               View on GitHub
             </a>
-            <a href="mailto:hello@unlearnstudio.ai" className="btn-primary no-underline">
+            <a href="mailto:hello@remapstudios.ai" className="btn-primary no-underline">
               Get in Touch
             </a>
           </div>

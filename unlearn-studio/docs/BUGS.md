@@ -1,4 +1,4 @@
-# Bug Tracker — NullMind
+# Bug Tracker — Remap Studios
 
 Bugs discovered during development and CLI proof-of-concept testing.
 Status: **OPEN** = unfixed, **FIXED** = resolved, **KNOWN** = intentional limitation.

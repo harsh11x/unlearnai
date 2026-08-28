@@ -6,7 +6,7 @@ const TIERS = [
     name: "Free",
     price: "$0",
     period: "forever",
-    description: "Try Unlearn Studio with a single small model.",
+    description: "Try Remap Studios with a single small model.",
     cta: "Start Free",
     ctaHref: "/#cta",
     highlight: false,
@@ -198,7 +198,7 @@ export default function PricingPage() {
               or volume licensing — let&apos;s talk.
             </p>
             <div className="flex flex-wrap justify-center gap-4 mt-6">
-              <a href="mailto:enterprise@unlearnstudio.ai" className="btn-primary no-underline">
+              <a href="mailto:enterprise@remapstudios.ai" className="btn-primary no-underline">
                 Contact Enterprise Sales
               </a>
               <a href="/docs" className="btn-outline no-underline">
