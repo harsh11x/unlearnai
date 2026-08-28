@@ -15,50 +15,78 @@ import {
   Layers, ArrowUpRight, Lock, Zap, RefreshCw, Scale, Terminal
 } from "lucide-react";
 
-/* ════════════ HERO SECTION WITH VISUAL CANVAS ════════════ */
+/* ════════════ HERO SECTION WITH SIDE-BY-SIDE VISUAL CANVAS ════════════ */
 function Hero() {
   return (
     <section className="relative min-h-[90vh] flex flex-col justify-center pt-32 sm:pt-36 md:pt-40 pb-20 md:pb-28 bg-[#f7f6f2] arch-grid border-b-2 border-[#09090b] overflow-hidden">
-      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto my-auto relative z-10 space-y-12">
+      <div className="w-full max-w-[1800px] px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto relative z-10">
         
-        {/* Top Badges */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="brutalist-badge-outline text-[#09090b]">
-            <span className="w-2 h-2 bg-[#09090b] rounded-full animate-pulse" />
-            <span>NULLMIND V1.0 // LLM UNLEARNING & RETRAIN ENGINE</span>
+        {/* Main Grid: Left Headline & Mission vs Right Live Canvas */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          
+          {/* Left Column (Span 5) */}
+          <div className="lg:col-span-5 space-y-6">
+            {/* Top Badges */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="brutalist-badge-outline text-[#09090b]">
+                <span className="w-2 h-2 bg-[#09090b] rounded-full animate-pulse" />
+                <span>NULLMIND V1.0 // LLM UNLEARN ENGINE</span>
+              </div>
+              <div className="brutalist-badge bg-[#09090b] text-white font-mono">
+                PRODUCTION PLATFORM
+              </div>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.05] text-[#09090b] uppercase font-sans">
+              SELECTIVELY <br />
+              <span className="bg-[#09090b] text-white px-3 py-1 inline-block my-2 border-2 border-[#09090b] shadow-[4px_4px_0_0_#09090b]">
+                UNLEARN & RETRAIN
+              </span> <br />
+              AI MODELS.
+            </h1>
+
+            {/* Mission Box */}
+            <div className="brutalist-card p-6 bg-white space-y-4">
+              <p className="font-mono text-xs md:text-sm font-semibold text-[#09090b] leading-relaxed">
+                NullMind is an open production platform for{" "}
+                <span className="bg-[#efeeea] px-2 py-0.5 border border-[#09090b] font-bold">
+                  measured LLM capability reduction & targeted retraining
+                </span>. Surgically erase copyrighted code, PII, and unsafe data without spending $100k+ to retrain full model weights from scratch.
+              </p>
+
+              {/* 4 Pillars Summary */}
+              <div className="pt-3 border-t-2 border-zinc-200 grid grid-cols-2 gap-2 font-mono text-[11px] font-bold text-[#09090b]">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[#09090b]">■</span> Target Ascent
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[#09090b]">■</span> Retain Loss
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[#09090b]">■</span> 89 Probes Battery
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[#09090b]">■</span> PDF Audit Certificate
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <Link href="/signup" className="brutalist-btn-primary text-xs py-3.5 px-7">
+                Start Free Experiment <ArrowRight size={15} />
+              </Link>
+              <Link href="/dashboard" className="brutalist-btn-secondary text-xs py-3.5 px-7">
+                Launch Workspace <ArrowUpRight size={15} />
+              </Link>
+            </div>
           </div>
-          <div className="brutalist-badge bg-[#09090b] text-white font-mono">
-            INTERACTIVE NEURAL DEEP MIND VISUALIZER
+
+          {/* Right Column: Embedded Canvas Visualizer (Span 7) */}
+          <div className="lg:col-span-7 w-full">
+            <NeuralVisualizer />
           </div>
-        </div>
 
-        {/* Headline */}
-        <div className="max-w-4xl">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] text-[#09090b] uppercase font-sans">
-            SELECTIVELY <br />
-            <span className="bg-[#09090b] text-white px-4 py-1 inline-block my-2 border-2 border-[#09090b] shadow-[4px_4px_0_0_#09090b]">
-              UNLEARN & RETRAIN
-            </span> <br />
-            AI MODELS.
-          </h1>
-
-          <p className="font-mono text-sm md:text-base font-semibold text-[#52525b] leading-relaxed mt-6 max-w-3xl">
-            Surgically erase targeted copyrighted code, PII, and unsafe neural representations without spending $100k+ to retrain full model parameters from scratch.
-          </p>
-
-          <div className="flex flex-wrap items-center gap-4 mt-8">
-            <Link href="/signup" className="brutalist-btn-primary text-sm py-3.5 px-8">
-              Start Free Experiment <ArrowRight size={16} />
-            </Link>
-            <Link href="/dashboard" className="brutalist-btn-secondary text-sm py-3.5 px-8">
-              Launch Studio Workspace <ArrowUpRight size={16} />
-            </Link>
-          </div>
-        </div>
-
-        {/* Embedded Interactive Canvas Visualizer */}
-        <div className="w-full">
-          <NeuralVisualizer />
         </div>
 
       </div>
@@ -70,7 +98,7 @@ function Hero() {
 function ComparisonSection() {
   return (
     <section className="relative py-24 sm:py-32 bg-[#efeeea] border-b-2 border-[#09090b]">
-      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto space-y-10">
+      <div className="w-full max-w-[1800px] px-4 sm:px-8 md:px-12 lg:px-16 mx-auto space-y-10">
         
         <div className="max-w-3xl">
           <div className="brutalist-badge mb-3">01 // BEFORE & AFTER MODEL TRANSFORMATION</div>
@@ -94,7 +122,7 @@ function ComparisonSection() {
 function ProcessJourneySection() {
   return (
     <section id="how-it-works" className="relative py-24 sm:py-32 bg-[#f7f6f2] arch-grid border-b-2 border-[#09090b]">
-      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto space-y-10">
+      <div className="w-full max-w-[1800px] px-4 sm:px-8 md:px-12 lg:px-16 mx-auto space-y-10">
         
         {/* Embedded Interactive Process Journey Component */}
         <InteractiveProcessExplorer />
@@ -108,7 +136,7 @@ function ProcessJourneySection() {
 function CalculatorSection() {
   return (
     <section className="relative py-24 sm:py-32 bg-[#efeeea] arch-grid-dense border-b-2 border-[#09090b]">
-      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto">
+      <div className="w-full max-w-[1800px] px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
         
         {/* Embedded Interactive Calculator Component */}
         <ComputeCalculator />
@@ -122,7 +150,7 @@ function CalculatorSection() {
 function SandboxSection() {
   return (
     <section className="relative py-24 sm:py-32 bg-[#f7f6f2] arch-grid border-b-2 border-[#09090b]">
-      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto">
+      <div className="w-full max-w-[1800px] px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
         
         {/* Embedded Interactive Terminal Sandbox Component */}
         <ProbeSimulator />
@@ -144,7 +172,7 @@ function ResultsSection() {
 
   return (
     <section id="results" className="relative py-24 sm:py-32 bg-[#efeeea] border-b-2 border-[#09090b]">
-      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto">
+      <div className="w-full max-w-[1800px] px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           
@@ -215,7 +243,7 @@ function ResultsSection() {
 function ResearchSection() {
   return (
     <section id="research" className="relative py-24 sm:py-32 bg-[#f7f6f2] arch-grid border-b-2 border-[#09090b]">
-      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto">
+      <div className="w-full max-w-[1800px] px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
         
         <div className="text-center max-w-2xl mx-auto mb-12">
           <div className="brutalist-badge mb-3">03 // TRANSPARENCY NOTICE</div>
@@ -259,7 +287,7 @@ function ResearchSection() {
 function CTASection() {
   return (
     <section className="relative py-20 sm:py-28 bg-[#efeeea]">
-      <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto">
+      <div className="w-full max-w-[1800px] px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
         
         <div className="brutalist-card p-10 md:p-14 text-center bg-white space-y-4">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#09090b] uppercase tracking-tight leading-tight max-w-3xl mx-auto">

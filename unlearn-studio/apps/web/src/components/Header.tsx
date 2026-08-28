@@ -21,8 +21,9 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#f7f6f2] border-b-2 border-[#09090b]">
-      <div className="w-full max-w-[1400px] px-4 md:px-8 mx-auto flex items-center justify-between h-[68px]">
+      <div className="w-full max-w-[1800px] px-4 md:px-8 mx-auto flex items-center justify-between h-[68px]">
         {/* Brand Logo */}
+
         <Link href="/" className="flex items-center gap-3 group">
           <div className="flex items-center gap-2 bg-[#09090b] text-white border-2 border-[#09090b] px-3 py-1 shadow-[3px_3px_0_0_#09090b] group-hover:translate-x-0.5 group-hover:translate-y-0.5 transition-transform">
             <span className="font-mono font-black text-base md:text-lg tracking-wider">NULLMIND</span>

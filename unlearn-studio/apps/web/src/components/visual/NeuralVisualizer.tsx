@@ -62,14 +62,23 @@ export default function NeuralVisualizer() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Set high-DPI canvas resolution
-    const width = (canvas.width = canvas.parentElement?.clientWidth || 800);
-    const height = (canvas.height = 420);
+    let width = (canvas.width = canvas.parentElement?.clientWidth || 700);
+    let height = (canvas.height = 440);
+
+    const handleResize = () => {
+      if (canvas && canvas.parentElement) {
+        width = canvas.width = canvas.parentElement.clientWidth;
+        height = canvas.height = 440;
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
 
     const layers = 5;
     const nodesPerLayer = [4, 7, 8, 7, 4];
     const nodes: Node[] = [];
     const connections: Connection[] = [];
+
 
     // Generate Nodes across layers
     nodesPerLayer.forEach((count, lIndex) => {
@@ -238,9 +247,11 @@ export default function NeuralVisualizer() {
     render();
 
     return () => {
+      window.removeEventListener("resize", handleResize);
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
   }, [mode]);
+
 
   return (
     <div className="brutalist-card p-6 md:p-8 bg-white relative overflow-hidden">

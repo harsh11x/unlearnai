@@ -6,7 +6,8 @@ import { ArrowUpRight, Cpu, Terminal } from "lucide-react";
 export default function Footer() {
   return (
     <footer className="bg-[#09090b] text-white border-t-2 border-[#09090b] pt-16 pb-12">
-      <div className="w-full max-w-[1400px] px-6 sm:px-10 md:px-12 mx-auto">
+      <div className="w-full max-w-[1800px] px-6 sm:px-10 md:px-12 mx-auto">
+
         
         {/* Top Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-zinc-800">
