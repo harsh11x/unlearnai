@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  Upload, Play, BarChart3, Settings, Brain,
-  ChevronRight, Eye, CheckCircle2,
-  Terminal, Target, ArrowRight,
+  Upload, Play, BarChart3, Settings, Brain, Database,
+  ChevronRight, FileCode2, Layers, Zap, CheckCircle2,
+  Clock, Terminal, Eye, ArrowRight, Cpu, Target, Shield
 } from "lucide-react";
 
 type Tab = "upload" | "explore" | "configure" | "train" | "results";
@@ -21,10 +21,10 @@ function Sidebar({ activeTab, onTabChange }: { activeTab: Tab; onTabChange: (t: 
   ];
 
   return (
-    <aside className="w-16 lg:w-56 border-r border-border-strong bg-bg-alt flex flex-col shrink-0">
-      <div className="p-4 border-b border-border-strong hidden lg:block">
-        <div className="text-[10px] font-semibold tracking-widest uppercase text-ink-subtle mb-1">Workspace</div>
-        <div className="font-semibold text-sm text-ink truncate">My Project</div>
+    <aside className="w-16 lg:w-56 border-r border-border bg-white flex flex-col shrink-0">
+      <div className="p-4 border-b border-border hidden lg:block">
+        <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-ink-subtle mb-1">Workspace</div>
+        <div className="font-semibold text-sm truncate">My Project</div>
       </div>
       <nav className="flex-1 py-3">
         {tabs.map((tab) => (
@@ -33,8 +33,8 @@ function Sidebar({ activeTab, onTabChange }: { activeTab: Tab; onTabChange: (t: 
             onClick={() => onTabChange(tab.id)}
             className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200 ${
               activeTab === tab.id
-                ? "bg-white/[0.06] text-ink border-r-2 border-highlight"
-                : "text-ink-subtle hover:text-ink hover:bg-white/[0.03]"
+                ? "bg-ink text-white"
+                : "text-ink-muted hover:text-ink hover:bg-bg-alt"
             }`}
           >
             <tab.icon size={17} />
@@ -42,7 +42,7 @@ function Sidebar({ activeTab, onTabChange }: { activeTab: Tab; onTabChange: (t: 
           </button>
         ))}
       </nav>
-      <div className="p-4 border-t border-border-strong hidden lg:block">
+      <div className="p-4 border-t border-border hidden lg:block">
         <div className="flex items-center gap-2 text-xs text-ink-subtle">
           <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
           <span>GPU Ready</span>
@@ -60,14 +60,14 @@ function TopBar({ activeTab }: { activeTab: Tab }) {
   };
 
   return (
-    <header className="h-14 border-b border-border-strong bg-bg-alt/80 backdrop-blur-sm flex items-center justify-between px-5 shrink-0">
+    <header className="h-14 border-b border-border bg-white flex items-center justify-between px-5 shrink-0">
       <div className="flex items-center gap-2.5 text-sm">
         <span className="font-mono text-ink-subtle text-xs">nullmind</span>
         <ChevronRight size={12} className="text-ink-subtle" />
-        <span className="font-semibold text-ink">{titles[activeTab]}</span>
+        <span className="font-semibold">{titles[activeTab]}</span>
       </div>
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-highlight to-amber-600 flex items-center justify-center">
-        <span className="text-[#0a0f1a] text-xs font-bold">H</span>
+      <div className="w-8 h-8 bg-ink rounded-full flex items-center justify-center">
+        <span className="text-white text-xs font-semibold">H</span>
       </div>
     </header>
   );
@@ -94,15 +94,15 @@ function UploadTab({ model, onModelUpload }: { model: { name: string; architectu
       <div className="p-6 lg:p-8 space-y-6">
         <div className="flex items-center gap-3">
           <CheckCircle2 size={22} className="text-success" />
-          <h2 className="text-2xl font-bold text-ink">Model Ready</h2>
+          <h2 className="text-2xl font-bold">Model Ready</h2>
         </div>
-        <div className="rounded-xl border border-border-strong overflow-hidden bg-bg-card">
-          <div className="px-5 py-3 bg-white/[0.02] border-b border-border-strong text-xs font-semibold uppercase tracking-widest text-ink-subtle">Model Information</div>
-          <div className="divide-y divide-border-strong/50">
+        <div className="rounded-xl border border-border overflow-hidden bg-white">
+          <div className="px-5 py-3 bg-bg-alt border-b border-border text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Model Information</div>
+          <div className="divide-y divide-border/50">
             {[["Name", model.name], ["Architecture", model.architecture], ["Parameters", model.params], ["Format", model.format], ["Size", model.size], ["Hash", model.hash]].map(([l, v]) => (
               <div key={l} className="grid grid-cols-[140px_1fr] px-5 py-3">
                 <span className="text-xs font-mono text-ink-subtle uppercase">{l}</span>
-                <span className="text-sm font-mono text-ink">{v}</span>
+                <span className="text-sm font-mono">{v}</span>
               </div>
             ))}
           </div>
@@ -113,12 +113,10 @@ function UploadTab({ model, onModelUpload }: { model: { name: string; architectu
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      <h2 className="text-2xl font-bold text-ink">Upload Model</h2>
+      <h2 className="text-2xl font-bold">Upload Model</h2>
       <p className="text-ink-muted text-sm">Upload an open-weight language model to get started.</p>
       <div
-        className={`border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer transition-all duration-300 ${
-          dragOver ? "border-highlight bg-white/[0.02]" : "border-border-strong hover:border-ink-subtle"
-        }`}
+        className={`border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer transition-all duration-300 ${dragOver ? "border-ink bg-bg-alt" : "border-border hover:border-ink/30"}`}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => { e.preventDefault(); setDragOver(false); handleUpload(); }}
@@ -126,16 +124,16 @@ function UploadTab({ model, onModelUpload }: { model: { name: string; architectu
       >
         {uploading ? (
           <div className="space-y-4">
-            <div className="font-semibold text-lg text-ink">Uploading...</div>
-            <div className="w-64 mx-auto h-1.5 bg-border-strong rounded-full overflow-hidden">
-              <div className="h-full bg-highlight transition-all duration-300" style={{ width: `${progress}%` }} />
+            <div className="font-semibold text-lg">Uploading...</div>
+            <div className="w-64 mx-auto h-1.5 bg-border rounded-full overflow-hidden">
+              <div className="h-full bg-ink transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
-            <div className="font-mono text-xs text-ink-subtle">{progress}%</div>
+            <div className="font-mono text-xs text-ink-muted">{progress}%</div>
           </div>
         ) : (
           <>
             <Upload size={40} className="text-ink-subtle mx-auto mb-4" />
-            <div className="font-semibold text-lg text-ink mb-1">Drop model here or click to browse</div>
+            <div className="font-semibold text-lg mb-1">Drop model here or click to browse</div>
             <div className="text-ink-muted text-sm">.safetensors · .bin · HuggingFace directories</div>
           </>
         )}
@@ -160,39 +158,39 @@ function ExploreTab() {
     <div className="p-6 lg:p-8 space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-ink">Capability Explorer</h2>
+          <h2 className="text-2xl font-bold">Capability Explorer</h2>
           <p className="text-ink-muted text-sm mt-1">89 probes · 24 categories</p>
         </div>
         <button className="btn-primary text-xs px-5 py-2.5"><Play size={14} /> Run Evaluation</button>
       </div>
 
       <div>
-        <div className="flex items-center gap-2 mb-3"><Target size={14} className="text-highlight" /><span className="text-xs font-semibold uppercase tracking-widest text-ink-subtle">Python (Target)</span></div>
+        <div className="flex items-center gap-2 mb-3"><Target size={14} className="text-highlight" /><span className="text-xs font-semibold uppercase tracking-[0.1em]">Python (Target)</span></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {cats.map((c) => (
-            <div key={c.name} className="border border-border-strong rounded-xl p-4 bg-bg-card hover:border-ink-subtle transition-all">
-              <div className="flex justify-between mb-2"><span className="text-sm font-semibold text-ink">{c.name}</span><span className="font-mono text-xs text-ink-subtle">{c.score}%</span></div>
-              <div className="h-1.5 bg-white/[0.04] rounded-full overflow-hidden"><div className="h-full bg-highlight rounded-full" style={{ width: `${c.score}%` }} /></div>
+            <div key={c.name} className="border border-border rounded-xl p-4 bg-white hover:shadow-sm transition-all">
+              <div className="flex justify-between mb-2"><span className="text-sm font-semibold">{c.name}</span><span className="font-mono text-xs text-ink-subtle">{c.score}%</span></div>
+              <div className="h-1.5 bg-bg-alt rounded-full overflow-hidden"><div className="h-full bg-ink rounded-full" style={{ width: `${c.score}%` }} /></div>
             </div>
           ))}
         </div>
       </div>
 
       <div>
-        <div className="flex items-center gap-2 mb-3"><CheckCircle2 size={14} className="text-success" /><span className="text-xs font-semibold uppercase tracking-widest text-ink-subtle">Retained</span></div>
+        <div className="flex items-center gap-2 mb-3"><CheckCircle2 size={14} className="text-success" /><span className="text-xs font-semibold uppercase tracking-[0.1em]">Retained</span></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {retain.map((c) => (
-            <div key={c.name} className="border border-border-strong rounded-xl p-4 bg-bg-card">
-              <div className="flex justify-between mb-2"><span className="text-sm font-semibold text-ink">{c.name}</span><span className="font-mono text-xs text-ink-subtle">{c.score}%</span></div>
-              <div className="h-1.5 bg-white/[0.04] rounded-full overflow-hidden"><div className="h-full bg-success rounded-full" style={{ width: `${c.score}%` }} /></div>
+            <div key={c.name} className="border border-border rounded-xl p-4 bg-white">
+              <div className="flex justify-between mb-2"><span className="text-sm font-semibold">{c.name}</span><span className="font-mono text-xs text-ink-subtle">{c.score}%</span></div>
+              <div className="h-1.5 bg-bg-alt rounded-full overflow-hidden"><div className="h-full bg-success rounded-full" style={{ width: `${c.score}%` }} /></div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="p-5 rounded-xl border border-border-strong bg-bg-card flex items-center justify-between">
-        <span className="font-semibold text-ink">Overall Score</span>
-        <span className="text-2xl font-bold text-ink">40.4%</span>
+      <div className="p-5 rounded-xl border border-border bg-white flex items-center justify-between">
+        <span className="font-semibold">Overall Score</span>
+        <span className="text-2xl font-bold">40.4%</span>
       </div>
     </div>
   );
@@ -204,36 +202,36 @@ function ConfigureTab({ onTrain }: { onTrain: () => void }) {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      <h2 className="text-2xl font-bold text-ink">Configuration</h2>
+      <h2 className="text-2xl font-bold">Configuration</h2>
 
-      <div className="rounded-xl border border-border-strong bg-bg-card">
-        <div className="px-5 py-3 border-b border-border-strong text-xs font-semibold uppercase tracking-widest text-ink-subtle">Target</div>
+      <div className="rounded-xl border border-border bg-white">
+        <div className="px-5 py-3 border-b border-border text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Target</div>
         <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
           {["Python", "JavaScript", "TypeScript", "C++"].map((l) => (
-            <button key={l} className={`border rounded-lg py-2.5 text-sm font-medium transition-all ${l === "Python" ? "border-highlight bg-highlight/10 text-highlight" : "border-border-strong text-ink-subtle hover:border-ink-subtle"}`}>{l}</button>
+            <button key={l} className={`border rounded-lg py-2.5 text-sm font-medium transition-all ${l === "Python" ? "border-ink bg-ink text-white" : "border-border hover:border-ink/30 text-ink-muted"}`}>{l}</button>
           ))}
         </div>
       </div>
 
-      <div className="rounded-xl border border-border-strong bg-bg-card">
-        <div className="px-5 py-3 border-b border-border-strong text-xs font-semibold uppercase tracking-widest text-ink-subtle">Method</div>
+      <div className="rounded-xl border border-border bg-white">
+        <div className="px-5 py-3 border-b border-border text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Method</div>
         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           {[{ id: "retain_aware" as const, name: "Retain-Aware", desc: "Balances forgetting with preservation." }, { id: "gradient" as const, name: "Gradient Forgetting", desc: "Simple baseline without retention." }].map((m) => (
-            <button key={m.id} onClick={() => setMethod(m.id)} className={`border-2 p-4 text-left rounded-xl transition-all ${method === m.id ? "border-highlight bg-highlight/5" : "border-border-strong hover:border-ink-subtle"}`}>
-              <div className="font-semibold text-sm text-ink mb-1">{m.name}</div>
+            <button key={m.id} onClick={() => setMethod(m.id)} className={`border-2 p-4 text-left rounded-xl transition-all ${method === m.id ? "border-ink" : "border-border hover:border-ink/30"}`}>
+              <div className="font-semibold text-sm mb-1">{m.name}</div>
               <div className="text-ink-muted text-xs">{m.desc}</div>
             </button>
           ))}
         </div>
       </div>
 
-      <div className="rounded-xl border border-border-strong bg-bg-card">
-        <div className="px-5 py-3 border-b border-border-strong text-xs font-semibold uppercase tracking-widest text-ink-subtle">Hyperparameters</div>
+      <div className="rounded-xl border border-border bg-white">
+        <div className="px-5 py-3 border-b border-border text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Hyperparameters</div>
         <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
           {[{ l: "Learning Rate", v: "1e-5" }, { l: "Steps", v: "200" }, { l: "Batch Size", v: "2" }, { l: "Retain Weight", v: "2.0" }].map((p) => (
             <div key={p.l}>
-              <label className="text-[10px] font-semibold tracking-widest uppercase text-ink-subtle block mb-1.5">{p.l}</label>
-              <div className="bg-white/[0.03] border border-border-strong rounded-lg px-3 py-2 text-sm font-mono text-ink">{p.v}</div>
+              <label className="text-[10px] font-semibold tracking-[0.1em] uppercase text-ink-subtle block mb-1.5">{p.l}</label>
+              <div className="bg-bg border border-border rounded-lg px-3 py-2 text-sm font-mono">{p.v}</div>
             </div>
           ))}
         </div>
@@ -261,33 +259,33 @@ function TrainTab() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-ink">Training</h2>
+        <h2 className="text-2xl font-bold">Training</h2>
         {!running && step === 0 && <button onClick={start} className="btn-primary text-xs px-5 py-2.5"><Play size={14} /> Start</button>}
       </div>
 
-      <div className="rounded-xl border border-border-strong bg-bg-card p-5">
+      <div className="rounded-xl border border-border bg-white p-5">
         <div className="flex justify-between mb-3 text-sm">
-          <span className="font-semibold text-ink">{running ? "Training..." : step > 0 ? "Complete" : "Ready"}</span>
-          <span className="font-mono text-ink-subtle text-xs">{step}/200</span>
+          <span className="font-semibold">{running ? "Training..." : step > 0 ? "Complete" : "Ready"}</span>
+          <span className="font-mono text-ink-muted text-xs">{step}/200</span>
         </div>
-        <div className="h-2 bg-white/[0.04] rounded-full overflow-hidden">
-          <div className={`h-full rounded-full transition-all duration-300 ${running ? "bg-highlight" : step > 0 ? "bg-success" : "bg-border-strong"}`} style={{ width: `${(step / 200) * 100}%` }} />
+        <div className="h-2 bg-bg-alt rounded-full overflow-hidden">
+          <div className={`h-full rounded-full transition-all duration-300 ${running ? "bg-highlight" : step > 0 ? "bg-success" : "bg-border"}`} style={{ width: `${(step / 200) * 100}%` }} />
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[{ l: "Forget Loss", v: "52.88", c: "text-highlight" }, { l: "Retain Loss", v: "28.91", c: "text-success" }, { l: "GPU Util", v: "87%", c: "text-ink" }, { l: "Elapsed", v: "3m 12s", c: "text-ink-subtle" }].map((m) => (
-          <div key={m.l} className="border border-border-strong rounded-xl p-4 bg-bg-card">
-            <div className="text-[10px] font-semibold tracking-widest uppercase text-ink-subtle mb-1">{m.l}</div>
+        {[{ l: "Forget Loss", v: "52.88", c: "text-highlight" }, { l: "Retain Loss", v: "28.91", c: "text-success" }, { l: "GPU Util", v: "87%", c: "text-ink" }, { l: "Elapsed", v: "3m 12s", c: "text-ink-muted" }].map((m) => (
+          <div key={m.l} className="border border-border rounded-xl p-4 bg-white">
+            <div className="text-[10px] font-semibold tracking-[0.1em] uppercase text-ink-subtle mb-1">{m.l}</div>
             <div className={`text-xl font-bold ${m.c}`}>{m.v}</div>
           </div>
         ))}
       </div>
 
-      <div className="rounded-xl border border-border-strong bg-bg-card">
-        <div className="px-5 py-3 border-b border-border-strong flex items-center gap-2">
+      <div className="rounded-xl border border-border bg-white">
+        <div className="px-5 py-3 border-b border-border flex items-center gap-2">
           <Terminal size={14} className="text-success" />
-          <span className="text-xs font-semibold uppercase tracking-widest text-ink-subtle">Logs</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.1em]">Logs</span>
         </div>
         <div className="p-4 font-mono text-xs space-y-1 max-h-40 overflow-y-auto">
           {[{ t: "16:41:38", m: "Starting retain_aware unlearning" }, { t: "16:41:39", m: "Step 10: forget=29.32 retain=25.09" }, { t: "16:41:45", m: "Step 50: forget=45.12 retain=27.33" }].map((l, i) => (
@@ -311,12 +309,12 @@ function ResultsTab() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-ink">Results</h2>
+        <h2 className="text-2xl font-bold">Results</h2>
         <button className="btn-outline text-xs px-5 py-2.5">Export Report</button>
       </div>
 
-      <div className="rounded-xl border border-border-strong overflow-hidden bg-bg-card">
-        <div className="grid grid-cols-4 bg-white/[0.04] text-[11px] font-semibold uppercase tracking-widest text-ink-subtle">
+      <div className="rounded-xl border border-border overflow-hidden bg-white">
+        <div className="grid grid-cols-4 bg-ink text-white text-[11px] font-semibold uppercase tracking-[0.1em]">
           <div className="p-4">Capability</div>
           <div className="p-4 text-center">Before</div>
           <div className="p-4 text-center">After</div>
@@ -325,8 +323,8 @@ function ResultsTab() {
         {results.map((r) => {
           const d = r.after - r.before;
           return (
-            <div key={r.cap} className={`grid grid-cols-4 border-t border-border-strong/50 ${r.isTarget ? "bg-highlight/[0.03]" : ""}`}>
-              <div className="p-4 text-sm font-semibold text-ink flex items-center gap-2">
+            <div key={r.cap} className={`grid grid-cols-4 border-t border-border/50 ${r.isTarget ? "bg-highlight/[0.03]" : ""}`}>
+              <div className="p-4 text-sm font-semibold flex items-center gap-2">
                 {r.isTarget && <Target size={13} className="text-highlight" />}{r.cap}
                 {r.isTarget && <span className="text-[9px] font-mono text-highlight border border-highlight/30 px-1.5 py-0.5 rounded">TARGET</span>}
               </div>
@@ -340,8 +338,8 @@ function ResultsTab() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[{ l: "Forgetting", v: "50%", c: "text-highlight" }, { l: "Retention", v: "100%", c: "text-success" }, { l: "Collateral", v: "LOW", c: "text-success" }, { l: "Verdict", v: "PASS", c: "text-success" }].map((s) => (
-          <div key={s.l} className="border border-border-strong rounded-xl p-4 bg-bg-card text-center">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-ink-subtle mb-1">{s.l}</div>
+          <div key={s.l} className="border border-border rounded-xl p-4 bg-white text-center">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-subtle mb-1">{s.l}</div>
             <div className={`text-2xl font-bold ${s.c}`}>{s.v}</div>
           </div>
         ))}
