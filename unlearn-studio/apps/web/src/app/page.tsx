@@ -11,32 +11,32 @@ import {
 /* ════════════ HERO SECTION ════════════ */
 function Hero() {
   return (
-    <section className="relative pt-[250px] sm:pt-[320px] md:pt-[400px] lg:pt-[480px] pb-[200px] md:pb-[280px] lg:pb-[350px] bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a] overflow-hidden">
+    <section className="relative pt-24 sm:pt-32 md:pt-40 lg:pt-48 pb-20 sm:pb-28 md:pb-36 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a] overflow-hidden">
       {/* Background Floating Decorative Sticky Notes */}
-      <div className="absolute top-[250px] right-12 w-36 h-36 bg-[#fef08a] border-2 border-[#0f172a] rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
+      <div className="absolute top-28 right-12 w-36 h-36 bg-[#fef08a] border-2 border-[#0f172a] rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
         <div className="p-3 font-hand text-xl text-slate-800">unlearn_v1.py</div>
       </div>
-      <div className="absolute bottom-28 right-1/3 w-32 h-32 bg-[#fbcfe8] border-2 border-[#0f172a] -rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
+      <div className="absolute bottom-16 right-1/3 w-32 h-32 bg-[#fbcfe8] border-2 border-[#0f172a] -rotate-12 opacity-30 pointer-events-none hidden xl:block shadow-[4px_4px_0_0_#0f172a]">
         <div className="p-3 font-hand text-lg text-slate-800">python = 0%</div>
       </div>
 
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto relative z-10">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto relative z-10 my-6">
         
         {/* Top Tag Label */}
-        <div className="inline-flex items-center gap-2 bg-[#ffffff] border-2 border-[#0f172a] px-4 py-2 shadow-[3px_3px_0_0_#0f172a] mb-16 -rotate-1">
+        <div className="inline-flex items-center gap-2 bg-[#ffffff] border-2 border-[#0f172a] px-4 py-2 shadow-[3px_3px_0_0_#0f172a] mb-12 -rotate-1">
           <span className="w-2.5 h-2.5 bg-[#ef4444] rounded-full border border-[#0f172a]" />
           <span className="font-mono text-xs md:text-sm font-bold uppercase tracking-widest text-[#0f172a]">
             📌 RESEARCH BULLETIN — NULLMIND PLATFORM V1.0
           </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center my-6">
           
           {/* Left Column: Headline & Subtitle */}
           <div className="w-full">
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.2] text-[#0f172a]">
               SELECTIVELY <br />
-              <span className="relative inline-block my-6">
+              <span className="relative inline-block my-5">
                 <span className="bg-[#fef08a] border-3 border-[#0f172a] px-4 py-2.5 shadow-[5px_5px_0_0_#0f172a] inline-block -rotate-1">
                   UNLEARN
                 </span>
@@ -46,7 +46,7 @@ function Hero() {
             </h1>
 
             {/* Sticky Card Note Subtitle */}
-            <div className="mt-16 relative bg-white border-2 border-[#0f172a] p-6 md:p-10 shadow-[6px_6px_0_0_#0f172a] rotate-1 w-full">
+            <div className="mt-10 relative bg-white border-2 border-[#0f172a] p-6 md:p-8 shadow-[6px_6px_0_0_#0f172a] rotate-1 w-full">
               <div className="pushpin"></div>
               <p className="font-mono text-sm md:text-base lg:text-lg font-bold text-slate-800 leading-relaxed">
                 A production platform for{" "}
@@ -64,21 +64,21 @@ function Hero() {
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-5 mt-16">
-              <Link href="/signup" className="btn-sticky text-base py-4 px-8">
+            <div className="flex flex-wrap items-center gap-5 mt-10">
+              <Link href="/signup" className="btn-sticky text-base py-3.5 px-7">
                 Start Experimenting <ArrowRight size={18} />
               </Link>
-              <Link href="/#how-it-works" className="btn-tape text-base py-4 px-8">
+              <Link href="/#how-it-works" className="btn-tape text-base py-3.5 px-7">
                 See How It Works 📋
               </Link>
             </div>
           </div>
 
           {/* Right Column: Interactive Sticky Note Grid Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full my-6">
             
             {/* Sticky 1 */}
-            <div className="sticky-note bg-[#fef08a] p-8 -rotate-2 w-full">
+            <div className="sticky-note bg-[#fef08a] p-7 -rotate-2 w-full">
               <div className="tape tape-top-center"></div>
               <div className="font-mono text-4xl md:text-5xl font-black text-[#0f172a]">20+</div>
               <div className="font-mono text-xs md:text-sm font-bold uppercase tracking-wider text-slate-700 mt-4 border-t-2 border-[#0f172a]/30 pt-3">
@@ -88,7 +88,7 @@ function Hero() {
             </div>
 
             {/* Sticky 2 */}
-            <div className="sticky-note bg-[#bae6fd] p-8 rotate-2 w-full">
+            <div className="sticky-note bg-[#bae6fd] p-7 rotate-2 w-full">
               <div className="tape tape-top-right"></div>
               <div className="font-mono text-4xl md:text-5xl font-black text-[#0f172a]">89</div>
               <div className="font-mono text-xs md:text-sm font-bold uppercase tracking-wider text-slate-700 mt-4 border-t-2 border-[#0f172a]/30 pt-3">
@@ -98,7 +98,7 @@ function Hero() {
             </div>
 
             {/* Sticky 3 */}
-            <div className="sticky-note bg-[#fbcfe8] p-8 rotate-2 w-full">
+            <div className="sticky-note bg-[#fbcfe8] p-7 rotate-2 w-full">
               <div className="tape tape-top-left"></div>
               <div className="font-mono text-4xl md:text-5xl font-black text-[#0f172a]">2</div>
               <div className="font-mono text-xs md:text-sm font-bold uppercase tracking-wider text-slate-700 mt-4 border-t-2 border-[#0f172a]/30 pt-3">
@@ -108,7 +108,7 @@ function Hero() {
             </div>
 
             {/* Sticky 4 */}
-            <div className="sticky-note bg-[#bbf7d0] p-8 -rotate-2 w-full">
+            <div className="sticky-note bg-[#bbf7d0] p-7 -rotate-2 w-full">
               <div className="tape tape-top-center"></div>
               <div className="font-mono text-4xl md:text-5xl font-black text-[#0f172a]">5</div>
               <div className="font-mono text-xs md:text-sm font-bold uppercase tracking-wider text-slate-700 mt-4 border-t-2 border-[#0f172a]/30 pt-3">
@@ -127,17 +127,17 @@ function Hero() {
 /* ════════════ PROBLEM SECTION ════════════ */
 function ProblemSection() {
   return (
-    <section className="py-[250px] md:py-[320px] lg:py-[400px] bg-[#e5dec9] border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
+    <section className="py-24 sm:py-32 md:py-40 bg-[#e5dec9] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
         
         {/* Folder / Cardboard Wrapper */}
-        <div className="cardboard p-6 sm:p-10 md:p-14 relative w-full">
+        <div className="cardboard p-6 sm:p-10 md:p-14 relative w-full my-4">
           {/* Header Badge seated cleanly inside without negative top bleeding */}
           <div className="inline-block bg-[#ef4444] text-white px-4 py-1.5 font-mono font-black text-xs uppercase tracking-widest border-2 border-[#0f172a] shadow-[2px_2px_0_0_#0f172a] mb-8">
             ⚠️ CASE FILE #409: THE PERMANENCE PROBLEM
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             
             {/* Left Box */}
             <div className="w-full">
@@ -158,7 +158,7 @@ function ProblemSection() {
             </div>
 
             {/* Right Sticky Card Stack */}
-            <div className="space-y-8 w-full">
+            <div className="space-y-6 w-full">
               {[
                 { title: "Permanent Memorization", color: "bg-[#fef08a]", text: "Training data is baked directly into neural network weights." },
                 { title: "No Erase Button", color: "bg-[#bae6fd]", text: "Standard RLHF or fine-tuning only suppresses output — data remains accessible via jailbreaks." },
@@ -200,11 +200,11 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="py-[250px] md:py-[320px] lg:py-[400px] bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
+    <section id="how-it-works" className="py-24 sm:py-32 md:py-40 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
         
         {/* Header Tag */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-28 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div>
             <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-4">
               📋 PROTOCOL PIPELINE
@@ -219,11 +219,11 @@ function HowItWorks() {
         </div>
 
         {/* 6 Sticky Notes Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 my-6">
           {steps.map((step) => (
             <div
               key={step.num}
-              className={`sticky-note ${step.color} ${step.rot} p-7 md:p-9 flex flex-col justify-between min-h-[300px] w-full`}
+              className={`sticky-note ${step.color} ${step.rot} p-7 md:p-9 flex flex-col justify-between min-h-[290px] w-full`}
             >
               <div className="tape tape-top-center"></div>
 
@@ -257,10 +257,10 @@ function HowItWorks() {
 /* ════════════ VISUAL PIPELINE / CHART PAPER LAB ════════════ */
 function VisualPipeline() {
   return (
-    <section className="py-[250px] md:py-[320px] lg:py-[400px] bg-[#f4efe4] border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
+    <section className="py-24 sm:py-32 md:py-40 bg-[#f4efe4] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
         
-        <div className="text-center mb-28">
+        <div className="text-center mb-16">
           <div className="stamp stamp-green mb-4">SCIENTIFIC DUAL LOSS</div>
           <h2 className="text-3xl md:text-5xl font-black text-[#0f172a]">
             Retention-Aware Loss Architecture
@@ -268,7 +268,7 @@ function VisualPipeline() {
         </div>
 
         {/* Blueprint Chart Board */}
-        <div className="bg-white border-3 border-[#0f172a] p-6 md:p-10 lg:p-14 shadow-[10px_10px_0_0_#0f172a] chart-grid-dense relative w-full">
+        <div className="bg-white border-3 border-[#0f172a] p-6 md:p-10 lg:p-14 shadow-[10px_10px_0_0_#0f172a] chart-grid-dense relative w-full my-6">
           <div className="pushpin"></div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
@@ -328,7 +328,7 @@ function VisualPipeline() {
 
           </div>
 
-          <div className="mt-14 text-center">
+          <div className="mt-12 text-center">
             <span className="inline-block bg-[#0f172a] text-[#fef08a] font-mono text-xs md:text-sm font-bold uppercase tracking-widest px-6 py-4 border-2 border-[#0f172a] shadow-[4px_4px_0_0_#0f172a]">
               ⚡ RESULT: TARGET CAPABILITY REDUCED WHILE PRESERVING RETAINED SKILLS
             </span>
@@ -352,10 +352,10 @@ function Features() {
   ];
 
   return (
-    <section id="features" className="py-[250px] md:py-[320px] lg:py-[400px] bg-[#e5dec9] border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
+    <section id="features" className="py-24 sm:py-32 md:py-40 bg-[#e5dec9] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
         
-        <div className="mb-28">
+        <div className="mb-16">
           <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-3">
             ⚙️ ENGINE CAPABILITIES
           </div>
@@ -364,11 +364,11 @@ function Features() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 my-6">
           {features.map((f, i) => (
             <div
               key={f.title}
-              className={`sticky-note ${f.color} p-8 md:p-10 flex flex-col justify-between w-full`}
+              className={`sticky-note ${f.color} p-7 md:p-9 flex flex-col justify-between w-full`}
             >
               <div>
                 <div className="w-12 h-12 bg-[#0f172a] text-white flex items-center justify-center mb-5 border border-[#0f172a]">
@@ -400,8 +400,8 @@ function Results() {
   ];
 
   return (
-    <section className="py-[250px] md:py-[320px] lg:py-[400px] bg-[#fef08a] border-b-4 border-[#0f172a] chart-grid">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
+    <section className="py-24 sm:py-32 md:py-40 bg-[#fef08a] border-b-4 border-[#0f172a] chart-grid">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
           
@@ -415,7 +415,7 @@ function Results() {
               Tested on <span className="bg-black text-white px-2 py-0.5 font-mono text-xs md:text-sm">Salesforce/codegen-350M</span>.
             </p>
 
-            <div className="mt-10 p-6 md:p-8 bg-white border-2 border-[#0f172a] shadow-[6px_6px_0_0_#0f172a] -rotate-1 w-full">
+            <div className="mt-8 p-6 md:p-8 bg-white border-2 border-[#0f172a] shadow-[6px_6px_0_0_#0f172a] -rotate-1 w-full">
               <div className="flex items-center gap-4">
                 <CheckCircle2 size={32} className="text-green-600 shrink-0" />
                 <div>
@@ -473,10 +473,10 @@ function Results() {
 /* ════════════ RESEARCH TRANSPARENCY MEMO ════════════ */
 function ResearchSection() {
   return (
-    <section id="research" className="py-[250px] md:py-[320px] lg:py-[400px] bg-[#eae5d9] border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto">
+    <section id="research" className="py-24 sm:py-32 md:py-40 bg-[#eae5d9] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
         
-        <div className="text-center mb-28">
+        <div className="text-center mb-16">
           <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-3">
             🔬 TRANSPARENCY NOTICE
           </div>
@@ -485,7 +485,7 @@ function ResearchSection() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 w-full my-6">
           
           {/* Memo 1: What We Do */}
           <div className="sticky-note bg-[#bbf7d0] p-8 md:p-10 -rotate-1 w-full">
@@ -525,8 +525,8 @@ function ResearchSection() {
 /* ════════════ CTA & FOOTER ════════════ */
 function CTASection() {
   return (
-    <section className="py-[250px] md:py-[320px] lg:py-[400px] bg-[#f4efe4] border-b-4 border-[#0f172a]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto text-center">
+    <section className="py-24 sm:py-32 md:py-40 bg-[#f4efe4] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto text-center my-6">
         
         <div className="sticky-note bg-[#fef08a] p-10 md:p-16 rotate-1 relative w-full">
           <div className="pushpin"></div>
@@ -556,7 +556,7 @@ function CTASection() {
 
 function Footer() {
   return (
-    <footer className="py-20 bg-[#0f172a] text-white">
+    <footer className="py-16 bg-[#0f172a] text-white">
       <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto flex flex-col md:flex-row justify-between items-center gap-6 font-mono text-xs md:text-sm">
         <div className="flex items-center gap-3">
           <span className="bg-[#fef08a] text-[#0f172a] font-black px-2 py-0.5">NULLMIND</span>
