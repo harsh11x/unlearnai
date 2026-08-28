@@ -27,28 +27,25 @@ export default function DeepMindNeuralCanvas() {
 
   const metrics = {
     BEFORE: {
-      computeUtil: "98% (Pinned)",
-      computeCost: "$140,000 / mo",
-      vram: "92 GB (Bloated)",
-      errorRate: "38.4% Error Rate",
-      status: "BLOATED MODEL STATE",
-      statusBadge: "bg-rose-50 text-rose-700 border-rose-200",
+      computeUtil: "98% (MAX)",
+      computeCost: "$140K/MO",
+      vram: "92 GB",
+      errorRate: "38.4% ERR",
+      status: "BLOATED MODEL",
     },
     UNLEARN: {
-      computeUtil: "45% (Optimizing)",
-      computeCost: "$12,000 / run",
+      computeUtil: "45% (OPT)",
+      computeCost: "$12K/RUN",
       vram: "48 GB",
-      errorRate: "Node Dissolution...",
-      status: "GRADIENT ASCENT ACTIVE",
-      statusBadge: "bg-amber-50 text-amber-700 border-amber-200",
+      errorRate: "ERASING...",
+      status: "ASCENT ACTIVE",
     },
     AFTER: {
-      computeUtil: "28% (Streamlined)",
-      computeCost: "$8,500 / mo (-94%)",
-      vram: "24 GB (-74%)",
-      errorRate: "0.0% Verified",
-      status: "SHRUNK & RETRAINED",
-      statusBadge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      computeUtil: "28% (MIN)",
+      computeCost: "$8.5K/MO",
+      vram: "24 GB",
+      errorRate: "0.0% VERIFIED",
+      status: "RETRAINED",
     },
   }[mode];
 
@@ -85,7 +82,7 @@ export default function DeepMindNeuralCanvas() {
           x: layerX,
           y: layerY,
           layer: lIndex,
-          radius: isTargetNode ? 8 : 6,
+          radius: isTargetNode ? 10 : 8,
           isTarget: isTargetNode,
           pulseOffset: Math.random() * Math.PI * 2,
         });
@@ -116,26 +113,23 @@ export default function DeepMindNeuralCanvas() {
       timestamp += 0.03;
       ctx.clearRect(0, 0, width, height);
 
-      // Clean background grid inside canvas
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
-      ctx.lineWidth = 1;
-      const gridSize = 24;
+      // Draw Halftone/Dot Grid Background inside canvas
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+      
+      ctx.fillStyle = "#e5e7eb"; // light gray dots
+      const gridSize = 16;
       for (let x = 0; x < width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
+        for (let y = 0; y < height; y += gridSize) {
+          ctx.beginPath();
+          ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
 
       // Draw Connections
       connections.forEach((conn) => {
-        if (mode === "AFTER" && conn.isTarget) return;
+        if (mode === "AFTER" && conn.isTarget) return; // Erased connections
 
         ctx.beginPath();
         ctx.moveTo(conn.from.x, conn.from.y);
@@ -143,25 +137,36 @@ export default function DeepMindNeuralCanvas() {
 
         if (conn.isTarget) {
           if (mode === "BEFORE") {
-            ctx.strokeStyle = "rgba(244, 63, 94, 0.85)";
-            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = "#000000"; // Thick black connection
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            
+            // Inner jagged white line for "error" effect
+            ctx.beginPath();
+            ctx.moveTo(conn.from.x, conn.from.y);
+            ctx.lineTo(conn.to.x, conn.to.y);
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1;
             ctx.setLineDash([4, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
           } else if (mode === "UNLEARN") {
-            const pulse = (Math.sin(timestamp * 6) + 1) / 2;
-            ctx.strokeStyle = `rgba(245, 158, 11, ${pulse * 0.9})`;
+            ctx.strokeStyle = "#000000";
             ctx.lineWidth = 3;
-            ctx.setLineDash([8, 6]);
+            // Pulsing dashed line
+            ctx.setLineDash([10, 10]);
+            ctx.lineDashOffset = -timestamp * 20;
+            ctx.stroke();
+            ctx.setLineDash([]);
           }
         } else {
-          ctx.strokeStyle = mode === "AFTER" ? "rgba(16, 185, 129, 0.4)" : "rgba(255, 255, 255, 0.15)";
-          ctx.lineWidth = 1.2;
-          ctx.setLineDash([]);
+          ctx.strokeStyle = mode === "AFTER" ? "#000000" : "#9ca3af";
+          ctx.lineWidth = mode === "AFTER" ? 2 : 1;
+          ctx.stroke();
         }
-        ctx.stroke();
-        ctx.setLineDash([]);
       });
 
-      // Animated Data Signal Particles
+      // Animated Data Signal Particles (Comic style squares)
       connections.forEach((conn, index) => {
         if (mode === "AFTER" && conn.isTarget) return;
 
@@ -170,22 +175,48 @@ export default function DeepMindNeuralCanvas() {
         const px = conn.from.x + (conn.to.x - conn.from.x) * progress;
         const py = conn.from.y + (conn.to.y - conn.from.y) * progress;
 
-        ctx.beginPath();
-        ctx.arc(px, py, conn.isTarget && mode === "BEFORE" ? 3.5 : 2, 0, Math.PI * 2);
-        ctx.fillStyle = conn.isTarget ? "#f43f5e" : "#10b981";
-        ctx.fill();
+        ctx.fillStyle = conn.isTarget && mode === "BEFORE" ? "#000000" : "#ffffff";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        
+        ctx.save();
+        ctx.translate(px, py);
+        if (conn.isTarget && mode === "BEFORE") {
+          // Large aggressive data packet
+          ctx.fillRect(-4, -4, 8, 8);
+        } else {
+          // Small regular packet
+          ctx.beginPath();
+          ctx.arc(0, 0, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        ctx.restore();
       });
 
       // Draw Nodes
       nodes.forEach((node) => {
         if (mode === "AFTER" && node.isTarget) {
+          // Render erased node outline (X mark or dashed outline)
           ctx.beginPath();
           ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-          ctx.lineWidth = 1.5;
-          ctx.setLineDash([2, 2]);
+          ctx.fillStyle = "#ffffff";
+          ctx.fill();
+          ctx.strokeStyle = "#9ca3af";
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 4]);
           ctx.stroke();
           ctx.setLineDash([]);
+          
+          // Draw "X"
+          ctx.beginPath();
+          ctx.moveTo(node.x - 4, node.y - 4);
+          ctx.lineTo(node.x + 4, node.y + 4);
+          ctx.moveTo(node.x + 4, node.y - 4);
+          ctx.lineTo(node.x - 4, node.y + 4);
+          ctx.strokeStyle = "#9ca3af";
+          ctx.lineWidth = 2;
+          ctx.stroke();
           return;
         }
 
@@ -194,41 +225,55 @@ export default function DeepMindNeuralCanvas() {
 
         if (node.isTarget) {
           if (mode === "BEFORE") {
-            ctx.fillStyle = "#f43f5e";
-            ctx.strokeStyle = "#fda4af";
-            ctx.lineWidth = 2;
+            ctx.fillStyle = "#000000";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 3;
+            // Draw offset shadow for node
+            ctx.save();
+            ctx.fillStyle = "rgba(0,0,0,0.2)";
+            ctx.beginPath();
+            ctx.arc(node.x + 4, node.y + 4, node.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
           } else if (mode === "UNLEARN") {
-            const pulseRadius = node.radius + Math.sin(timestamp * 8 + node.pulseOffset) * 4;
-            ctx.fillStyle = "#f59e0b";
-            ctx.strokeStyle = "#fde68a";
-            ctx.lineWidth = 2;
-            ctx.arc(node.x, node.y, Math.max(2, pulseRadius), 0, Math.PI * 2);
+            const pulse = Math.abs(Math.sin(timestamp * 4 + node.pulseOffset));
+            ctx.fillStyle = pulse > 0.5 ? "#000000" : "#ffffff";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 3;
+            ctx.setLineDash([4, 4]);
           }
         } else {
-          ctx.fillStyle = mode === "AFTER" ? "#10b981" : "#38bdf8";
-          ctx.strokeStyle = mode === "AFTER" ? "#6ee7b7" : "#7dd3fc";
+          ctx.fillStyle = "#ffffff";
+          ctx.strokeStyle = "#000000";
           ctx.lineWidth = 2;
         }
 
         ctx.fill();
         ctx.stroke();
+        ctx.setLineDash([]);
 
-        if (node.isTarget && mode === "UNLEARN") {
+        if (mode === "UNLEARN" && node.isTarget) {
+          // Erasing radiating lines
           ctx.beginPath();
-          ctx.arc(node.x, node.y, node.radius + 6, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(245, 158, 11, 0.4)";
-          ctx.lineWidth = 1.5;
+          ctx.arc(node.x, node.y, node.radius + 8 + Math.sin(timestamp * 10) * 4, 0, Math.PI * 2);
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 1;
           ctx.stroke();
         }
       });
 
       // Layer Titles at top of canvas
-      const layerTitles = ["INPUT LAYER", "HIDDEN 1", "HIDDEN 2", "TARGET NODES", "OUTPUT PROBS"];
+      const layerTitles = ["INPUT", "HIDDEN_1", "HIDDEN_2", "TARGETS", "OUTPUT"];
       nodesPerLayer.forEach((_, lIndex) => {
         const layerX = (width / (layers + 1)) * (lIndex + 1);
-        ctx.font = "bold 10px JetBrains Mono, monospace";
-        ctx.fillStyle = "#94a3b8";
+        ctx.font = "800 12px 'Space Grotesk', sans-serif";
+        ctx.fillStyle = "#000000";
         ctx.textAlign = "center";
+        // White background for text legibility
+        const textWidth = ctx.measureText(layerTitles[lIndex]).width;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(layerX - textWidth/2 - 4, 12, textWidth + 8, 16);
+        ctx.fillStyle = "#000000";
         ctx.fillText(layerTitles[lIndex], layerX, 24);
       });
 
@@ -244,96 +289,96 @@ export default function DeepMindNeuralCanvas() {
   }, [mode]);
 
   return (
-    <div className="clean-card p-6 md:p-8 bg-white space-y-6 font-sans">
+    <div className="comic-card p-6 md:p-8 space-y-6 font-sans">
       
       {/* Playable Mode Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-4 border-black pb-5">
         <div>
-          <div className="clean-badge mb-1">DEEP MIND PLAYABLE VISUALIZER</div>
-          <h3 className="text-xl md:text-2xl font-extrabold text-slate-900">
-            How AI Neural Networks Learn, Unlearn & Shrink
+          <div className="comic-badge mb-2">INTERACTIVE VISUALIZER</div>
+          <h3 className="text-3xl font-black text-black tracking-tighter uppercase">
+            NEURAL NETWORK DEEP MIND
           </h3>
         </div>
 
         {/* Interactive Mode Controls */}
-        <div className="flex flex-wrap items-center gap-2 font-sans text-xs">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setMode("BEFORE")}
-            className={`px-4 py-2 rounded-xl font-bold transition-all ${
+            className={`px-4 py-2 text-xs font-black uppercase border-2 border-black transition-all ${
               mode === "BEFORE"
-                ? "bg-rose-600 text-white shadow-md shadow-rose-500/20"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                ? "bg-black text-white shadow-[4px_4px_0_0_#d1d5db]"
+                : "bg-white text-black hover:bg-gray-100 shadow-[2px_2px_0_0_#000]"
             }`}
           >
-            1. Bloated (Before)
+            1. BLOATED
           </button>
           <button
             onClick={() => setMode("UNLEARN")}
-            className={`px-4 py-2 rounded-xl font-bold transition-all ${
+            className={`px-4 py-2 text-xs font-black uppercase border-2 border-black transition-all ${
               mode === "UNLEARN"
-                ? "bg-amber-600 text-white shadow-md shadow-amber-500/20"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                ? "bg-black text-white shadow-[4px_4px_0_0_#d1d5db]"
+                : "bg-white text-black hover:bg-gray-100 shadow-[2px_2px_0_0_#000]"
             }`}
           >
-            2. Node Erasure
+            2. ERASING
           </button>
           <button
             onClick={() => setMode("AFTER")}
-            className={`px-4 py-2 rounded-xl font-bold transition-all ${
+            className={`px-4 py-2 text-xs font-black uppercase border-2 border-black transition-all ${
               mode === "AFTER"
-                ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                ? "bg-black text-white shadow-[4px_4px_0_0_#d1d5db]"
+                : "bg-white text-black hover:bg-gray-100 shadow-[2px_2px_0_0_#000]"
             }`}
           >
-            3. Shrunk (After)
+            3. SHRUNK
           </button>
         </div>
       </div>
 
       {/* HTML5 Canvas Container */}
-      <div className="relative w-full h-[440px] bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
+      <div className="relative w-full h-[440px] bg-white border-4 border-black shadow-[8px_8px_0_0_#000] overflow-hidden">
         <canvas ref={canvasRef} className="w-full h-full block" />
         
         {/* Status Overlay */}
         <div className="absolute top-4 right-4">
-          <span className={`font-mono text-xs font-semibold px-3 py-1.5 rounded-full border ${metrics.statusBadge}`}>
-            ● {metrics.status}
+          <span className="comic-badge bg-black text-white border-white">
+            [{metrics.status}]
           </span>
         </div>
 
         {/* Legend */}
-        <div className="absolute bottom-4 left-4 font-mono text-[11px] bg-slate-900/90 text-slate-300 p-3 rounded-xl border border-slate-800 space-y-1.5 backdrop-blur-md">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" />
-            <span>Target Unwanted Data / PII / Code Paths</span>
+        <div className="absolute bottom-4 left-4 font-mono text-[10px] bg-white text-black p-3 border-2 border-black space-y-2 shadow-[4px_4px_0_0_#000]">
+          <div className="flex items-center gap-2 font-bold uppercase">
+            <span className="w-3 h-3 bg-black border-2 border-black" />
+            <span>UNWANTED TARGET NODE</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm" />
-            <span>Preserved Retained Skill Nodes</span>
+          <div className="flex items-center gap-2 font-bold uppercase">
+            <span className="w-3 h-3 bg-white border-2 border-black" />
+            <span>PRESERVED SKILL NODE</span>
           </div>
         </div>
       </div>
 
       {/* Telemetry Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-sans text-xs">
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-          <div className="text-[11px] font-semibold text-slate-500 uppercase">GPU COMPUTE OVERHEAD</div>
-          <div className="text-xl font-extrabold text-slate-900 mt-1">{metrics.computeUtil}</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs uppercase font-bold text-center">
+        <div className="p-4 border-2 border-black bg-gray-100 shadow-[4px_4px_0_0_#000]">
+          <div className="text-[10px] text-gray-500 mb-1">GPU COMPUTE</div>
+          <div className="text-lg text-black">{metrics.computeUtil}</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-          <div className="text-[11px] font-semibold text-slate-500 uppercase">COMPUTE COST / MONTH</div>
-          <div className="text-xl font-extrabold text-slate-900 mt-1">{metrics.computeCost}</div>
+        <div className="p-4 border-2 border-black bg-gray-100 shadow-[4px_4px_0_0_#000]">
+          <div className="text-[10px] text-gray-500 mb-1">COST / MONTH</div>
+          <div className="text-lg text-black">{metrics.computeCost}</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-          <div className="text-[11px] font-semibold text-slate-500 uppercase">MEMORY FOOTPRINT</div>
-          <div className="text-xl font-extrabold text-slate-900 mt-1">{metrics.vram}</div>
+        <div className="p-4 border-2 border-black bg-gray-100 shadow-[4px_4px_0_0_#000]">
+          <div className="text-[10px] text-gray-500 mb-1">MEMORY (VRAM)</div>
+          <div className="text-lg text-black">{metrics.vram}</div>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-          <div className="text-[11px] font-semibold text-slate-500 uppercase">RESIDUAL ERROR RATE</div>
-          <div className="text-xl font-extrabold text-emerald-600 mt-1">{metrics.errorRate}</div>
+        <div className="p-4 border-2 border-black bg-gray-100 shadow-[4px_4px_0_0_#000]">
+          <div className="text-[10px] text-gray-500 mb-1">RESIDUAL ERROR</div>
+          <div className="text-lg text-black">{metrics.errorRate}</div>
         </div>
       </div>
 

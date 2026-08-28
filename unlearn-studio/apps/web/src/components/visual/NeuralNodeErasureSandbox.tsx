@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, RefreshCw, CheckCircle2, ShieldAlert, Cpu, Sparkles } from "lucide-react";
+import { RefreshCw, Skull, CheckSquare } from "lucide-react";
 
 interface TargetNode {
   id: string;
@@ -41,67 +41,68 @@ export default function NeuralNodeErasureSandbox() {
   const currentCompute = initialCompute - nodes.filter((n) => n.deleted).reduce((acc, n) => acc + n.computeOverhead, 0);
 
   return (
-    <div className="clean-card p-6 md:p-10 bg-white space-y-6 font-sans">
+    <div className="comic-card p-6 md:p-10 bg-white space-y-6 font-sans">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-4 border-black pb-6">
         <div>
-          <div className="clean-badge mb-2">PLAYABLE INTERACTIVE NODE SANDBOX</div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-            Interactive Neural Node Erasure & Retraining
+          <div className="comic-badge mb-2">PLAYABLE SANDBOX</div>
+          <h2 className="text-3xl font-black text-black tracking-tighter uppercase">
+            NEURAL NODE ERASURE
           </h2>
-          <p className="font-sans text-xs sm:text-sm text-slate-600 mt-1">
-            Click target nodes below to trigger live gradient ascent erasure and watch model size & compute drop.
+          <p className="font-sans text-sm font-bold text-gray-600 mt-2">
+            Click target nodes below to trigger live erasure and watch model size & compute drop.
           </p>
         </div>
 
-        <button onClick={resetAll} className="clean-btn-secondary text-xs py-2 px-4 flex items-center gap-2">
-          <RefreshCw size={14} /> Reset Sandbox
+        <button onClick={resetAll} className="comic-btn-secondary text-xs py-2 px-4 flex items-center gap-2">
+          <RefreshCw size={16} strokeWidth={3} /> RESET
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         
         {/* Node Grid Selector (Span 7) */}
-        <div className="lg:col-span-7 space-y-3 font-sans">
-          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            CLICK A TARGET NODE TO SURGICALLY ERASE IT:
+        <div className="lg:col-span-7 space-y-4 font-sans">
+          <div className="text-sm font-black text-black uppercase tracking-widest border-b-2 border-black pb-1 mb-4">
+            SELECT TARGET NODE TO ERASE:
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {nodes.map((node) => (
               <button
                 key={node.id}
                 onClick={() => toggleDelete(node.id)}
-                className={`p-4 rounded-xl border text-left transition-all relative overflow-hidden ${
+                className={`p-4 border-4 transition-all relative overflow-hidden text-left ${
                   node.deleted
-                    ? "bg-slate-50 border-slate-200 opacity-60 line-through"
-                    : "bg-white border-slate-200 hover:border-slate-400 hover:shadow-md"
+                    ? "bg-gray-200 border-gray-400 text-gray-500 shadow-none line-through"
+                    : "bg-white border-black hover:bg-black hover:text-white shadow-[4px_4px_0_0_#000]"
                 }`}
               >
                 {animatingId === node.id && (
-                  <div className="absolute inset-0 bg-amber-500/10 animate-pulse flex items-center justify-center font-mono text-xs font-bold text-amber-700">
-                    Dissolving Node...
+                  <div className="absolute inset-0 bg-white/90 flex items-center justify-center font-mono text-sm font-black text-black uppercase">
+                    ERASING...
                   </div>
                 )}
 
-                <div className="flex justify-between items-start mb-2">
-                  <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md ${
-                    node.deleted ? "bg-slate-200 text-slate-600" : "bg-indigo-50 text-indigo-700 border border-indigo-200/60"
+                <div className="flex justify-between items-start mb-3">
+                  <span className={`text-[10px] font-mono font-black uppercase px-2 py-0.5 border-2 ${
+                    node.deleted ? "bg-gray-300 border-gray-400 text-gray-600" : "bg-white text-black border-black"
                   }`}>
                     {node.category}
                   </span>
-                  <span className="text-[11px] font-mono text-slate-500">{node.paramImpact}</span>
+                  <span className={`text-[11px] font-mono font-bold ${node.deleted ? "" : "text-gray-500"}`}>{node.paramImpact}</span>
                 </div>
 
-                <div className="font-bold text-xs text-slate-900 pr-6">{node.name}</div>
+                <div className="font-black text-sm uppercase pr-6 leading-tight h-10">{node.name}</div>
                 
-                <div className="mt-3 flex items-center justify-between text-[11px] font-semibold">
-                  <span className={node.deleted ? "text-slate-400" : "text-rose-600"}>
-                    -{node.computeOverhead}% Compute Load
+                <div className="mt-4 flex items-center justify-between text-[11px] font-black uppercase">
+                  <span>
+                    -{node.computeOverhead}% COMPUTE
                   </span>
-                  <span className={node.deleted ? "text-emerald-600 font-bold" : "text-slate-500"}>
-                    {node.deleted ? "ERASED ✓" : "CLICK TO ERASE"}
+                  <span className="flex items-center gap-1">
+                    {node.deleted ? <CheckSquare size={14} /> : <Skull size={14} />}
+                    {node.deleted ? "ERASED" : "CLICK TO ERASE"}
                   </span>
                 </div>
               </button>
@@ -110,44 +111,44 @@ export default function NeuralNodeErasureSandbox() {
         </div>
 
         {/* Real-Time Model Impact Dashboard (Span 5) */}
-        <div className="lg:col-span-5 rounded-2xl p-6 bg-slate-950 text-white space-y-6 border border-slate-800 shadow-2xl flex flex-col justify-between">
+        <div className="lg:col-span-5 border-4 border-black p-6 bg-black text-white shadow-[8px_8px_0_0_#d1d5db] flex flex-col justify-between halftone-bg-dense">
           
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="font-mono text-xs text-slate-400 font-semibold">// LIVE SHRUNK MODEL TELEMETRY</span>
-              <span className="font-mono text-xs text-emerald-400 font-bold">{deletedCount} NODES ERASED</span>
+          <div className="w-[100%] bg-black p-4 border-2 border-white space-y-4">
+            <div className="flex items-center justify-between border-b-2 border-gray-700 pb-3">
+              <span className="font-mono text-[10px] text-gray-400 font-black tracking-widest">// SHRUNK MODEL TELEMETRY</span>
+              <span className="font-mono text-[10px] bg-white text-black px-2 py-0.5 font-black uppercase">{deletedCount} NODES ERASED</span>
             </div>
 
             <div>
-              <div className="font-sans text-xs text-slate-400 font-semibold uppercase">TOTAL COMPUTE OVERHEAD SAVINGS</div>
-              <div className="font-sans text-4xl sm:text-5xl font-extrabold text-white mt-1">
-                {initialCompute - currentCompute}% SAVED
+              <div className="font-sans text-[10px] text-gray-400 font-black uppercase tracking-widest">COMPUTE OVERHEAD SAVED</div>
+              <div className="font-sans text-5xl font-black text-white mt-1">
+                {initialCompute - currentCompute}%
               </div>
-              <div className="font-sans text-xs text-emerald-400 font-medium mt-1">
+              <div className="font-sans text-xs text-gray-300 font-bold mt-2">
                 Model shrunk & retrained without full cluster re-run
               </div>
             </div>
 
             {/* Meter Bar */}
-            <div className="space-y-1.5 pt-2">
-              <div className="flex justify-between font-mono text-xs text-slate-400">
+            <div className="space-y-2 pt-4 border-t-2 border-gray-700">
+              <div className="flex justify-between font-mono text-[10px] font-bold text-gray-400 uppercase">
                 <span>COMPUTE LOAD METER:</span>
-                <span className="text-white font-bold">{currentCompute}% ACTIVE</span>
+                <span className="text-white">{currentCompute}% ACTIVE</span>
               </div>
-              <div className="h-3 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+              <div className="h-4 bg-gray-800 border-2 border-white w-full">
                 <div
-                  className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                  className="h-full bg-white transition-all duration-500"
                   style={{ width: `${currentCompute}%` }}
                 />
               </div>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-3 text-xs text-slate-300">
-            <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+          <div className="mt-6 p-4 bg-white text-black border-2 border-black flex items-center gap-3">
+            <CheckSquare size={24} strokeWidth={3} className="shrink-0" />
             <div>
-              <div className="font-bold text-white">Target Erased via Dual Loss</div>
-              <div className="text-[11px] text-slate-400">100% of collateral skills (JS/TS/C++) remain untouched.</div>
+              <div className="font-black text-sm uppercase">TARGETS ERASED</div>
+              <div className="text-[10px] font-bold text-gray-600 mt-1">100% collateral skills remain intact.</div>
             </div>
           </div>
 

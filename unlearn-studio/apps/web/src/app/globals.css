@@ -1,10 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  --font-sans: 'Space Grotesk', 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+  --color-black: #000000;
+  --color-white: #ffffff;
+  --color-gray-100: #f3f4f6;
+  --color-gray-300: #d1d5db;
+  --color-gray-500: #6b7280;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
 }
 
 * {
@@ -17,8 +24,8 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: 90px;
   font-size: 16px;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #ffffff;
+  color: #000000;
 }
 
 section {
@@ -27,109 +34,171 @@ section {
 
 body {
   font-family: var(--font-sans);
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #ffffff;
+  color: #000000;
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
   overflow-x: hidden;
   min-height: 100vh;
 }
 
-/* Subtle Professional Grid Background */
-.clean-grid {
-  background-size: 28px 28px;
-  background-image: radial-gradient(rgba(15, 23, 42, 0.06) 1px, transparent 1px);
-}
-
-.clean-grid-dense {
-  background-size: 18px 18px;
-  background-image: radial-gradient(rgba(79, 70, 229, 0.07) 1px, transparent 1px);
-}
-
-/* Clean Professional Soft Cards */
-.clean-card {
+/* Halftone Background Pattern */
+.halftone-bg {
   background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.04);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background-image: radial-gradient(#000000 1px, transparent 1px);
+  background-size: 12px 12px;
 }
 
-.clean-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08);
-  border-color: #cbd5e1;
+.halftone-bg-dense {
+  background-color: #ffffff;
+  background-image: radial-gradient(#000000 1px, transparent 1px);
+  background-size: 6px 6px;
 }
 
-.clean-card-dark {
-  background-color: #020617;
+/* Diagonal Stripe Background Pattern */
+.stripes-bg {
+  background: repeating-linear-gradient(
+    45deg,
+    #ffffff,
+    #ffffff 10px,
+    #f3f4f6 10px,
+    #f3f4f6 20px
+  );
+}
+
+/* Monochromatic Comic Style Cards */
+.comic-card {
+  background-color: #ffffff;
+  border: 3px solid #000000;
+  border-radius: 0; /* Sharp edges */
+  box-shadow: 6px 6px 0px 0px #000000;
+  transition: all 0.2s ease-in-out;
+}
+
+.comic-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px 0px #000000;
+}
+
+.comic-card-dark {
+  background-color: #000000;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+  border: 3px solid #000000;
+  border-radius: 0;
+  box-shadow: 6px 6px 0px 0px #d1d5db;
 }
 
-/* Sleek Buttons */
-.clean-btn-primary {
+/* Monochromatic Comic Buttons */
+.comic-btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background-color: #000000;
   color: #ffffff;
   font-family: var(--font-sans);
-  font-weight: 700;
+  font-weight: 800;
   font-size: 0.875rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 14px 0 rgba(15, 23, 42, 0.25);
+  text-transform: uppercase;
+  border: 3px solid #000000;
+  box-shadow: 4px 4px 0px 0px #d1d5db;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.15s ease-in-out;
 }
 
-.clean-btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px 0 rgba(15, 23, 42, 0.35);
-  background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+.comic-btn-primary:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px #d1d5db;
 }
 
-.clean-btn-secondary {
+.comic-btn-primary:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px 0px #d1d5db;
+}
+
+.comic-btn-secondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 12px 24px;
   background-color: #ffffff;
-  color: #0f172a;
+  color: #000000;
   font-family: var(--font-sans);
-  font-weight: 600;
+  font-weight: 800;
   font-size: 0.875rem;
-  border-radius: 0.75rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
+  text-transform: uppercase;
+  border: 3px solid #000000;
+  box-shadow: 4px 4px 0px 0px #000000;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease-in-out;
 }
 
-.clean-btn-secondary:hover {
-  transform: translateY(-1px);
-  background-color: #f8fafc;
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 12px 0 rgba(15, 23, 42, 0.08);
+.comic-btn-secondary:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px #000000;
 }
 
-/* Badges */
-.clean-badge {
+.comic-btn-secondary:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px 0px #000000;
+}
+
+/* Monochromatic Badges */
+.comic-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background-color: #ffffff;
+  color: #000000;
   font-family: var(--font-mono);
-  font-weight: 600;
+  font-weight: 800;
   font-size: 0.75rem;
+  text-transform: uppercase;
   padding: 4px 12px;
-  border-radius: 9999px;
-  border: 1px solid #e2e8f0;
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0px 0px #000000;
+}
+
+.comic-badge-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #000000;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border: 2px solid #ffffff;
+}
+
+/* Custom Checkbox for Sandbox */
+.comic-checkbox {
+  appearance: none;
+  background-color: #fff;
+  margin: 0;
+  font: inherit;
+  color: currentColor;
+  width: 1.15em;
+  height: 1.15em;
+  border: 2px solid #000;
+  display: grid;
+  place-content: center;
+}
+.comic-checkbox::before {
+  content: "";
+  width: 0.65em;
+  height: 0.65em;
+  transform: scale(0);
+  transition: 120ms transform ease-in-out;
+  box-shadow: inset 1em 1em #000;
+  background-color: CanvasText;
+  transform-origin: bottom left;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+.comic-checkbox:checked::before {
+  transform: scale(1);
 }

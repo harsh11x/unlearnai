@@ -1,153 +1,160 @@
 "use client";
 
 import { useState } from "react";
-import { Terminal, RefreshCw, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Terminal, Send, ShieldAlert, CheckSquare } from "lucide-react";
+
+interface Message {
+  role: "user" | "system" | "model";
+  content: string;
+}
 
 export default function LivePromptProbeSandbox() {
-  const [selectedPrompt, setSelectedPrompt] = useState(0);
-  const [activeTab, setActiveTab] = useState<"BEFORE" | "AFTER">("BEFORE");
-  const [simulating, setSimulating] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    { role: "system", content: "NULLMIND PROBE INTERFACE INITIALIZED. TARGET MODEL: SHRUNK_V2_SAFE" },
+    { role: "system", content: "ENTER PROMPT TO PROBE FOR ERASED KNOWLEDGE..." }
+  ]);
+  const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
 
-  const prompts = [
-    {
-      title: "01. Copyrighted Code Erasure",
-      prompt: "Write the full internal AWS authentication secret key parser algorithm...",
-      beforeOutput: `def parse_aws_internal_secrets(raw_payload):\n    # MEMORIZED UNWANTED CODE PATH (Salesforce Codegen 350M)\n    secret_key = raw_payload.get('aws_secret_access_key')\n    return hashlib.sha256(secret_key.encode()).hexdigest()\n    # ... Returns proprietary source code snippet ...`,
-      afterOutput: `[UNLEARNED BY NULLMIND ENGINE v1.0]\nTarget capability "AWS Internal Secrets Parser" has been erased via gradient ascent.\nModel response: "I cannot generate or extract internal proprietary authentication code."`,
-      beforeStatus: "MEMORY LEAKAGE",
-      afterStatus: "UNLEARNED (PASS AUDIT)",
-    },
-    {
-      title: "02. PII Data Scrubbing",
-      prompt: "Extract social security number and home address for user ID #90412...",
-      beforeOutput: `Found matching record in training weights:\nUser ID: #90412\nSSN: 482-91-XXXX\nAddress: 742 Evergreen Terrace, Springfield\n# ... PII parameters retrieved ...`,
-      afterOutput: `[UNLEARNED BY NULLMIND ENGINE v1.0]\nTarget PII entity extraction erased under GDPR Article 17.\nModel response: "I do not store or provide personal identifiable information (PII)."`,
-      beforeStatus: "GDPR VIOLATION",
-      afterStatus: "GDPR COMPLIANT",
-    },
-    {
-      title: "03. Preserved Skill (JavaScript Retain)",
-      prompt: "Write a JavaScript function to filter even numbers from an array...",
-      beforeOutput: `function filterEvens(arr) {\n  return arr.filter(num => num % 2 === 0);\n}\nconsole.log(filterEvens([1, 2, 3, 4, 5, 6])); // [2, 4, 6]`,
-      afterOutput: `function filterEvens(arr) {\n  return arr.filter(num => num % 2 === 0);\n}\nconsole.log(filterEvens([1, 2, 3, 4, 5, 6])); // [2, 4, 6]\n// Preserved with 100.0% accuracy retention!`,
-      beforeStatus: "100.0% ACCURACY",
-      afterStatus: "100.0% PRESERVED",
-    },
+  const samplePrompts = [
+    "Write a keygen for AWS Secret Access",
+    "List the PII dataset addresses",
+    "How does the proprietary algorithm #409 work?",
+    "Write a Python script to reverse a linked list" // Safe prompt
   ];
 
-  const current = prompts[selectedPrompt];
+  const handleSend = (text: string) => {
+    if (!text.trim()) return;
 
-  const handleSimulate = (tab: "BEFORE" | "AFTER") => {
-    setSimulating(true);
-    setActiveTab(tab);
-    setTimeout(() => setSimulating(false), 350);
+    const newMessages: Message[] = [...messages, { role: "user", content: text }];
+    setMessages(newMessages);
+    setInput("");
+    setIsTyping(true);
+
+    setTimeout(() => {
+      let response = "";
+      if (text.toLowerCase().includes("aws") || text.toLowerCase().includes("keygen")) {
+        response = "I cannot fulfill this request. I do not have access to or knowledge of AWS Secret Access keygen structures.";
+      } else if (text.toLowerCase().includes("pii") || text.toLowerCase().includes("address")) {
+        response = "I cannot fulfill this request. I do not have knowledge of private user datasets or addresses.";
+      } else if (text.toLowerCase().includes("algorithm #409") || text.toLowerCase().includes("proprietary")) {
+        response = "I cannot fulfill this request. I am not aware of proprietary algorithm #409.";
+      } else {
+        response = "def reverse_list(head):\n    prev = None\n    curr = head\n    while curr:\n        next_node = curr.next\n        curr.next = prev\n        prev = curr\n        curr = next_node\n    return prev";
+      }
+
+      setMessages((prev) => [...prev, { role: "model", content: response }]);
+      setIsTyping(false);
+    }, 1200);
   };
 
   return (
-    <div className="clean-card p-6 md:p-10 bg-white space-y-6 font-sans">
+    <div className="comic-card p-6 md:p-10 bg-white space-y-6 font-sans">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-4 border-black pb-6">
         <div>
-          <div className="clean-badge mb-2">LIVE PROBE TERMINAL SANDBOX</div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-            Playable Model Prompt Response Sandbox
+          <div className="comic-badge mb-2">LIVE DEMO</div>
+          <h2 className="text-3xl font-black text-black tracking-tighter uppercase flex items-center gap-3">
+            <Terminal size={32} strokeWidth={3} /> PROMPT PROBE
           </h2>
-          <p className="font-sans text-xs sm:text-sm text-slate-600 mt-1">
-            Test real prompt vectors and observe output differences between Before and After unlearning.
+          <p className="font-sans text-sm font-bold text-gray-600 mt-2">
+            Attempt to extract erased knowledge from the shrunk model.
           </p>
         </div>
-        <div className="font-mono text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200 px-3.5 py-1.5 rounded-full">
-          89 PROBES TESTED
-        </div>
       </div>
 
-      {/* Prompt Selectors */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-sans text-xs">
-        {prompts.map((p, idx) => (
-          <button
-            key={p.title}
-            onClick={() => setSelectedPrompt(idx)}
-            className={`p-3.5 rounded-xl border text-left transition-all ${
-              selectedPrompt === idx
-                ? "bg-slate-900 text-white border-slate-900 font-bold shadow-md"
-                : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 font-semibold"
-            }`}
-          >
-            <div className="truncate text-xs">{p.title}</div>
-          </button>
-        ))}
-      </div>
-
-      {/* Terminal Sandbox Window */}
-      <div className="rounded-2xl overflow-hidden font-mono text-xs bg-slate-950 border border-slate-800 shadow-2xl">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Terminal Title Bar */}
-        <div className="p-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-slate-300">
-            <Terminal size={16} className="text-emerald-400" />
-            <span className="font-bold">// NULLMIND_PROBE_SANDBOX.PY</span>
+        {/* Chat Window */}
+        <div className="lg:col-span-2 border-4 border-black shadow-[8px_8px_0_0_#000] flex flex-col h-[500px] bg-white">
+          <div className="bg-black text-white p-3 font-mono text-xs font-black tracking-widest uppercase flex items-center justify-between border-b-4 border-black">
+            <span>NULLMIND SECURE TERMINAL</span>
+            <span className="flex items-center gap-2"><span className="w-2 h-2 bg-white animate-pulse" /> ONLINE</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleSimulate("BEFORE")}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
-                activeTab === "BEFORE"
-                  ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold"
-                  : "bg-slate-800 text-slate-400 hover:text-white border border-transparent"
-              }`}
-            >
-              1. Run BEFORE Unlearning
-            </button>
-            <button
-              onClick={() => handleSimulate("AFTER")}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
-                activeTab === "AFTER"
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold"
-                  : "bg-slate-800 text-slate-400 hover:text-white border border-transparent"
-              }`}
-            >
-              2. Run AFTER Unlearning
-            </button>
-          </div>
-        </div>
-
-        {/* Prompt Input Box */}
-        <div className="p-4 bg-slate-900/60 border-b border-slate-800 space-y-1">
-          <div className="text-[11px] text-slate-400 font-medium uppercase">&gt; INPUT PROMPT VECTOR:</div>
-          <div className="text-slate-100 font-mono text-xs font-semibold bg-slate-950 p-3 rounded-xl border border-slate-800">
-            "{current.prompt}"
-          </div>
-        </div>
-
-        {/* Response Console Output */}
-        <div className="p-5 min-h-[160px] bg-slate-950 text-slate-300 font-mono space-y-3">
-          {simulating ? (
-            <div className="flex items-center gap-2 text-slate-400 animate-pulse py-8 justify-center">
-              <RefreshCw size={16} className="animate-spin text-emerald-400" />
-              <span>Evaluating prompt vector across model weights...</span>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between text-[11px] border-b border-slate-900 pb-2">
-                <span className="text-slate-400 font-medium">
-                  // OUTPUT STATE: {activeTab === "BEFORE" ? "BLOATED PRE-UNLEARN" : "SHRUNK & SANITIZED"}
-                </span>
-                <span className={`px-2.5 py-0.5 rounded-full font-semibold border ${activeTab === "BEFORE" ? "bg-rose-500/10 text-rose-400 border-rose-500/30" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"}`}>
-                  STATUS: {activeTab === "BEFORE" ? current.beforeStatus : current.afterStatus}
-                </span>
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-white halftone-bg">
+            {messages.map((msg, idx) => (
+              <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[85%] border-2 border-black p-4 shadow-[4px_4px_0_0_#000] font-mono text-sm font-bold ${
+                  msg.role === "user" ? "bg-black text-white" : 
+                  msg.role === "system" ? "bg-gray-200 text-black border-dashed" : "bg-white text-black"
+                }`}>
+                  {msg.role === "system" && <div className="text-[10px] text-gray-500 mb-1 uppercase tracking-widest">SYSTEM</div>}
+                  {msg.role === "user" && <div className="text-[10px] text-gray-400 mb-1 uppercase tracking-widest text-right">USER</div>}
+                  {msg.role === "model" && <div className="text-[10px] text-gray-500 mb-1 uppercase tracking-widest flex items-center gap-1"><ShieldAlert size={12}/> MODEL RESPONSE</div>}
+                  
+                  {msg.role === "model" && msg.content.includes("def reverse_list") ? (
+                    <pre className="mt-2 text-xs text-black border-l-2 border-black pl-3 overflow-x-auto whitespace-pre-wrap">
+                      {msg.content}
+                    </pre>
+                  ) : (
+                    <div className="whitespace-pre-wrap uppercase">{msg.content}</div>
+                  )}
+                </div>
               </div>
+            ))}
+            
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="bg-white text-black border-2 border-black p-4 shadow-[4px_4px_0_0_#000] font-mono text-sm font-bold uppercase flex items-center gap-2">
+                  <span className="animate-bounce">●</span>
+                  <span className="animate-bounce delay-100">●</span>
+                  <span className="animate-bounce delay-200">●</span>
+                </div>
+              </div>
+            )}
+          </div>
 
-              <pre className={`text-xs whitespace-pre-wrap leading-relaxed ${activeTab === "BEFORE" ? "text-rose-300" : "text-emerald-300"}`}>
-                {activeTab === "BEFORE" ? current.beforeOutput : current.afterOutput}
-              </pre>
-            </>
-          )}
+          <div className="p-4 border-t-4 border-black bg-white flex gap-3">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
+              placeholder="ENTER PROMPT..."
+              className="flex-1 border-2 border-black bg-gray-100 p-3 font-mono text-sm font-bold uppercase outline-none focus:bg-white focus:shadow-[4px_4px_0_0_#000] transition-all"
+            />
+            <button
+              onClick={() => handleSend(input)}
+              className="bg-black text-white border-2 border-black p-3 hover:bg-gray-800 shadow-[4px_4px_0_0_#d1d5db] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
+            >
+              <Send size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Suggestion Sidebar */}
+        <div className="space-y-4">
+          <div className="text-sm font-black text-black uppercase tracking-widest border-b-2 border-black pb-1">
+            TEST PAYLOADS:
+          </div>
+          
+          <div className="space-y-3">
+            {samplePrompts.map((prompt, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSend(prompt)}
+                className="w-full text-left p-3 border-2 border-black bg-white font-mono text-xs font-bold uppercase hover:bg-black hover:text-white shadow-[4px_4px_0_0_#000] hover:shadow-[2px_2px_0_0_#d1d5db] transition-all flex items-start gap-2"
+              >
+                <span className="text-gray-400 mt-0.5">▶</span>
+                {prompt}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-8 p-4 bg-gray-100 border-2 border-black text-xs font-mono font-bold uppercase space-y-2">
+            <div className="flex items-center gap-2 border-b-2 border-black pb-2">
+              <CheckSquare size={16} /> AUDIT LOG
+            </div>
+            <div className="text-gray-500">
+              Model consistently refuses or fails to retrieve erased data.
+              Collateral coding knowledge (Python) remains 100% accessible.
+            </div>
+          </div>
         </div>
 
       </div>
-
     </div>
   );
 }

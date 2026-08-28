@@ -4,66 +4,61 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-950 text-slate-400 border-t border-slate-800 pt-16 pb-12 font-sans">
-      <div className="w-full max-w-[1700px] px-6 sm:px-10 lg:px-16 mx-auto">
+    <footer className="bg-black text-white border-t-8 border-gray-900 pt-16 pb-12 font-sans halftone-bg-dense text-gray-100">
+      <div className="w-full max-w-[1700px] px-6 sm:px-10 lg:px-16 mx-auto bg-black p-8 sm:p-12 border-4 border-white shadow-[8px_8px_0_0_#fff]">
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-slate-800/80">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b-4 border-white">
           
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white text-slate-950 flex items-center justify-center font-black text-sm">
+              <div className="w-12 h-12 bg-white text-black flex items-center justify-center font-black text-xl border-4 border-white">
                 N
               </div>
-              <span className="font-sans font-black text-lg tracking-tight text-white">NULLMIND AI</span>
+              <span className="font-sans font-black text-3xl tracking-tighter text-white uppercase">NULLMIND</span>
             </div>
-            <p className="font-sans text-xs text-slate-400 max-w-sm leading-relaxed">
+            <p className="font-sans text-sm text-gray-300 max-w-sm leading-relaxed font-medium border-l-4 border-gray-600 pl-4">
               Measured LLM unlearning & selective retraining engine. Surgically erase copyrighted code, PII, and memorized data parameters without spending $100k+ to retrain full model weights.
             </p>
-            <div className="font-mono text-[11px] text-slate-300 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>GDPR ARTICLE 17 & CCPA COMPLIANT</span>
+            <div className="comic-badge-dark mt-4">
+              GDPR & CCPA COMPLIANT
             </div>
           </div>
 
           <div>
-            <div className="font-sans font-bold text-xs uppercase tracking-wider text-white mb-4">PLATFORM VISUALS</div>
-            <ul className="space-y-2.5 font-sans text-xs">
-              <li><Link href="/#deep-mind" className="hover:text-white transition-colors">Deep Mind Visualizer</Link></li>
-              <li><Link href="/#transformation" className="hover:text-white transition-colors">Before vs After Slider</Link></li>
-              <li><Link href="/#node-sandbox" className="hover:text-white transition-colors">Node Erasure Sandbox</Link></li>
-              <li><Link href="/#calculator" className="hover:text-white transition-colors">Compute Calculator</Link></li>
+            <div className="font-mono font-black text-sm uppercase tracking-widest text-white mb-6 border-b-2 border-gray-700 pb-2">VISUALS</div>
+            <ul className="space-y-3 font-sans text-sm font-bold uppercase">
+              <li><Link href="/#deep-mind" className="hover:text-gray-400 hover:underline transition-all">DEEP MIND CANVAS</Link></li>
+              <li><Link href="/#transformation" className="hover:text-gray-400 hover:underline transition-all">BEFORE VS AFTER</Link></li>
+              <li><Link href="/#node-sandbox" className="hover:text-gray-400 hover:underline transition-all">NODE SANDBOX</Link></li>
+              <li><Link href="/#calculator" className="hover:text-gray-400 hover:underline transition-all">COMPUTE CALCULATOR</Link></li>
             </ul>
           </div>
 
           <div>
-            <div className="font-sans font-bold text-xs uppercase tracking-wider text-white mb-4">TECHNICAL SPEC</div>
-            <ul className="space-y-2.5 font-sans text-xs">
-              <li><span className="text-slate-400">89-Probe Evaluation Battery</span></li>
-              <li><span className="text-slate-400">Dual-Loss Objective (L_forget + λ L_retain)</span></li>
-              <li><span className="text-slate-400">Gradient Ascent Optimization</span></li>
-              <li><span className="text-slate-400">Cryptographic PDF Audit Reports</span></li>
+            <div className="font-mono font-black text-sm uppercase tracking-widest text-white mb-6 border-b-2 border-gray-700 pb-2">TECH SPEC</div>
+            <ul className="space-y-3 font-sans text-sm font-bold uppercase text-gray-400">
+              <li>89-PROBE BATTERY</li>
+              <li>DUAL-LOSS OBJECTIVE</li>
+              <li>GRADIENT ASCENT</li>
+              <li>CRYPTOGRAPHIC PDF</li>
             </ul>
           </div>
 
           <div>
-            <div className="font-sans font-bold text-xs uppercase tracking-wider text-white mb-4">COMPLIANCE</div>
-            <ul className="space-y-2.5 font-sans text-xs">
-              <li><span className="text-slate-400">GDPR Right to be Forgotten</span></li>
-              <li><span className="text-slate-400">CCPA Model Erasure Spec</span></li>
-              <li><span className="text-slate-400">Zero Collateral Loss Guarantee</span></li>
-              <li><span className="text-slate-400">Paraphrase Resistance (99.4%)</span></li>
+            <div className="font-mono font-black text-sm uppercase tracking-widest text-white mb-6 border-b-2 border-gray-700 pb-2">LEGAL</div>
+            <ul className="space-y-3 font-sans text-sm font-bold uppercase text-gray-400">
+              <li>RIGHT TO BE FORGOTTEN</li>
+              <li>ZERO COLLATERAL LOSS</li>
+              <li>TERMS OF SERVICE</li>
+              <li>PRIVACY POLICY</li>
             </ul>
           </div>
 
         </div>
 
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 font-sans text-xs text-slate-500">
-          <div>© {new Date().getFullYear()} NULLMIND AI INC. ALL RIGHTS RESERVED.</div>
-          <div className="flex items-center gap-6">
-            <span>PRIVACY POLICY</span>
-            <span>TERMS OF SERVICE</span>
-            <span>SECURITY SPEC</span>
-          </div>
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono font-bold text-xs text-gray-500 uppercase tracking-wider">
+          <div>© {new Date().getFullYear()} NULLMIND INC.</div>
+          <div>SYSTEM STATUS: ONLINE</div>
         </div>
 
       </div>
