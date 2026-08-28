@@ -41,6 +41,8 @@ body {
   line-height: 1.5;
   overflow-x: hidden;
   min-height: 100vh;
+  padding-left: 12px;
+  padding-right: 12px;
 }
 
 /* Comic / Halftone Dots Texture */
