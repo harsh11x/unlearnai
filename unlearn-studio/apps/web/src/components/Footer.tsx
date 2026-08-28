@@ -5,22 +5,13 @@ import { ArrowUpRight, Cpu, Terminal } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#09090b] text-white border-t-2 border-[#09090b] pt-16 pb-12">
-      <div className="w-full max-w-[1800px] px-6 sm:px-10 md:px-12 mx-auto">
-
+    <footer className="bg-slate-950 text-slate-400 border-t border-slate-800 pt-16 pb-12 font-sans">
+      <div className="w-full max-w-[1700px] px-6 sm:px-10 lg:px-12 mx-auto">
         
         {/* Top Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-zinc-800">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-slate-800/80">
           
-          {/* Column 1: Brand & Overview */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="inline-flex items-center gap-2 bg-white text-[#09090b] border-2 border-white px-3 py-1 font-mono font-black text-base">
-              <span>NULLMIND</span>
-              <span className="bg-[#09090b] text-white text-[9px] font-mono font-bold px-1.5 py-0.5 border border-white">
-                v1.0
-              </span>
-            </div>
-            
             <p className="font-mono text-xs md:text-sm text-zinc-400 leading-relaxed max-w-sm">
               An open-source production engine for measured LLM capability unlearning. Erase targeted knowledge parameters without retraining full model weights.
             </p>

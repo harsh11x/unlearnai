@@ -15,8 +15,8 @@ export default function ExplorerPage() {
   ];
 
   return (
-    <div className="h-screen flex flex-col bg-[#f7f6f2] font-sans">
-      <DashboardHeader title="Capability Explorer & Probing Battery" />
+    <div className="h-screen flex flex-col bg-slate-50 font-sans">
+      <DashboardHeader title="89-Probe Capability Explorer" />
       <div className="flex flex-1 overflow-hidden">
         <DashboardSidebar />
         
@@ -24,64 +24,62 @@ export default function ExplorerPage() {
           
           <div className="flex items-center justify-between">
             <div>
-              <div className="brutalist-badge mb-2">STEP 02 // PROBE SUITE</div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold uppercase font-sans tracking-tight">
+              <div className="soft-badge mb-2">PROBE SUITE</div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
                 89-Probe Capability Explorer
               </h1>
-              <p className="font-mono text-xs text-[#52525b] mt-1">
+              <p className="font-sans text-xs text-slate-500 mt-1">
                 Evaluating model accuracy across 20+ capability categories and 89 empirical probes.
               </p>
             </div>
-            <button className="brutalist-btn-primary text-xs px-5 py-2.5">
+            <button className="soft-btn-primary text-xs py-2.5 px-5">
               <Play size={14} /> Re-Run All Probes
             </button>
           </div>
 
-          {/* Target Domain Grid */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Target size={16} className="text-[#09090b]" />
-              <span className="font-mono text-xs font-extrabold uppercase tracking-widest text-[#09090b]">Python (Target Domain)</span>
+              <Target size={16} className="text-indigo-600" />
+              <span className="font-sans text-xs font-bold uppercase tracking-wider text-slate-900">Python (Target Domain)</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {cats.map((c) => (
-                <div key={c.name} className="brutalist-card p-4 bg-white">
-                  <div className="flex justify-between mb-2 font-mono text-xs font-bold">
-                    <span>{c.name}</span>
-                    <span>{c.score}%</span>
+                <div key={c.name} className="soft-card p-4 bg-white">
+                  <div className="flex justify-between mb-2 font-sans text-xs font-semibold">
+                    <span className="text-slate-900">{c.name}</span>
+                    <span className="text-indigo-600 font-bold">{c.score}%</span>
                   </div>
-                  <div className="h-2 bg-[#f7f6f2] border border-[#09090b] overflow-hidden">
-                    <div className="h-full bg-[#09090b]" style={{ width: `${c.score}%` }} />
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                    <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${c.score}%` }} />
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Retention Domain Grid */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <CheckCircle2 size={16} className="text-[#09090b]" />
-              <span className="font-mono text-xs font-extrabold uppercase tracking-widest text-[#09090b]">Retention Skill Sets</span>
+              <CheckCircle2 size={16} className="text-emerald-600" />
+              <span className="font-sans text-xs font-bold uppercase tracking-wider text-slate-900">Retention Skill Sets</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {retain.map((c) => (
-                <div key={c.name} className="brutalist-card p-4 bg-white">
-                  <div className="flex justify-between mb-2 font-mono text-xs font-bold">
-                    <span>{c.name}</span>
-                    <span>{c.score}%</span>
+                <div key={c.name} className="soft-card p-4 bg-white">
+                  <div className="flex justify-between mb-2 font-sans text-xs font-semibold">
+                    <span className="text-slate-900">{c.name}</span>
+                    <span className="text-emerald-600 font-bold">{c.score}%</span>
                   </div>
-                  <div className="h-2 bg-[#f7f6f2] border border-[#09090b] overflow-hidden">
-                    <div className="h-full bg-[#09090b]" style={{ width: `${c.score}%` }} />
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                    <div className="h-full bg-emerald-600 rounded-full" style={{ width: `${c.score}%` }} />
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="brutalist-card p-5 bg-[#f7f6f2] flex items-center justify-between font-mono">
-            <span className="font-extrabold text-sm uppercase">Overall Baseline Accuracy Score</span>
-            <span className="text-2xl font-extrabold text-[#09090b]">40.4%</span>
+          <div className="soft-card p-5 bg-indigo-50 border border-indigo-200/80 flex items-center justify-between font-sans">
+            <span className="font-bold text-sm text-slate-900 uppercase">Overall Baseline Accuracy Score</span>
+            <span className="text-2xl font-extrabold text-indigo-600">40.4%</span>
           </div>
 
         </main>

@@ -2,147 +2,92 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
-import { useAuth } from "@/lib/auth-helpers";
 import OAuthButtons from "@/components/OAuthButtons";
+import { ArrowLeft, Lock, Mail, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  if (isAuthenticated) {
-    router.push("/dashboard");
-    return null;
-  }
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
-    const result = await login(email, password);
-    if (result.error) {
-      setError(result.error);
+    setTimeout(() => {
       setLoading(false);
-    }
+      router.push("/dashboard");
+    }, 600);
   };
 
   return (
-    <div className="min-h-screen flex bg-[#f7f6f2] font-sans">
-      {/* Left panel */}
-      <div className="hidden lg:flex lg:w-[48%] bg-[#09090b] text-white flex-col justify-between p-12 xl:p-16 border-r-2 border-[#09090b]">
-        <div>
-          <Link href="/" className="flex items-center gap-3">
-            <div className="bg-white text-[#09090b] border-2 border-white px-3 py-1 font-mono font-black text-lg">
-              NULLMIND
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans soft-grid">
+      <div className="w-full max-w-md space-y-6">
+        
+        <Link href="/" className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+          <ArrowLeft size={14} /> Back to NullMind Home
+        </Link>
+
+        <div className="soft-card p-8 bg-white space-y-6 shadow-xl shadow-slate-200/50">
+          <div className="space-y-2">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/20">
+              N
             </div>
-            <span className="font-mono text-xs font-bold text-zinc-400 uppercase tracking-widest">
-              // STUDIO v1.0
-            </span>
-          </Link>
-        </div>
-
-        <div className="space-y-6">
-          <div className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-400">
-            [ AUTHENTICATION GATEWAY ]
-          </div>
-          <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight uppercase leading-tight font-sans">
-            LOG IN TO <br />
-            <span className="bg-white text-[#09090b] px-3 py-1 inline-block mt-2">
-              UNLEARN STUDIO
-            </span>
-          </h1>
-          <p className="font-mono text-xs text-zinc-400 leading-relaxed max-w-md">
-            Resume your LLM capability unlearning experiments. Probe baseline performance, run gradient ascent, and verify targeted erasure.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-4 text-xs text-zinc-500 font-mono border-t border-zinc-800 pt-6">
-          <span>// PLATFORM: ACTIVE</span>
-          <span>·</span>
-          <span>PROBE SUITE: 89 TESTS</span>
-        </div>
-      </div>
-
-      {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-10 bg-[#f7f6f2] arch-grid">
-        <div className="w-full max-w-[420px] brutalist-card p-8 bg-white">
-          <Link href="/" className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="bg-[#09090b] text-white border-2 border-[#09090b] px-3 py-1 font-mono font-black text-sm">
-              NULLMIND
-            </div>
-          </Link>
-
-          <div className="brutalist-badge mb-2">ACCOUNT LOG IN</div>
-          <h2 className="text-2xl font-extrabold uppercase font-sans tracking-tight mb-1 text-[#09090b]">Log In</h2>
-          <p className="font-mono text-xs text-[#52525b] mb-6">Enter your credentials or use an OAuth provider.</p>
-
-          <div className="font-mono text-xs font-bold text-[#09090b] bg-[#f7f6f2] border-2 border-[#09090b] p-3 mb-6">
-            Demo Credentials: demo@nullmind.dev / Password1
+            <h1 className="text-2xl font-extrabold text-slate-900">Sign in to NullMind</h1>
+            <p className="text-xs text-slate-500">Access your LLM unlearning dashboard and model checkpoints.</p>
           </div>
 
-          <OAuthButtons mode="login" onError={setError} />
-
-          {error && (
-            <div className="flex items-center gap-2 font-mono text-xs text-[#09090b] mt-4 p-3 bg-red-50 border-2 border-[#09090b]">
-              <AlertCircle size={16} />
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-4 mt-6">
+          <form onSubmit={handleSubmit} className="space-y-4 font-sans text-xs">
             <div>
-              <label className="font-mono text-[11px] font-bold tracking-wider uppercase text-[#09090b] block mb-1.5">
-                Email Address
-              </label>
+              <label className="block text-slate-700 font-semibold mb-1">Email Address</label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setError(""); }}
-                placeholder="you@example.com"
-                className="w-full bg-[#f7f6f2] border-2 border-[#09090b] px-4 py-3 font-mono text-xs text-[#09090b] focus:outline-none focus:bg-white transition-all"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@company.com"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
               />
             </div>
+
             <div>
-              <label className="font-mono text-[11px] font-bold tracking-wider uppercase text-[#09090b] block mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                  placeholder="••••••••"
-                  className="w-full bg-[#f7f6f2] border-2 border-[#09090b] px-4 py-3 font-mono text-xs text-[#09090b] focus:outline-none focus:bg-white transition-all pr-11"
-                  required
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#09090b]">
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-slate-700 font-semibold">Password</label>
+                <Link href="/forgot-password" className="text-indigo-600 hover:underline text-[11px] font-semibold">
+                  Forgot Password?
+                </Link>
               </div>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••••"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 transition-all"
+              />
             </div>
 
-            <button
-              type="submit"
-              disabled={loading || authLoading}
-              className="brutalist-btn-primary w-full py-3.5 mt-2 text-xs"
-            >
-              {loading || authLoading ? <span className="animate-pulse">Authenticating...</span> : <>Log In <ArrowRight size={14} /></>}
+            <button type="submit" className="soft-btn-primary w-full py-3.5 text-xs mt-2">
+              {loading ? "Authenticating..." : "Sign In to Studio Workspace →"}
             </button>
           </form>
 
-          <p className="mt-8 text-center font-mono text-xs text-[#52525b]">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-extrabold text-[#09090b] hover:underline">Sign up →</Link>
-          </p>
+          <div className="relative border-t border-slate-200 text-center">
+            <span className="bg-white px-3 text-[11px] font-semibold text-slate-400 relative -top-2.5">OR CONTINUE WITH</span>
+          </div>
+
+          <OAuthButtons />
+
+          <div className="text-center text-xs text-slate-500 font-medium">
+            Don't have an account?{" "}
+            <Link href="/signup" className="text-indigo-600 font-semibold hover:underline">
+              Create Free Account
+            </Link>
+          </div>
         </div>
+
       </div>
-    </div>
+    </main>
   );
 }

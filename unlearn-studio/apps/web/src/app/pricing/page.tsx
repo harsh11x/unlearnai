@@ -2,121 +2,119 @@
 
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { CheckCircle2, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
+import { Check, Sparkles } from "lucide-react";
 
 export default function PricingPage() {
-  const plans = [
+  const tiers = [
     {
-      name: "OPEN SOURCE / COMMUNITY",
+      name: "Open Source",
       price: "$0",
-      period: "forever free",
-      desc: "For individual researchers and developers running local model unlearning experiments.",
+      desc: "For individual AI researchers and open-source model developers.",
       features: [
-        "Full Python CLI & SDK access",
-        "Local PyTorch / Safetensors support",
-        "89-probe evaluation battery",
-        "Up to 5 model runs / month",
-        "Community GitHub support",
+        "Python SDK & CLI Tooling",
+        "Up to 7B Parameter Models",
+        "Standard 89-Probe Evaluation",
+        "Community Support",
       ],
-      cta: "Install Open Source CLI",
-      href: "/docs",
-      primary: false,
+      cta: "Get Started Free",
+      href: "/signup",
+      popular: false,
     },
     {
-      name: "RESEARCHER PRO",
+      name: "Researcher Pro",
       price: "$99",
-      period: "per month",
-      desc: "For AI research labs, startups, and engineering teams requiring cloud GPU queues and PDF audits.",
+      period: "/ month",
+      desc: "For production AI teams managing custom foundation model edits.",
       features: [
         "Everything in Open Source",
-        "Cloud A100 GPU queue execution",
-        "Unlimited model probe evaluations",
-        "Cryptographic PDF Audit Certificates",
-        "Custom probe category definitions",
-        "Priority email & Discord support",
+        "Up to 70B Parameter Models",
+        "Retain-Aware Dual Loss Engine",
+        "Selective Retraining Pipeline",
+        "Cryptographic PDF Audit Certs",
+        "Priority GPU Worker Nodes",
       ],
       cta: "Start 14-Day Free Trial",
       href: "/signup",
-      primary: true,
+      popular: true,
     },
     {
-      name: "ENTERPRISE COMPLIANCE",
-      price: "CUSTOM",
-      period: "annual billing",
-      desc: "For enterprise organizations enforcing GDPR Right to be Forgotten & CCPA model erasure.",
+      name: "Enterprise Compliance",
+      price: "Custom",
+      desc: "For legal, financial, and healthcare enterprises needing GDPR & CCPA guarantees.",
       features: [
-        "Dedicated GPU cluster allocation",
-        "Custom proprietary probe batteries",
-        "SLA & guaranteed GPU worker uptime",
-        "On-premise air-gapped deployment",
-        "GDPR & CCPA compliance SLA",
-        "Dedicated ML engineer support",
+        "Unlimited Parameter Size (175B+)",
+        "Dedicated A100/H100 GPU Clusters",
+        "Custom Probe Vector Design",
+        "SLA & Dedicated Legal Audit Team",
+        "On-Premises Air-Gapped Deployment",
       ],
-      cta: "Contact Sales Team",
-      href: "mailto:enterprise@nullmind.dev",
-      primary: false,
+      cta: "Contact Enterprise Sales",
+      href: "mailto:enterprise@nullmind.ai",
+      popular: false,
     },
   ];
 
   return (
-    <main className="pt-[68px] bg-[#f7f6f2] min-h-screen">
+    <main className="pt-[72px] bg-slate-50 min-h-screen font-sans">
       <Header />
 
-      {/* Pricing Banner */}
-      <section className="py-16 sm:py-24 bg-[#efeeea] border-b-2 border-[#09090b] arch-grid">
-        <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto text-center">
-          <div className="brutalist-badge mb-3">TRANSPARENT LICENSING & PLANS</div>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-[#09090b] uppercase tracking-tight font-sans">
-            PRICING & PLANS
-          </h1>
-          <p className="font-mono text-xs sm:text-sm font-semibold text-[#52525b] mt-3 max-w-xl mx-auto">
-            Choose the plan that fits your research, application, or enterprise privacy compliance requirements.
-          </p>
-        </div>
-      </section>
-
-      {/* Plans Cards */}
-      <section className="py-16 sm:py-24">
-        <div className="w-full max-w-[1400px] px-4 sm:px-8 md:px-12 mx-auto">
+      <section className="py-16 sm:py-24 bg-slate-50 soft-grid border-b border-slate-200/80">
+        <div className="w-full max-w-[1700px] px-6 sm:px-10 lg:px-16 mx-auto space-y-12">
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {plans.map((plan) => (
+          <div className="text-center max-w-3xl mx-auto space-y-4">
+            <div className="soft-badge">FLEXIBLE TRANSPARENT PRICING</div>
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+              Simple, Predictable Plans for AI Unlearning
+            </h1>
+            <p className="font-sans text-sm sm:text-base text-slate-600 leading-relaxed">
+              Save up to 94% on compute costs compared to full model retraining from scratch.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {tiers.map((t) => (
               <div
-                key={plan.name}
-                className={`brutalist-card p-8 bg-white flex flex-col justify-between ${
-                  plan.primary ? "border-4 border-[#09090b] shadow-[6px_6px_0_0_#09090b]" : ""
+                key={t.name}
+                className={`soft-card p-8 bg-white flex flex-col justify-between relative ${
+                  t.popular ? "border-2 border-indigo-600 shadow-xl shadow-indigo-500/10" : ""
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between border-b-2 border-[#09090b] pb-3 mb-4">
-                    <span className="font-mono text-xs font-extrabold bg-[#09090b] text-white px-2 py-0.5">
-                      {plan.name}
-                    </span>
+                {t.popular && (
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-indigo-600 text-white font-sans text-xs font-semibold px-4 py-1 rounded-full shadow-md">
+                    MOST POPULAR
+                  </span>
+                )}
+
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-sans text-xl font-extrabold text-slate-900">{t.name}</h3>
+                    <p className="font-sans text-xs text-slate-500 mt-1">{t.desc}</p>
                   </div>
 
-                  <div className="font-mono text-4xl font-extrabold text-[#09090b]">{plan.price}</div>
-                  <div className="font-mono text-xs text-[#71717a] mt-1">{plan.period}</div>
-                  <p className="font-mono text-xs font-semibold text-[#52525b] mt-4 leading-relaxed">{plan.desc}</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-sans text-4xl font-extrabold text-slate-900">{t.price}</span>
+                    {t.period && <span className="font-sans text-xs text-slate-500 font-medium">{t.period}</span>}
+                  </div>
 
-                  <div className="mt-6 pt-4 border-t border-zinc-200 space-y-3 font-mono text-xs">
-                    {plan.features.map((f) => (
-                      <div key={f} className="flex items-start gap-2 text-[#09090b] font-semibold">
-                        <CheckCircle2 size={15} className="text-[#09090b] shrink-0 mt-0.5" />
+                  <ul className="space-y-3 font-sans text-xs text-slate-700 pt-2 border-t border-slate-100">
+                    {t.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2">
+                        <Check size={16} className="text-indigo-600 shrink-0 mt-0.5" />
                         <span>{f}</span>
-                      </div>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
 
-                <div className="mt-8">
+                <div className="pt-8">
                   <Link
-                    href={plan.href}
-                    className={`w-full ${
-                      plan.primary ? "brutalist-btn-primary" : "brutalist-btn-secondary"
-                    } text-xs py-3.5`}
+                    href={t.href}
+                    className={`w-full text-center ${
+                      t.popular ? "soft-btn-primary py-3.5" : "soft-btn-secondary py-3.5"
+                    }`}
                   >
-                    {plan.cta} <ArrowRight size={14} />
+                    {t.cta}
                   </Link>
                 </div>
               </div>

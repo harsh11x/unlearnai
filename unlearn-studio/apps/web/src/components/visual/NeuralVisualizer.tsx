@@ -122,8 +122,8 @@ export default function NeuralVisualizer() {
       timestamp += 0.03;
       ctx.clearRect(0, 0, width, height);
 
-      // Draw background architectural grid inside canvas
-      ctx.strokeStyle = "rgba(9, 9, 11, 0.05)";
+      // Draw background subtle grid inside canvas
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
       ctx.lineWidth = 1;
       const gridSize = 24;
       for (let x = 0; x < width; x += gridSize) {
@@ -149,18 +149,18 @@ export default function NeuralVisualizer() {
 
         if (conn.isTarget) {
           if (mode === "BEFORE") {
-            ctx.strokeStyle = "rgba(9, 9, 11, 0.85)";
+            ctx.strokeStyle = "rgba(99, 102, 241, 0.9)";
             ctx.lineWidth = 2.5;
             ctx.setLineDash([4, 4]);
           } else if (mode === "UNLEARN") {
-            // Pulsing dissolving animation
+            // Pulsing amber dissolving animation
             const pulse = (Math.sin(timestamp * 6) + 1) / 2;
-            ctx.strokeStyle = `rgba(9, 9, 11, ${pulse * 0.9})`;
+            ctx.strokeStyle = `rgba(245, 158, 11, ${pulse * 0.95})`;
             ctx.lineWidth = 3;
             ctx.setLineDash([8, 6]);
           }
         } else {
-          ctx.strokeStyle = mode === "AFTER" ? "rgba(9, 9, 11, 0.3)" : "rgba(9, 9, 11, 0.18)";
+          ctx.strokeStyle = mode === "AFTER" ? "rgba(16, 185, 129, 0.35)" : "rgba(255, 255, 255, 0.12)";
           ctx.lineWidth = 1.2;
           ctx.setLineDash([]);
         }
@@ -179,7 +179,7 @@ export default function NeuralVisualizer() {
 
         ctx.beginPath();
         ctx.arc(px, py, conn.isTarget && mode === "BEFORE" ? 3.5 : 2, 0, Math.PI * 2);
-        ctx.fillStyle = conn.isTarget ? "#09090b" : "#52525b";
+        ctx.fillStyle = conn.isTarget ? "#6366f1" : "#10b981";
         ctx.fill();
       });
 
@@ -189,7 +189,7 @@ export default function NeuralVisualizer() {
           // Render erased node outline in AFTER mode
           ctx.beginPath();
           ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(9, 9, 11, 0.2)";
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
           ctx.lineWidth = 1.5;
           ctx.setLineDash([2, 2]);
           ctx.stroke();
@@ -202,19 +202,19 @@ export default function NeuralVisualizer() {
 
         if (node.isTarget) {
           if (mode === "BEFORE") {
-            ctx.fillStyle = "#09090b";
-            ctx.strokeStyle = "#09090b";
+            ctx.fillStyle = "#6366f1";
+            ctx.strokeStyle = "#818cf8";
             ctx.lineWidth = 2;
           } else if (mode === "UNLEARN") {
             const pulseRadius = node.radius + Math.sin(timestamp * 8 + node.pulseOffset) * 4;
-            ctx.fillStyle = "#09090b";
-            ctx.strokeStyle = "#09090b";
+            ctx.fillStyle = "#f59e0b";
+            ctx.strokeStyle = "#fbbf24";
             ctx.lineWidth = 2;
             ctx.arc(node.x, node.y, Math.max(2, pulseRadius), 0, Math.PI * 2);
           }
         } else {
-          ctx.fillStyle = mode === "AFTER" ? "#09090b" : "#ffffff";
-          ctx.strokeStyle = "#09090b";
+          ctx.fillStyle = mode === "AFTER" ? "#10b981" : "#38bdf8";
+          ctx.strokeStyle = mode === "AFTER" ? "#34d399" : "#7dd3fc";
           ctx.lineWidth = 2;
         }
 
@@ -225,7 +225,7 @@ export default function NeuralVisualizer() {
         if (node.isTarget && mode === "UNLEARN") {
           ctx.beginPath();
           ctx.arc(node.x, node.y, node.radius + 6, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(9, 9, 11, 0.3)";
+          ctx.strokeStyle = "rgba(245, 158, 11, 0.4)";
           ctx.lineWidth = 1.5;
           ctx.stroke();
         }
@@ -236,10 +236,11 @@ export default function NeuralVisualizer() {
       nodesPerLayer.forEach((_, lIndex) => {
         const layerX = (width / (layers + 1)) * (lIndex + 1);
         ctx.font = "bold 10px JetBrains Mono, monospace";
-        ctx.fillStyle = "#71717a";
+        ctx.fillStyle = "#94a3b8";
         ctx.textAlign = "center";
         ctx.fillText(layerTitles[lIndex], layerX, 22);
       });
+
 
       animationFrameRef.current = requestAnimationFrame(render);
     };
@@ -254,49 +255,49 @@ export default function NeuralVisualizer() {
 
 
   return (
-    <div className="brutalist-card p-6 md:p-8 bg-white relative overflow-hidden">
+    <div className="soft-card p-6 md:p-8 bg-white relative overflow-hidden font-sans">
       
       {/* Mode Control Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b-2 border-[#09090b] pb-5 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#71717a]">
-              [ NEURAL NETWORK DEEP MIND VISUALIZER ]
+            <span className="soft-badge">
+              NEURAL NETWORK DEEP MIND VISUALIZER
             </span>
           </div>
-          <h3 className="font-sans text-xl md:text-2xl font-extrabold uppercase text-[#09090b]">
-            Visualizing Model Activation & Node Erasure
+          <h3 className="font-sans text-xl md:text-2xl font-extrabold text-slate-900">
+            Model Activation & Node Erasure Flow
           </h3>
         </div>
 
         {/* Mode Selector Buttons */}
-        <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+        <div className="flex flex-wrap items-center gap-2 font-sans text-xs">
           <button
             onClick={() => setMode("BEFORE")}
-            className={`px-3.5 py-2 border-2 border-[#09090b] font-extrabold uppercase transition-all ${
+            className={`px-4 py-2 rounded-xl font-semibold transition-all ${
               mode === "BEFORE"
-                ? "bg-[#09090b] text-white shadow-[3px_3px_0_0_#09090b]"
-                : "bg-white text-[#09090b] hover:bg-[#f7f6f2]"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200/70"
             }`}
           >
             1. Bloated (Before)
           </button>
           <button
             onClick={() => setMode("UNLEARN")}
-            className={`px-3.5 py-2 border-2 border-[#09090b] font-extrabold uppercase transition-all ${
+            className={`px-4 py-2 rounded-xl font-semibold transition-all ${
               mode === "UNLEARN"
-                ? "bg-[#09090b] text-white shadow-[3px_3px_0_0_#09090b]"
-                : "bg-white text-[#09090b] hover:bg-[#f7f6f2]"
+                ? "bg-amber-600 text-white shadow-md shadow-amber-500/20"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200/70"
             }`}
           >
             2. Node Erasure
           </button>
           <button
             onClick={() => setMode("AFTER")}
-            className={`px-3.5 py-2 border-2 border-[#09090b] font-extrabold uppercase transition-all ${
+            className={`px-4 py-2 rounded-xl font-semibold transition-all ${
               mode === "AFTER"
-                ? "bg-[#09090b] text-white shadow-[3px_3px_0_0_#09090b]"
-                : "bg-white text-[#09090b] hover:bg-[#f7f6f2]"
+                ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200/70"
             }`}
           >
             3. Streamlined (After)
@@ -305,52 +306,53 @@ export default function NeuralVisualizer() {
       </div>
 
       {/* Canvas Container */}
-      <div className="relative w-full h-[420px] bg-[#f7f6f2] border-2 border-[#09090b] shadow-[4px_4px_0_0_#09090b] mb-6">
+      <div className="relative w-full h-[440px] bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden mb-6">
         <canvas ref={canvasRef} className="w-full h-full block" />
         
         {/* Status Overlay Badge */}
         <div className="absolute top-4 right-4">
-          <span className={`font-mono text-xs font-extrabold uppercase px-3 py-1.5 ${metrics.statusColor}`}>
+          <span className="font-mono text-xs font-semibold uppercase px-3 py-1.5 rounded-full bg-slate-900/90 text-indigo-300 border border-indigo-500/30 backdrop-blur-md">
             ● {metrics.status}
           </span>
         </div>
 
         {/* Dynamic Canvas Legend */}
-        <div className="absolute bottom-4 left-4 font-mono text-[11px] font-bold bg-white border-2 border-[#09090b] p-2.5 shadow-[2px_2px_0_0_#09090b] space-y-1">
-          <div className="flex items-center gap-2 text-[#09090b]">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#09090b] border border-[#09090b]" />
-            <span>Target Capability Nodes & Paths</span>
+        <div className="absolute bottom-4 left-4 font-mono text-[11px] font-medium bg-slate-900/90 border border-slate-800 text-slate-300 p-3 rounded-xl backdrop-blur-md space-y-1.5 shadow-lg">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-sm shadow-indigo-500/50" />
+            <span>Target Capability Nodes & Signal Paths</span>
           </div>
-          <div className="flex items-center gap-2 text-[#52525b]">
-            <span className="w-2.5 h-2.5 rounded-full bg-white border border-[#09090b]" />
-            <span>Preserved Retained Skill Nodes</span>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
+            <span>Preserved Retained Capability Sets</span>
           </div>
         </div>
       </div>
 
       {/* Real-time Telemetry Dashboard Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs">
-        <div className="brutalist-card p-4 bg-[#f7f6f2]">
-          <div className="text-[10px] font-bold uppercase text-[#71717a]">GPU COMPUTE OVERHEAD</div>
-          <div className="text-xl font-extrabold text-[#09090b] mt-1">{metrics.computeUtil}</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-sans text-xs">
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+          <div className="text-[11px] font-semibold uppercase text-slate-500">GPU COMPUTE OVERHEAD</div>
+          <div className="text-xl font-extrabold text-slate-900 mt-1">{metrics.computeUtil}</div>
         </div>
 
-        <div className="brutalist-card p-4 bg-[#f7f6f2]">
-          <div className="text-[10px] font-bold uppercase text-[#71717a]">COMPUTE COST / MONTH</div>
-          <div className="text-xl font-extrabold text-[#09090b] mt-1">{metrics.computeCost}</div>
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+          <div className="text-[11px] font-semibold uppercase text-slate-500">COMPUTE COST / MONTH</div>
+          <div className="text-xl font-extrabold text-indigo-600 mt-1">{metrics.computeCost}</div>
         </div>
 
-        <div className="brutalist-card p-4 bg-[#f7f6f2]">
-          <div className="text-[10px] font-bold uppercase text-[#71717a]">MEMORY FOOTPRINT (VRAM)</div>
-          <div className="text-xl font-extrabold text-[#09090b] mt-1">{metrics.vram}</div>
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+          <div className="text-[11px] font-semibold uppercase text-slate-500">MEMORY FOOTPRINT (VRAM)</div>
+          <div className="text-xl font-extrabold text-slate-900 mt-1">{metrics.vram}</div>
         </div>
 
-        <div className="brutalist-card p-4 bg-[#f7f6f2]">
-          <div className="text-[10px] font-bold uppercase text-[#71717a]">RESIDUAL ERROR RATE</div>
-          <div className="text-xl font-extrabold text-[#09090b] mt-1">{metrics.errorRate}</div>
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+          <div className="text-[11px] font-semibold uppercase text-slate-500">RESIDUAL ERROR RATE</div>
+          <div className="text-xl font-extrabold text-emerald-600 mt-1">{metrics.errorRate}</div>
         </div>
       </div>
 
     </div>
   );
 }
+

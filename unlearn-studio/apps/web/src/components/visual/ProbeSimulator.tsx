@@ -44,68 +44,68 @@ export default function ProbeSimulator() {
   };
 
   return (
-    <div className="brutalist-card p-6 md:p-10 bg-white space-y-6">
+    <div className="soft-card p-6 md:p-10 bg-white space-y-6 font-sans">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-[#09090b] pb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
-          <div className="brutalist-badge mb-2">INTERACTIVE PROBE TERMINAL</div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold uppercase font-sans text-[#09090b]">
+          <div className="soft-badge mb-2">INTERACTIVE PROBE TERMINAL</div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold font-sans text-slate-900">
             Live Model Prompt Probe Sandbox
           </h2>
-          <p className="font-mono text-xs text-[#52525b] mt-1">
+          <p className="font-sans text-xs sm:text-sm text-slate-600 mt-1">
             Test prompts in real time and observe the response difference between Before and After unlearning.
           </p>
         </div>
-        <div className="font-mono text-xs font-bold uppercase bg-[#09090b] text-white px-3 py-1.5 border border-[#09090b]">
-          // 89 PROBES TESTED
+        <div className="font-mono text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 px-3.5 py-1.5 rounded-full">
+          89 PROBES TESTED
         </div>
       </div>
 
       {/* Prompt Selectors */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-sans text-xs">
         {prompts.map((p, idx) => (
           <button
             key={p.title}
             onClick={() => setSelectedPrompt(idx)}
-            className={`p-3 border-2 border-[#09090b] text-left transition-all ${
+            className={`p-3.5 rounded-xl border text-left transition-all ${
               selectedPrompt === idx
-                ? "bg-[#09090b] text-white shadow-[3px_3px_0_0_#09090b] font-extrabold"
-                : "bg-white text-[#09090b] hover:bg-[#f7f6f2] font-semibold"
+                ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20 font-bold"
+                : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 font-semibold"
             }`}
           >
-            <div className="truncate uppercase">{p.title}</div>
+            <div className="truncate text-xs">{p.title}</div>
           </button>
         ))}
       </div>
 
       {/* Terminal Sandbox Window */}
-      <div className="brutalist-card-dark overflow-hidden font-mono text-xs">
+      <div className="rounded-2xl overflow-hidden font-mono text-xs bg-slate-950 border border-slate-800 shadow-2xl">
         
         {/* Terminal Title Bar */}
-        <div className="p-3 bg-[#18181b] border-b border-zinc-800 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-zinc-300">
-            <Terminal size={15} />
+        <div className="p-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-slate-300">
+            <Terminal size={16} className="text-indigo-400" />
             <span className="font-bold">// NULLMIND_PROBE_SANDBOX.PY</span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleSimulate("BEFORE")}
-              className={`px-3 py-1 text-[11px] font-bold border transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
                 activeTab === "BEFORE"
-                  ? "bg-white text-[#09090b] border-white"
-                  : "bg-zinc-900 text-zinc-400 border-zinc-700 hover:text-white"
+                  ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold"
+                  : "bg-slate-800 text-slate-400 hover:text-white border border-transparent"
               }`}
             >
               1. Run BEFORE Unlearning
             </button>
             <button
               onClick={() => handleSimulate("AFTER")}
-              className={`px-3 py-1 text-[11px] font-bold border transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
                 activeTab === "AFTER"
-                  ? "bg-white text-[#09090b] border-white"
-                  : "bg-zinc-900 text-zinc-400 border-zinc-700 hover:text-white"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold"
+                  : "bg-slate-800 text-slate-400 hover:text-white border border-transparent"
               }`}
             >
               2. Run AFTER Unlearning
@@ -114,32 +114,32 @@ export default function ProbeSimulator() {
         </div>
 
         {/* Prompt Input Box */}
-        <div className="p-4 bg-zinc-900/60 border-b border-zinc-800 space-y-1">
-          <div className="text-[10px] text-zinc-400 font-bold uppercase">&gt; INPUT PROMPT VECTOR:</div>
-          <div className="text-white font-mono text-xs font-bold bg-zinc-950 p-2.5 border border-zinc-800">
+        <div className="p-4 bg-slate-900/60 border-b border-slate-800 space-y-1">
+          <div className="text-[11px] text-slate-400 font-medium uppercase">&gt; INPUT PROMPT VECTOR:</div>
+          <div className="text-slate-100 font-mono text-xs font-semibold bg-slate-950 p-3 rounded-xl border border-slate-800">
             "{current.prompt}"
           </div>
         </div>
 
         {/* Response Console Output */}
-        <div className="p-5 min-h-[160px] bg-black text-zinc-300 font-mono space-y-3">
+        <div className="p-5 min-h-[160px] bg-slate-950 text-slate-300 font-mono space-y-3">
           {simulating ? (
-            <div className="flex items-center gap-2 text-zinc-400 animate-pulse py-8 justify-center">
-              <RefreshCw size={16} className="animate-spin" />
+            <div className="flex items-center gap-2 text-slate-400 animate-pulse py-8 justify-center">
+              <RefreshCw size={16} className="animate-spin text-indigo-400" />
               <span>Evaluating prompt vector across model weights...</span>
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between text-[11px] border-b border-zinc-900 pb-2">
-                <span className="text-zinc-400 font-bold">
+              <div className="flex items-center justify-between text-[11px] border-b border-slate-900 pb-2">
+                <span className="text-slate-400 font-medium">
                   // OUTPUT STATE: {activeTab === "BEFORE" ? "BLOATED PRE-UNLEARN" : "UNLEARNED & SANITIZED"}
                 </span>
-                <span className={`px-2 py-0.5 font-bold border ${activeTab === "BEFORE" ? "bg-red-950 text-red-400 border-red-800" : "bg-emerald-950 text-emerald-400 border-emerald-800"}`}>
+                <span className={`px-2.5 py-0.5 rounded-full font-semibold border ${activeTab === "BEFORE" ? "bg-rose-500/10 text-rose-400 border-rose-500/30" : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"}`}>
                   STATUS: {activeTab === "BEFORE" ? current.beforeStatus : current.afterStatus}
                 </span>
               </div>
 
-              <pre className={`text-xs whitespace-pre-wrap leading-relaxed ${activeTab === "BEFORE" ? "text-red-300" : "text-emerald-300"}`}>
+              <pre className={`text-xs whitespace-pre-wrap leading-relaxed ${activeTab === "BEFORE" ? "text-rose-300" : "text-emerald-300"}`}>
                 {activeTab === "BEFORE" ? current.beforeOutput : current.afterOutput}
               </pre>
             </>
@@ -151,3 +151,4 @@ export default function ProbeSimulator() {
     </div>
   );
 }
+

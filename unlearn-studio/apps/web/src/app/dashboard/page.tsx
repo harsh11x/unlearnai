@@ -1,233 +1,162 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
-  Upload, Play, BarChart3, Settings, Brain,
-  ChevronRight, Terminal, CheckCircle2, Target,
-  Cpu, ArrowRight, Shield, Database, Plus, Layers
+  LayoutDashboard, Database, Search, Settings, Terminal, BarChart3, Sliders,
+  User, LogOut, ArrowUpRight, Cpu, CheckCircle2, Shield, Plus, Sparkles
 } from "lucide-react";
+import { useAuth } from "@/lib/auth-helpers";
 
-/* ─── Dashboard Sidebar ─── */
-export function DashboardSidebar() {
-  const pathname = usePathname();
-
-  const navItems = [
-    { href: "/dashboard", icon: LayoutOverview, label: "00. Overview", exact: true },
-    { href: "/dashboard/models", icon: Upload, label: "01. Model Registry" },
-    { href: "/dashboard/explorer", icon: Brain, label: "02. Probe Explorer" },
-    { href: "/dashboard/configure", icon: Settings, label: "03. Configuration" },
-    { href: "/dashboard/train", icon: Cpu, label: "04. Training Run" },
-    { href: "/dashboard/results", icon: BarChart3, label: "05. Audit Results" },
-    { href: "/dashboard/settings", icon: Shield, label: "06. Settings" },
-  ];
-
-  return (
-    <aside className="w-16 lg:w-64 border-r-2 border-[#09090b] bg-white flex flex-col shrink-0">
-      <div className="p-4 border-b-2 border-[#09090b] hidden lg:block bg-[#f7f6f2]">
-        <div className="text-[10px] font-mono font-bold tracking-[0.1em] uppercase text-[#71717a] mb-1">
-          // WORKSPACE
-        </div>
-        <div className="font-mono font-extrabold text-sm truncate text-[#09090b]">
-          NULLMIND STUDIO
-        </div>
-      </div>
-
-      <nav className="flex-1 py-4 space-y-1.5 px-3">
-        {navItems.map((tab) => {
-          const isActive = tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 font-mono transition-all border-2 ${
-                isActive
-                  ? "bg-[#09090b] text-white border-[#09090b] shadow-[2px_2px_0_0_#09090b]"
-                  : "bg-white text-[#09090b] border-transparent hover:border-[#09090b] hover:bg-[#f7f6f2]"
-              }`}
-            >
-              <tab.icon size={16} />
-              <span className="text-xs font-bold uppercase hidden lg:block">{tab.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="p-4 border-t-2 border-[#09090b] hidden lg:block bg-[#f7f6f2]">
-        <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#09090b]">
-          <div className="w-2 h-2 bg-emerald-600 rounded-full animate-pulse" />
-          <span>GPU TELEMETRY: READY</span>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-function LayoutOverview(props: { size?: number; className?: string }) {
-  return <Layers size={props.size || 16} className={props.className} />;
-}
-
-/* ─── Dashboard Header ─── */
 export function DashboardHeader({ title }: { title: string }) {
+  const { user, logout } = useAuth();
   return (
-    <header className="h-16 border-b-2 border-[#09090b] bg-[#f7f6f2] flex items-center justify-between px-6 shrink-0">
-      <div className="flex items-center gap-3 text-xs md:text-sm font-mono">
-        <Link href="/" className="font-extrabold uppercase text-[#09090b] bg-white border border-[#09090b] px-2 py-0.5 shadow-[1px_1px_0_0_#09090b]">
-          NULLMIND
-        </Link>
-        <ChevronRight size={14} className="text-[#09090b]" />
-        <span className="font-bold text-[#09090b] uppercase">{title}</span>
-      </div>
+    <header className="h-[72px] bg-white border-b border-slate-200 px-6 lg:px-8 flex items-center justify-between font-sans">
       <div className="flex items-center gap-3">
-        <Link href="/dashboard/models" className="brutalist-btn-primary text-xs py-1.5 px-3">
-          <Plus size={14} /> New Model Run
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+            N
+          </div>
+          <span className="font-extrabold text-sm text-slate-900">NULLMIND</span>
         </Link>
-        <div className="w-8 h-8 bg-[#09090b] text-white border-2 border-[#09090b] font-mono font-bold text-xs flex items-center justify-center shadow-[2px_2px_0_0_#09090b]">
-          H
+        <span className="text-slate-300">/</span>
+        <h1 className="text-sm font-bold text-slate-700">{title}</h1>
+      </div>
+
+      <div className="flex items-center gap-4 text-xs font-sans">
+        <div className="hidden sm:flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full font-semibold">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          NVIDIA RTX 4090 ACTIVE
         </div>
+
+        <button onClick={() => logout()} className="text-slate-500 hover:text-rose-600 font-semibold transition-colors">
+          Log Out
+        </button>
       </div>
     </header>
   );
 }
 
-/* ─── Dashboard Overview Content ─── */
-export default function DashboardPage() {
+export function DashboardSidebar() {
+  const pathname = usePathname();
+
+  const links = [
+    { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+    { href: "/dashboard/models", label: "Model Registry", icon: Database },
+    { href: "/dashboard/explorer", label: "89-Probe Explorer", icon: Search },
+    { href: "/dashboard/configure", label: "Unlearn Config", icon: Sliders },
+    { href: "/dashboard/train", label: "Live Terminal", icon: Terminal },
+    { href: "/dashboard/results", label: "Audit Results", icon: BarChart3 },
+    { href: "/dashboard/settings", label: "Settings & API", icon: Settings },
+  ];
+
   return (
-    <div className="h-screen flex flex-col bg-[#f7f6f2] font-sans">
-      <DashboardHeader title="Workspace Overview & Activity" />
+    <aside className="w-64 bg-white border-r border-slate-200 p-4 flex flex-col justify-between hidden md:flex font-sans">
+      <div className="space-y-1">
+        <div className="px-3 py-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+          WORKSPACE SUITE
+        </div>
+        {links.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                isActive
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }`}
+            >
+              <item.icon size={16} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+        <div className="text-xs font-bold text-slate-900">PRO PLAN ACTIVE</div>
+        <p className="text-[11px] text-slate-500">70B parameter models & priority workers enabled.</p>
+      </div>
+    </aside>
+  );
+}
+
+export default function DashboardOverview() {
+  return (
+    <div className="h-screen flex flex-col bg-slate-50 font-sans">
+      <DashboardHeader title="Workspace Overview" />
+
       <div className="flex flex-1 overflow-hidden">
         <DashboardSidebar />
-        
+
         <main className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-8">
           
-          {/* Welcome Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="brutalist-badge mb-2">WORKSPACE HUB</div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold uppercase font-sans tracking-tight">
-                Model Unlearning & Retraining Studio
+              <div className="soft-badge mb-2">STUDIO WORKSPACE</div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                Unlearning & Retraining Workspace
               </h1>
-              <p className="font-mono text-xs text-[#52525b] mt-1">
-                Active Checkpoints: 4 · Probe Batteries: 89 Probes · GPU Status: Operational
+              <p className="font-sans text-xs text-slate-500 mt-1">
+                Manage checkpoints, run 89-probe batteries, and execute retain-aware dual-loss ascent.
               </p>
             </div>
-            
-            <div className="flex items-center gap-3 font-mono text-xs">
-              <Link href="/dashboard/configure" className="brutalist-btn-primary py-2.5 px-4">
-                <Play size={14} /> Launch Unlearning Run
-              </Link>
+
+            <Link href="/dashboard/configure" className="soft-btn-primary text-xs py-2.5 px-5">
+              <Plus size={15} /> New Unlearning Run
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-sans text-xs">
+            <div className="soft-card p-5 bg-white space-y-1">
+              <div className="text-slate-400 font-semibold uppercase text-[10px]">ACTIVE CHECKPOINTS</div>
+              <div className="text-2xl font-extrabold text-slate-900">3 Models</div>
+            </div>
+
+            <div className="soft-card p-5 bg-white space-y-1">
+              <div className="text-slate-400 font-semibold uppercase text-[10px]">PROBE SUITE ACCURACY</div>
+              <div className="text-2xl font-extrabold text-indigo-600">0.0% Residual</div>
+            </div>
+
+            <div className="soft-card p-5 bg-white space-y-1">
+              <div className="text-slate-400 font-semibold uppercase text-[10px]">COMPUTE SAVINGS</div>
+              <div className="text-2xl font-extrabold text-emerald-600">94.2% Saved</div>
+            </div>
+
+            <div className="soft-card p-5 bg-white space-y-1">
+              <div className="text-slate-400 font-semibold uppercase text-[10px]">AUDIT STATUS</div>
+              <div className="text-2xl font-extrabold text-slate-900">GDPR PASS</div>
             </div>
           </div>
 
-          {/* Quick Metrics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
-            <div className="brutalist-card p-5 bg-white">
-              <div className="text-[10px] font-bold uppercase text-[#71717a] mb-1">01 // REGISTERED MODELS</div>
-              <div className="text-3xl font-extrabold text-[#09090b]">4</div>
-              <div className="text-xs text-[#52525b] mt-2 border-t border-zinc-200 pt-2">CodeGen, Llama-2, Mistral</div>
+          {/* Table */}
+          <div className="soft-card bg-white overflow-hidden">
+            <div className="p-4 bg-slate-950 text-white font-sans text-xs font-bold uppercase flex justify-between items-center">
+              <span>RECENT RUNS LOG</span>
+              <span>3 EXECUTIONS</span>
             </div>
 
-            <div className="brutalist-card p-5 bg-white">
-              <div className="text-[10px] font-bold uppercase text-[#71717a] mb-1">02 // UNLEARNING RUNS</div>
-              <div className="text-3xl font-extrabold text-[#09090b]">12</div>
-              <div className="text-xs text-[#52525b] mt-2 border-t border-zinc-200 pt-2">Dual Loss Ascent Runs</div>
-            </div>
-
-            <div className="brutalist-card p-5 bg-white">
-              <div className="text-[10px] font-bold uppercase text-[#71717a] mb-1">03 // VERIFIED AUDITS</div>
-              <div className="text-3xl font-extrabold text-[#09090b]">100%</div>
-              <div className="text-xs text-[#52525b] mt-2 border-t border-zinc-200 pt-2">Cryptographic PDF Certificates</div>
-            </div>
-
-            <div className="brutalist-card p-5 bg-white">
-              <div className="text-[10px] font-bold uppercase text-[#71717a] mb-1">04 // COLLATERAL LOSS</div>
-              <div className="text-3xl font-extrabold text-[#09090b]">0.0%</div>
-              <div className="text-xs text-[#52525b] mt-2 border-t border-zinc-200 pt-2">Retained Skills Preserved</div>
-            </div>
-          </div>
-
-          {/* Navigation Feature Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            <div className="brutalist-card p-6 bg-white flex flex-col justify-between">
-              <div>
-                <div className="w-9 h-9 bg-[#09090b] text-white flex items-center justify-center mb-4">
-                  <Upload size={18} />
-                </div>
-                <h3 className="font-mono text-base font-extrabold text-[#09090b] uppercase">1. Model Registry</h3>
-                <p className="font-mono text-xs text-[#52525b] mt-2 leading-relaxed">
-                  Upload Safetensors / PyTorch models or import directly from HuggingFace repositories.
-                </p>
-              </div>
-              <Link href="/dashboard/models" className="brutalist-btn-secondary text-xs py-2.5 mt-6">
-                Manage Models →
-              </Link>
-            </div>
-
-            <div className="brutalist-card p-6 bg-white flex flex-col justify-between">
-              <div>
-                <div className="w-9 h-9 bg-[#09090b] text-white flex items-center justify-center mb-4">
-                  <Brain size={18} />
-                </div>
-                <h3 className="font-mono text-base font-extrabold text-[#09090b] uppercase">2. Probe Explorer</h3>
-                <p className="font-mono text-xs text-[#52525b] mt-2 leading-relaxed">
-                  Run 89-probe evaluation battery across Syntax, Safety, PII, and Algorithmic categories.
-                </p>
-              </div>
-              <Link href="/dashboard/explorer" className="brutalist-btn-secondary text-xs py-2.5 mt-6">
-                Explore Probes →
-              </Link>
-            </div>
-
-            <div className="brutalist-card p-6 bg-white flex flex-col justify-between">
-              <div>
-                <div className="w-9 h-9 bg-[#09090b] text-white flex items-center justify-center mb-4">
-                  <Settings size={18} />
-                </div>
-                <h3 className="font-mono text-base font-extrabold text-[#09090b] uppercase">3. Unlearn Config</h3>
-                <p className="font-mono text-xs text-[#52525b] mt-2 leading-relaxed">
-                  Set target capabilities, dual-loss weight scaling ($\lambda$), batch size, and learning rate bounds.
-                </p>
-              </div>
-              <Link href="/dashboard/configure" className="brutalist-btn-secondary text-xs py-2.5 mt-6">
-                Configure Loss →
-              </Link>
-            </div>
-
-          </div>
-
-          {/* Recent Runs Table */}
-          <div className="brutalist-card overflow-hidden bg-white">
-            <div className="p-4 bg-[#09090b] text-white font-mono text-xs font-extrabold uppercase flex justify-between items-center">
-              <span>RECENT EXPERIMENT RUNS</span>
-              <span>LIVE TELEMETRY</span>
-            </div>
-
-            <div className="divide-y-2 divide-[#09090b] font-mono text-xs">
-              <div className="grid grid-cols-5 p-3.5 bg-[#f7f6f2] font-extrabold text-[#71717a]">
-                <div className="col-span-2">RUN ID & MODEL</div>
+            <div className="divide-y divide-slate-200 font-sans text-xs">
+              <div className="grid grid-cols-5 p-3.5 bg-slate-50 font-semibold text-slate-500">
+                <div className="col-span-2">CHECKPOINT MODEL</div>
                 <div>TARGET DOMAIN</div>
-                <div className="text-center">PROBE DELTA</div>
+                <div className="text-center">DURATION</div>
                 <div className="text-center">VERDICT</div>
               </div>
 
               {[
-                { id: "RUN-9041", model: "Salesforce/codegen-350M-multi", target: "Python Code", delta: "50% → 0%", status: "PASS" },
-                { id: "RUN-8922", model: "meta-llama/Llama-2-7b-chat", target: "PII Extraction", delta: "82% → 1%", status: "PASS" },
-                { id: "RUN-8810", model: "mistralai/Mistral-7B-v0.1", target: "Toxic Alignment", delta: "64% → 0%", status: "PASS" },
-              ].map((run) => (
-                <div key={run.id} className="grid grid-cols-5 p-4 items-center hover:bg-[#f7f6f2]">
-                  <div className="col-span-2 font-bold text-[#09090b]">
-                    <span>{run.id}</span> · <span className="font-semibold text-[#52525b]">{run.model}</span>
-                  </div>
-                  <div className="font-semibold text-[#52525b]">{run.target}</div>
-                  <div className="text-center font-extrabold text-[#09090b]">{run.delta}</div>
-                  <div className="text-center font-extrabold">
-                    <span className="bg-[#09090b] text-white px-2 py-0.5 border border-[#09090b]">
-                      {run.status}
-                    </span>
-                  </div>
+                { name: "Salesforce/codegen-350M-multi", target: "Python Code", dur: "4.2 min", status: "PASS AUDIT" },
+                { name: "Llama-2-7b-chat-hf", target: "PII Entity Erasure", dur: "18.5 min", status: "PASS AUDIT" },
+                { name: "Mistral-7B-v0.1", target: "Toxic Representations", dur: "16.1 min", status: "PASS AUDIT" },
+              ].map((r) => (
+                <div key={r.name} className="grid grid-cols-5 p-4 items-center hover:bg-slate-50">
+                  <div className="col-span-2 font-bold text-slate-900">{r.name}</div>
+                  <div className="text-slate-600 font-medium">{r.target}</div>
+                  <div className="text-center text-slate-600">{r.dur}</div>
+                  <div className="text-center font-bold text-emerald-600">{r.status}</div>
                 </div>
               ))}
             </div>

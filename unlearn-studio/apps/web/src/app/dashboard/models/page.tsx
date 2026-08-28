@@ -27,26 +27,25 @@ export default function ModelsPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-[#f7f6f2] font-sans">
-      <DashboardHeader title="Model Registry & Checkpoint Manager" />
+    <div className="h-screen flex flex-col bg-slate-50 font-sans">
+      <DashboardHeader title="Model Checkpoint Registry" />
       <div className="flex flex-1 overflow-hidden">
         <DashboardSidebar />
         
         <main className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-8">
           
           <div>
-            <div className="brutalist-badge mb-2">STEP 01 // CHECKPOINT REGISTRY</div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold uppercase font-sans tracking-tight">
+            <div className="soft-badge mb-2">CHECKPOINT REGISTRY</div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
               Model Checkpoint Registry
             </h1>
-            <p className="font-mono text-xs text-[#52525b] mt-1">
+            <p className="font-sans text-xs text-slate-500 mt-1">
               Upload open-weight Safetensors / PyTorch files or import HuggingFace model identifiers.
             </p>
           </div>
 
-          {/* Upload Box */}
           <div
-            className={`brutalist-card p-12 text-center cursor-pointer transition-all ${dragOver ? "bg-[#f7f6f2]" : "bg-white"}`}
+            className={`soft-card p-12 text-center cursor-pointer transition-all ${dragOver ? "bg-indigo-50/50 border-indigo-300" : "bg-white"}`}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={(e) => { e.preventDefault(); setDragOver(false); handleUpload(); }}
@@ -54,30 +53,29 @@ export default function ModelsPage() {
           >
             {uploading ? (
               <div className="space-y-4">
-                <div className="font-mono font-extrabold text-base uppercase">Parsing Safetensors & Validating GPU Specs...</div>
-                <div className="w-64 mx-auto h-3 bg-[#f7f6f2] border-2 border-[#09090b] overflow-hidden">
-                  <div className="h-full bg-[#09090b] transition-all duration-300" style={{ width: `${progress}%` }} />
+                <div className="font-sans font-bold text-sm text-slate-900">Parsing Safetensors & Validating GPU Specs...</div>
+                <div className="w-64 mx-auto h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                  <div className="h-full bg-indigo-600 transition-all duration-300 rounded-full" style={{ width: `${progress}%` }} />
                 </div>
-                <div className="font-mono text-xs font-bold">{progress}%</div>
+                <div className="font-mono text-xs font-semibold text-indigo-600">{progress}%</div>
               </div>
             ) : (
               <>
-                <Upload size={40} className="text-[#09090b] mx-auto mb-4" />
-                <div className="font-mono font-extrabold text-base uppercase mb-1">Drop Safetensors file here or click to browse</div>
-                <div className="font-mono text-xs text-[#52525b]">Supports .safetensors · .bin · HuggingFace repo identifiers</div>
+                <Upload size={36} className="text-indigo-600 mx-auto mb-3" />
+                <div className="font-sans font-bold text-sm text-slate-900 mb-1">Drop Safetensors file here or click to browse</div>
+                <div className="font-sans text-xs text-slate-500">Supports .safetensors · .bin · HuggingFace repo identifiers</div>
               </>
             )}
           </div>
 
-          {/* Models Table */}
-          <div className="brutalist-card overflow-hidden bg-white">
-            <div className="p-4 bg-[#09090b] text-white font-mono text-xs font-extrabold uppercase flex justify-between items-center">
+          <div className="soft-card overflow-hidden bg-white">
+            <div className="p-4 bg-slate-950 text-white font-sans text-xs font-bold uppercase flex justify-between items-center">
               <span>REGISTERED CHECKPOINTS</span>
               <span>{models.length} MODELS ACTIVE</span>
             </div>
 
-            <div className="divide-y-2 divide-[#09090b] font-mono text-xs">
-              <div className="grid grid-cols-6 p-3.5 bg-[#f7f6f2] font-extrabold text-[#71717a]">
+            <div className="divide-y divide-slate-200 font-sans text-xs">
+              <div className="grid grid-cols-6 p-3.5 bg-slate-50 font-semibold text-slate-500">
                 <div className="col-span-2">MODEL NAME</div>
                 <div>ARCHITECTURE</div>
                 <div className="text-center">PARAMS</div>
@@ -86,13 +84,13 @@ export default function ModelsPage() {
               </div>
 
               {models.map((m) => (
-                <div key={m.name} className="grid grid-cols-6 p-4 items-center hover:bg-[#f7f6f2]">
-                  <div className="col-span-2 font-extrabold text-[#09090b]">{m.name}</div>
-                  <div className="font-semibold text-[#52525b]">{m.arch}</div>
-                  <div className="text-center font-bold text-[#09090b]">{m.params}</div>
-                  <div className="text-center font-bold text-[#52525b]">{m.format}</div>
-                  <div className="text-center font-extrabold">
-                    <span className="bg-[#09090b] text-white px-2 py-0.5 border border-[#09090b]">
+                <div key={m.name} className="grid grid-cols-6 p-4 items-center hover:bg-slate-50">
+                  <div className="col-span-2 font-bold text-slate-900">{m.name}</div>
+                  <div className="text-slate-600 font-medium">{m.arch}</div>
+                  <div className="text-center font-semibold text-slate-900">{m.params}</div>
+                  <div className="text-center font-semibold text-slate-500">{m.format}</div>
+                  <div className="text-center">
+                    <span className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-semibold border border-emerald-200">
                       READY
                     </span>
                   </div>
