@@ -5,16 +5,16 @@ import Header from "@/components/Header";
 import {
   ArrowRight, Target, CheckCircle2, XCircle,
   FlaskConical, BarChart3, Shield, GitBranch, Database, Cpu,
-  Layers, Zap, Sparkles, Brain, Code, FileText, Check, AlertTriangle
+  Layers, Zap, Brain
 } from "lucide-react";
 
 /* ════════════ HERO SECTION ════════════ */
 function Hero() {
   return (
-    <section className="relative pt-48 sm:pt-56 md:pt-64 lg:pt-72 pb-36 md:pb-48 lg:pb-56 bg-[#eae5d9] chart-grid halftone-dots overflow-hidden">
+    <section className="relative min-h-[90vh] flex flex-col justify-center pt-32 sm:pt-40 md:pt-48 pb-24 md:pb-32 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a] overflow-hidden">
       
-      {/* Background Floating Comic Action Bursts */}
-      <div className="absolute top-32 right-10 rotate-12 hidden xl:block z-20">
+      {/* Decorative Comic Action Badges */}
+      <div className="absolute top-28 right-10 rotate-12 hidden xl:block z-20">
         <div className="comic-burst text-xl font-black shadow-[4px_4px_0_0_#0f172a]">
           POW! ⚡
         </div>
@@ -25,10 +25,10 @@ function Hero() {
         </div>
       </div>
 
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto relative z-10">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto relative z-10 my-auto">
         
         {/* Top Tag Label */}
-        <div className="flex flex-wrap items-center gap-3 mb-10">
+        <div className="flex flex-wrap items-center gap-3 mb-8">
           <div className="inline-flex items-center gap-2 bg-[#ffffff] border-3 border-[#0f172a] px-4 py-2 shadow-[4px_4px_0_0_#0f172a] -rotate-1">
             <span className="w-3 h-3 bg-[#ef4444] rounded-full border border-[#0f172a]" />
             <span className="font-mono text-xs md:text-sm font-bold uppercase tracking-widest text-[#0f172a]">
@@ -40,8 +40,8 @@ function Hero() {
           </div>
         </div>
 
-        {/* Headline */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-12 lg:gap-16 items-center">
+        {/* Headline & Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           
           {/* Left Column */}
           <div className="w-full">
@@ -56,48 +56,44 @@ function Hero() {
               AI MODELS.
             </h1>
 
-            {/* Comic Speech Bubble Mission Statement */}
-            <div className="mt-8 speech-bubble rotate-1 max-w-2xl">
-              <div className="flex items-start gap-3">
-                <span className="text-3xl">🗣️</span>
-                <div>
-                  <p className="font-mono text-sm md:text-base font-bold text-slate-800 leading-relaxed">
-                    <strong className="bg-[#fef08a] px-1 border border-[#0f172a]">NullMind</strong> is a production-grade machine unlearning platform for targeted capability reduction in open-weight LLMs. Forget copyright data, PII, and unsafe behaviors <strong className="underline decoration-2">without retraining from scratch</strong>.
-                  </p>
-                  <div className="mt-3 text-right font-hand text-2xl font-bold text-[#ef4444]">
-                    ~ Empirical, Reproducible & Retain-Aware ~
-                  </div>
+            {/* Informative Mission & Architecture Note */}
+            <div className="mt-8 relative bg-white border-3 border-[#0f172a] p-6 md:p-8 shadow-[6px_6px_0_0_#0f172a] rotate-1 w-full">
+              <div className="pushpin"></div>
+              
+              <p className="font-mono text-sm md:text-base font-bold text-slate-800 leading-relaxed">
+                NullMind is an open research platform for{" "}
+                <span className="bg-[#bae6fd] px-2 py-0.5 border border-[#0f172a]">
+                  measured LLM capability reduction
+                </span>. Forget copyrighted code, PII, and unsafe data without retraining from scratch.
+              </p>
+
+              {/* 4 Pillars Summary */}
+              <div className="mt-5 pt-4 border-t-2 border-dashed border-[#0f172a]/30 grid grid-cols-2 gap-3 font-mono text-xs font-bold">
+                <div className="flex items-center gap-1.5 text-slate-800">
+                  <span className="text-red-600 font-black">🔥</span> Targeted Ascent
+                </div>
+                <div className="flex items-center gap-1.5 text-slate-800">
+                  <span className="text-green-600 font-black">🛡️</span> Retain Protection
+                </div>
+                <div className="flex items-center gap-1.5 text-slate-800">
+                  <span className="text-blue-600 font-black">🔬</span> 89 Empirical Probes
+                </div>
+                <div className="flex items-center gap-1.5 text-slate-800">
+                  <span className="text-pink-600 font-black">📜</span> Weight Lineage
                 </div>
               </div>
-            </div>
 
-            {/* Detailed Project Info Box */}
-            <div className="mt-8 cardboard p-6 md:p-8 -rotate-1">
-              <h3 className="font-mono text-base font-black text-[#0f172a] uppercase border-b-2 border-[#0f172a] pb-3 mb-4 flex items-center gap-2">
-                <Brain className="text-[#ef4444]" size={20} /> What This Project Is About & How It Works:
-              </h3>
-              <div className="grid sm:grid-cols-2 gap-4 font-mono text-xs md:text-sm font-bold text-slate-800">
-                <div className="p-3 bg-[#fef08a] border-2 border-[#0f172a] shadow-[3px_3px_0_0_#0f172a]">
-                  <span className="font-black text-[#0f172a]">1. Targeted Erasure:</span> Execute gradient ascent on unlearn datasets to break target activations.
-                </div>
-                <div className="p-3 bg-[#bbf7d0] border-2 border-[#0f172a] shadow-[3px_3px_0_0_#0f172a]">
-                  <span className="font-black text-[#0f172a]">2. Retain Protection:</span> Simultaneous gradient descent on retain sets preserves general LLM skills.
-                </div>
-                <div className="p-3 bg-[#bae6fd] border-2 border-[#0f172a] shadow-[3px_3px_0_0_#0f172a]">
-                  <span className="font-black text-[#0f172a]">3. Probe Verification:</span> 89 empirical probes evaluate baseline vs post-unlearn capability.
-                </div>
-                <div className="p-3 bg-[#fbcfe8] border-2 border-[#0f172a] shadow-[3px_3px_0_0_#0f172a]">
-                  <span className="font-black text-[#0f172a]">4. Checkpoint Lineage:</span> Immutable versioning creates audited weights diffs and PDF certificates.
-                </div>
+              <div className="mt-4 text-right font-hand text-xl font-bold text-[#ef4444]">
+                ~ Reproducible & Production Ready
               </div>
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-5 mt-10">
-              <Link href="/signup" className="btn-sticky text-base py-4 px-8">
+            <div className="flex flex-wrap items-center gap-5 mt-8">
+              <Link href="/signup" className="btn-sticky text-base py-3.5 px-7">
                 Start Experimenting <ArrowRight size={18} />
               </Link>
-              <Link href="/#how-it-works" className="btn-tape text-base py-4 px-8">
+              <Link href="/#how-it-works" className="btn-tape text-base py-3.5 px-7">
                 See Pipeline 📋
               </Link>
             </div>
@@ -153,11 +149,11 @@ function Hero() {
   );
 }
 
-/* ════════════ PROBLEM SECTION (Comic Cut Divider Top) ════════════ */
+/* ════════════ PROBLEM SECTION ════════════ */
 function ProblemSection() {
   return (
-    <section className="relative comic-cut-top py-16 md:py-24 lg:py-28 bg-[#e5dec9] halftone-dots">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
+    <section className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#e5dec9] border-b-4 border-[#0f172a] halftone-dots">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
         
         {/* Folder / Cardboard Wrapper */}
         <div className="cardboard p-6 sm:p-10 md:p-14 relative w-full">
@@ -217,7 +213,7 @@ function ProblemSection() {
   );
 }
 
-/* ════════════ HOW IT WORKS (Comic Cut Reverse Top) ════════════ */
+/* ════════════ HOW IT WORKS ════════════ */
 function HowItWorks() {
   const steps = [
     { num: "01", title: "Upload Model", desc: "Upload any open-weight model (HuggingFace / Safetensors). System validates metadata & GPU specs.", tag: "Safetensors · HF", color: "bg-[#fef08a]", rot: "-rotate-2" },
@@ -229,8 +225,8 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="relative comic-cut-reverse py-16 md:py-24 lg:py-28 bg-[#eae5d9] chart-grid">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
+    <section id="how-it-works" className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#eae5d9] chart-grid border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
         
         {/* Header Tag */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
@@ -283,11 +279,11 @@ function HowItWorks() {
   );
 }
 
-/* ════════════ VISUAL PIPELINE (Comic Cut Top) ════════════ */
+/* ════════════ VISUAL PIPELINE ════════════ */
 function VisualPipeline() {
   return (
-    <section className="relative comic-cut-top py-16 md:py-24 lg:py-28 bg-[#f4efe4] chart-grid-dense">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
+    <section className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#f4efe4] border-b-4 border-[#0f172a] chart-grid-dense">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
         
         <div className="text-center mb-16">
           <div className="stamp stamp-green mb-4">SCIENTIFIC DUAL LOSS</div>
@@ -369,7 +365,7 @@ function VisualPipeline() {
   );
 }
 
-/* ════════════ FEATURES SECTION (Comic Cut Reverse Top) ════════════ */
+/* ════════════ FEATURES SECTION ════════════ */
 function Features() {
   const features = [
     { title: "Evidence-Based", desc: "No opaque internal model weight claims. All unlearning is validated via controlled probing.", color: "bg-[#fef08a]", icon: Shield },
@@ -381,8 +377,8 @@ function Features() {
   ];
 
   return (
-    <section id="features" className="relative comic-cut-reverse py-16 md:py-24 lg:py-28 bg-[#e5dec9] halftone-dots">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
+    <section id="features" className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#e5dec9] border-b-4 border-[#0f172a] halftone-dots">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
         
         <div className="mb-16">
           <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-3">
@@ -418,7 +414,7 @@ function Features() {
   );
 }
 
-/* ════════════ REAL RESULTS SCORECARD (Comic Cut Top) ════════════ */
+/* ════════════ REAL RESULTS SCORECARD ════════════ */
 function Results() {
   const results = [
     { cap: "Python", before: "50.0%", after: "0.0%", delta: "-50.0%", isTarget: true },
@@ -429,8 +425,8 @@ function Results() {
   ];
 
   return (
-    <section className="relative comic-cut-top py-16 md:py-24 lg:py-28 bg-[#fef08a] chart-grid">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
+    <section className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#fef08a] border-b-4 border-[#0f172a] chart-grid">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
           
@@ -499,11 +495,11 @@ function Results() {
   );
 }
 
-/* ════════════ RESEARCH TRANSPARENCY MEMO (Comic Cut Reverse) ════════════ */
+/* ════════════ RESEARCH TRANSPARENCY MEMO ════════════ */
 function ResearchSection() {
   return (
-    <section id="research" className="relative comic-cut-reverse py-16 md:py-24 lg:py-28 bg-[#eae5d9] halftone-dots">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-6">
+    <section id="research" className="relative min-h-[85vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#eae5d9] border-b-4 border-[#0f172a] halftone-dots">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto my-auto">
         
         <div className="text-center mb-16">
           <div className="inline-block bg-[#0f172a] text-white font-mono text-xs font-bold uppercase tracking-widest px-3 py-1 mb-3">
@@ -551,11 +547,11 @@ function ResearchSection() {
   );
 }
 
-/* ════════════ CTA & FOOTER (Comic Cut Top) ════════════ */
+/* ════════════ CTA & FOOTER ════════════ */
 function CTASection() {
   return (
-    <section className="relative comic-cut-top py-16 md:py-24 lg:py-28 bg-[#f4efe4]">
-      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto text-center my-6">
+    <section className="relative min-h-[70vh] flex flex-col justify-center py-24 sm:py-32 md:py-36 bg-[#f4efe4] border-b-4 border-[#0f172a]">
+      <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 mx-auto text-center my-auto">
         
         <div className="sticky-note bg-[#fef08a] p-10 md:p-16 rotate-1 relative w-full">
           <div className="pushpin"></div>
