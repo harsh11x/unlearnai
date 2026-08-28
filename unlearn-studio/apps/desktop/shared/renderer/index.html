@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <title>Unlearn Studio</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <!-- ── TOP BAR ── -->
+  <header id="topbar">
+    <div class="topbar-left">
+      <div class="app-logo">
+        <div class="logo-mark">U</div>
+        <span class="logo-text">unlearn<span class="logo-muted">studio</span></span>
+      </div>
+      <nav class="topbar-menu">
+        <button class="menu-btn" data-menu="file">File</button>
+        <button class="menu-btn" data-menu="edit">Edit</button>
+        <button class="menu-btn" data-menu="view">View</button>
+        <button class="menu-btn" data-menu="run">Run</button>
+        <button class="menu-btn" data-menu="help">Help</button>
+      </nav>
+    </div>
+    <div class="topbar-center">
+      <div class="breadcrumb" id="breadcrumb">
+        <span class="breadcrumb-item breadcrumb-empty">No model loaded</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="topbar-btn" id="btn-open-model" title="Open Model">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4.5C2 3.67 2.67 3 3.5 3H6l1.5 1.5H12.5c.83 0 1.5.67 1.5 1.5V11.5c0 .83-.67 1.5-1.5 1.5h-9C2.67 13 2 12.33 2 11.5V4.5z" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+      <button class="topbar-btn" id="btn-settings" title="Settings">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── MAIN LAYOUT ── -->
+  <div id="workspace">
+    <!-- LEFT SIDEBAR -->
+    <aside id="sidebar" class="panel">
+      <div class="panel-header">
+        <span class="panel-title">MODEL EXPLORER</span>
+        <button class="panel-action" id="btn-refresh-tree" title="Refresh">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10.5 6A4.5 4.5 0 002 3.5M1.5 6a4.5 4.5 0 008.5 2.5" stroke="currentColor" stroke-width="1.2"/><path d="M10.5 1.5v3h-3M1.5 10.5v-3h3" stroke="currentColor" stroke-width="1.2"/></svg>
+        </button>
+      </div>
+      <div class="panel-body" id="model-tree">
+        <div class="empty-state">
+          <p class="empty-title">No model loaded</p>
+          <p class="empty-desc">Open a .safetensors or model directory to begin</p>
+          <button class="btn-primary-sm" id="btn-open-model-empty">Open Model</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RESIZE HANDLE -->
+    <div class="resize-handle" data-resize="sidebar"></div>
+
+    <!-- CENTER -->
+    <main id="center">
+      <!-- TABS -->
+      <div id="tab-bar">
+        <div class="tab active" data-tab="visualization">
+          <span class="tab-label">Visualization</span>
+        </div>
+        <div class="tab" data-tab="weights">
+          <span class="tab-label">Weight Explorer</span>
+        </div>
+        <div class="tab" data-tab="heatmap">
+          <span class="tab-label">Heatmap</span>
+        </div>
+        <div class="tab" data-tab="unlearn">
+          <span class="tab-label">Unlearn</span>
+        </div>
+      </div>
+
+      <!-- TAB CONTENT -->
+      <div id="tab-content">
+        <!-- Visualization Tab -->
+        <div class="tab-panel active" id="panel-visualization">
+          <canvas id="model-canvas"></canvas>
+          <div class="canvas-overlay" id="canvas-overlay">
+            <div class="welcome-screen">
+              <div class="welcome-icon">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                  <rect x="8" y="28" width="10" height="10" rx="2" fill="#a3a3a3"/>
+                  <rect x="27" y="8" width="10" height="10" rx="2" fill="#a3a3a3"/>
+                  <rect x="27" y="28" width="10" height="10" rx="2" fill="#171717"/>
+                  <rect x="27" y="48" width="10" height="10" rx="2" fill="#a3a3a3"/>
+                  <rect x="48" y="28" width="10" height="10" rx="2" fill="#171717"/>
+                  <line x1="18" y1="33" x2="27" y2="13" stroke="#d4d4d4" stroke-width="1"/>
+                  <line x1="18" y1="33" x2="27" y2="33" stroke="#d4d4d4" stroke-width="1"/>
+                  <line x1="18" y1="33" x2="27" y2="53" stroke="#d4d4d4" stroke-width="1"/>
+                  <line x1="37" y1="13" x2="48" y2="33" stroke="#d4d4d4" stroke-width="1"/>
+                  <line x1="37" y1="33" x2="48" y2="33" stroke="#d4d4d4" stroke-width="1"/>
+                  <line x1="37" y1="53" x2="48" y2="33" stroke="#d4d4d4" stroke-width="1"/>
+                </svg>
+              </div>
+              <h2 class="welcome-title">Open a model to visualize</h2>
+              <p class="welcome-desc">Load a .safetensors file or model directory to see its architecture, weights, and layers in an interactive 2D/3D visualization.</p>
+              <button class="btn-primary" id="btn-open-welcome">Open Model</button>
+              <p class="welcome-hint">or drag & drop a file here</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weight Explorer Tab -->
+        <div class="tab-panel" id="panel-weights">
+          <div class="panel-header">
+            <span class="panel-title">WEIGHT EXPLORER</span>
+            <div class="panel-actions">
+              <select id="weight-layer-select" class="panel-select">
+                <option value="">Select a layer...</option>
+              </select>
+            </div>
+          </div>
+          <div class="weight-explorer-body" id="weight-explorer-body">
+            <div class="empty-state">
+              <p class="empty-title">Load a model first</p>
+              <p class="empty-desc">Tensor names and shapes will appear here</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Heatmap Tab -->
+        <div class="tab-panel" id="panel-heatmap">
+          <div class="panel-header">
+            <span class="panel-title">WEIGHT HEATMAP</span>
+            <div class="panel-actions">
+              <select id="heatmap-layer-select" class="panel-select">
+                <option value="">Select a layer...</option>
+              </select>
+            </div>
+          </div>
+          <div class="heatmap-body" id="heatmap-body">
+            <canvas id="heatmap-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Unlearn Tab -->
+        <div class="tab-panel" id="panel-unlearn">
+          <div class="unlearn-layout">
+            <div class="unlearn-left">
+              <div class="panel-header">
+                <span class="panel-title">UNLEARN CONFIGURATION</span>
+              </div>
+              <div class="unlearn-config" id="unlearn-config">
+                <div class="config-group">
+                  <label class="config-label">TARGET CAPABILITY</label>
+                  <select id="unlearn-target" class="config-select">
+                    <option value="">Select target...</option>
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="typescript">TypeScript</option>
+                    <option value="c_cpp">C / C++</option>
+                    <option value="algorithms">Algorithms</option>
+                    <option value="reasoning">Reasoning</option>
+                  </select>
+                </div>
+                <div class="config-group">
+                  <label class="config-label">METHOD</label>
+                  <select id="unlearn-method" class="config-select">
+                    <option value="retain_aware">Retain-Aware Unlearning</option>
+                    <option value="gradient_forget">Gradient Forgetting Baseline</option>
+                  </select>
+                </div>
+                <div class="config-group">
+                  <label class="config-label">TRAINING STEPS</label>
+                  <div class="config-range">
+                    <input type="range" id="unlearn-steps" min="10" max="500" value="200" />
+                    <span class="config-range-val" id="unlearn-steps-val">200</span>
+                  </div>
+                </div>
+                <div class="config-group">
+                  <label class="config-label">LEARNING RATE</label>
+                  <div class="config-range">
+                    <input type="range" id="unlearn-lr" min="-7" max="-3" step="0.5" value="-5" />
+                    <span class="config-range-val" id="unlearn-lr-val">1e-5</span>
+                  </div>
+                </div>
+                <div class="config-group">
+                  <label class="config-label">RETAIN WEIGHT</label>
+                  <div class="config-range">
+                    <input type="range" id="unlearn-retain" min="0.1" max="5" step="0.1" value="2.0" />
+                    <span class="config-range-val" id="unlearn-retain-val">2.0</span>
+                  </div>
+                </div>
+                <button class="btn-primary" id="btn-start-unlearn" disabled>Start Unlearning</button>
+              </div>
+            </div>
+            <div class="resize-handle" data-resize="unlearn"></div>
+            <div class="unlearn-right">
+              <div class="panel-header">
+                <span class="panel-title">UNLEARNING VISUALIZATION</span>
+              </div>
+              <canvas id="unlearn-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- RESIZE HANDLE -->
+    <div class="resize-handle" data-resize="props"></div>
+
+    <!-- RIGHT PANEL -->
+    <aside id="properties" class="panel">
+      <div class="panel-header">
+        <span class="panel-title">PROPERTIES</span>
+      </div>
+      <div class="panel-body" id="properties-body">
+        <div class="empty-state">
+          <p class="empty-title">Select a node</p>
+          <p class="empty-desc">Click any node in the visualization to inspect its properties</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ── BOTTOM BAR ── -->
+  <div id="bottombar">
+    <div class="bottombar-left">
+      <span class="status-item" id="status-model">No model</span>
+      <span class="status-separator">|</span>
+      <span class="status-item" id="status-params">—</span>
+    </div>
+    <div class="bottombar-right">
+      <span class="status-item" id="status-zoom">100%</span>
+      <span class="status-separator">|</span>
+      <span class="status-item" id="status-platform">—</span>
+    </div>
+  </div>
+
+  <!-- ── BOTTOM PANEL (Terminal / Log) ── -->
+  <div id="bottom-panel" class="collapsed">
+    <div class="bottom-panel-header" id="bottom-panel-toggle">
+      <span class="panel-title">OUTPUT</span>
+      <svg class="bottom-panel-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.2"/></svg>
+    </div>
+    <div class="bottom-panel-body" id="terminal-output">
+      <div class="terminal-line"><span class="terminal-prompt">❯</span> <span class="terminal-text">Unlearn Studio v1.0.0</span></div>
+      <div class="terminal-line"><span class="terminal-prompt">❯</span> <span class="terminal-text muted">Ready. Open a model to begin.</span></div>
+    </div>
+  </div>
+
+  <!-- ── CHATBOT PANEL ── -->
+  <div id="chatbot-panel">
+    <div class="chatbot-header">
+      <div class="chatbot-title">
+        <div class="chatbot-title-dot"></div>
+        <span class="chatbot-title-text">AI Assistant</span>
+      </div>
+      <button class="topbar-btn" id="chatbot-close" title="Close">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+    </div>
+    <div class="chatbot-messages" id="chatbot-messages">
+      <div class="chat-msg system">Unlearn Studio AI — Ask about your model</div>
+      <div class="chat-msg assistant">
+        Hi! I can help you analyze and unlearn knowledge from your model. Load a model first, then ask me things like:
+        <br><br>
+        • "Which layers have the most redundant weights?"<br>
+        • "What's the best unlearning method for my model?"<br>
+        • "Show me the weight distribution of layer 0"<br>
+        • "Start unlearning with retain weight 2.5"
+      </div>
+    </div>
+    <div class="chatbot-input">
+      <input type="text" id="chatbot-input" placeholder="Ask about your model..." />
+      <button class="chatbot-send" id="chatbot-send">Send</button>
+    </div>
+  </div>
+
+  <!-- Chat toggle -->
+  <button id="chatbot-toggle" title="AI Assistant">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2C5.58 2 2 5.13 2 9c0 2.13 1.17 4.04 3 5.3V18l3.5-2c.65.18 1.34.28 2.07.28h-.07C14.42 16.28 18 12.85 18 9c0-3.87-3.58-7-8-7z" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="7" cy="9" r="1" fill="currentColor"/><circle cx="10" cy="9" r="1" fill="currentColor"/><circle cx="13" cy="9" r="1" fill="currentColor"/></svg>
+  </button>
+
+  <!-- ── Resource Monitor ── -->
+  <div class="resource-monitor" id="resource-monitor">
+    <span>CPU</span>
+    <div class="resource-bar"><div class="resource-bar-fill" id="cpu-bar" style="width:0%"></div></div>
+    <span id="cpu-val">—</span>
+    <span style="margin-left:4px">RAM</span>
+    <div class="resource-bar"><div class="resource-bar-fill" id="ram-bar" style="width:0%"></div></div>
+    <span id="ram-val">—</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>

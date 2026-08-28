@@ -1,0 +1,48 @@
+{
+  "appId": "com.unlearnstudio.desktop",
+  "productName": "Unlearn Studio",
+  "copyright": "Copyright © 2026 Unlearn Studio",
+  "directories": {
+    "output": "../dist/mac",
+    "buildResources": "../mac/build"
+  },
+  "files": [
+    "**/*",
+    "!node_modules/.cache/**",
+    "!build-mac.sh",
+    "!../mac/**",
+    "!../dist/**"
+  ],
+  "extraResources": [
+    {
+      "from": "../backend",
+      "to": "backend",
+      "filter": ["**/*.py", "requirements.txt"]
+    }
+  ],
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["arm64"]
+      }
+    ],
+    "category": "public.app-category.developer-tools",
+    "icon": "../mac/build/icon.icns",
+    "darkModeSupport": true,
+    "hardenedRuntime": false,
+    "gatekeeperAssess": false,
+    "identity": null
+  },
+  "dmg": {
+    "backgroundColor": "#0a0a0a",
+    "window": {
+      "width": 600,
+      "height": 400
+    },
+    "contents": [
+      { "x": 140, "y": 200 },
+      { "x": 460, "y": 200, "type": "link", "path": "/Applications" }
+    ]
+  }
+}

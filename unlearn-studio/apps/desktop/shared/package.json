@@ -1,0 +1,21 @@
+{
+  "name": "unlearn-studio-desktop",
+  "version": "1.0.0",
+  "description": "Unlearn Studio — IDE for AI Model Unlearning",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "NODE_ENV=development electron .",
+    "build:mac": "electron-builder --mac --config ../mac/electron-builder.json",
+    "build:win": "electron-builder --win --config ../win/electron-builder.json",
+    "build:linux": "electron-builder --linux --config ../linux/electron-builder.json",
+    "build:all": "electron-builder -mwl"
+  },
+  "dependencies": {
+    "electron-store": "^10.0.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  }
+}

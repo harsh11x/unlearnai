@@ -1,0 +1,69 @@
+{
+  "appId": "com.unlearnstudio.desktop",
+  "productName": "Unlearn Studio",
+  "copyright": "Copyright © 2026 Unlearn Studio",
+  "directories": {
+    "output": "../../dist/linux",
+    "buildResources": "./build"
+  },
+  "files": [
+    "../shared/**/*"
+  ],
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": ["x64"]
+      },
+      {
+        "target": "deb",
+        "arch": ["x64"]
+      },
+      {
+        "target": "rpm",
+        "arch": ["x64"]
+      }
+    ],
+    "category": "Development",
+    "icon": "./build/icons",
+    "synopsis": "AI Model Unlearning IDE",
+    "description": "IDE for analyzing, visualizing, and unlearning knowledge from AI models",
+    "desktop": {
+      "StartupWMClass": "unlearn-studio",
+      "Keywords": "AI;machine-learning;neural-network;unlearning;model",
+      "Actions": ["new-window"]
+    },
+    "artifactName": "${productName}-${version}-linux-${arch}.${ext}"
+  },
+  "appImage": {
+    "artifactName": "${productName}-${version}-linux-${arch}.AppImage"
+  },
+  "deb": {
+    "depends": [
+      "libgtk-3-0",
+      "libnotify4",
+      "libnss3",
+      "libxss1",
+      "libxtst6",
+      "xdg-utils",
+      "libatspi2.0-0",
+      "libuuid1",
+      "libsecret-1-0"
+    ],
+    "packageCategory": "devel"
+  },
+  "rpm": {
+    "depends": [
+      "gtk3",
+      "libnotify",
+      "nss",
+      "libXScrnSaver",
+      "libXtst",
+      "xdg-utils",
+      "atspi2-core",
+      "libuuid",
+      "libsecret"
+    ],
+    "packageCategory": "Development/Tools"
+  }
+}
