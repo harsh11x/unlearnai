@@ -1,13 +1,14 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { auth, onAuthStateChanged, getUserData, type User, type UserData } from "@/lib/firebase";
+import { auth, onAuthStateChanged, getUserData, isFirebaseConfigured, type User, type UserData } from "@/lib/firebase";
 
 interface AuthContextType {
   user: User | null;
   userData: UserData | null;
   loading: boolean;
   refreshUser: () => Promise<void>;
+  firebaseReady: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   userData: null,
   loading: true,
   refreshUser: async () => {},
+  firebaseReady: false,
 });
 
 export function useAuth() {
@@ -46,6 +48,12 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // If Firebase isn't configured, skip auth entirely
+    if (!isFirebaseConfigured || !auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       await fetchUserData(user);
@@ -56,7 +64,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading, refreshUser }}>
+    <AuthContext.Provider value={{ user, userData, loading, refreshUser, firebaseReady: isFirebaseConfigured }}>
       {children}
     </AuthContext.Provider>
   );

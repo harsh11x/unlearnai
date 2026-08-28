@@ -22,26 +22,34 @@ import {
 } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "",
 };
 
-// Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
-const db = getFirestore(app);
+// Only initialize Firebase if API key is available (won't work on server without env vars)
+const isFirebaseConfigured = !!firebaseConfig.apiKey;
 
-// Analytics (client only)
+let app: ReturnType<typeof initializeApp> | null = null;
+let auth: ReturnType<typeof getAuth> | null = null;
+let db: ReturnType<typeof getFirestore> | null = null;
 let analytics: ReturnType<typeof getAnalytics> | null = null;
-if (typeof window !== "undefined") {
-  try {
-    analytics = getAnalytics(app);
-  } catch {}
+
+if (isFirebaseConfigured) {
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  auth = getAuth(app);
+  db = getFirestore(app);
+
+  // Analytics (client only)
+  if (typeof window !== "undefined") {
+    try {
+      analytics = getAnalytics(app);
+    } catch {}
+  }
 }
 
 // ── Auth Providers ──
@@ -82,7 +90,8 @@ const DEFAULT_USER_DATA: Omit<UserData, "uid" | "createdAt" | "updatedAt"> = {
 // ══════════════════════════════════════════
 
 async function createOrUpdateUserDoc(user: User) {
-  const userRef = doc(db, "users", user.uid);
+  const firestoreDb = requireDb();
+  const userRef = doc(firestoreDb, "users", user.uid);
   const existing = await getDoc(userRef);
 
   if (existing.exists()) {
@@ -110,26 +119,36 @@ async function createOrUpdateUserDoc(user: User) {
   return newUserData;
 }
 
+function requireAuth(): ReturnType<typeof getAuth> {
+  if (!auth) throw new Error("Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_API_KEY in your environment.");
+  return auth;
+}
+
+function requireDb(): ReturnType<typeof getFirestore> {
+  if (!db) throw new Error("Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_API_KEY in your environment.");
+  return db;
+}
+
 export async function loginWithGoogle() {
-  const result = await signInWithPopup(auth, googleProvider);
+  const result = await signInWithPopup(requireAuth(), googleProvider);
   await createOrUpdateUserDoc(result.user);
   return result.user;
 }
 
 export async function loginWithApple() {
-  const result = await signInWithPopup(auth, appleProvider);
+  const result = await signInWithPopup(requireAuth(), appleProvider);
   await createOrUpdateUserDoc(result.user);
   return result.user;
 }
 
 export async function loginWithEmail(email: string, password: string) {
-  const result = await signInWithEmailAndPassword(auth, email, password);
+  const result = await signInWithEmailAndPassword(requireAuth(), email, password);
   await createOrUpdateUserDoc(result.user);
   return result.user;
 }
 
 export async function signupWithEmail(email: string, password: string, displayName?: string) {
-  const result = await createUserWithEmailAndPassword(auth, email, password);
+  const result = await createUserWithEmailAndPassword(requireAuth(), email, password);
 
   if (displayName) {
     await updateProfile(result.user, { displayName });
@@ -140,7 +159,7 @@ export async function signupWithEmail(email: string, password: string, displayNa
 }
 
 export async function logout() {
-  await signOut(auth);
+  await signOut(requireAuth());
 }
 
 // ══════════════════════════════════════════
@@ -148,14 +167,17 @@ export async function logout() {
 // ══════════════════════════════════════════
 
 export async function getUserData(uid: string): Promise<UserData | null> {
-  const userRef = doc(db, "users", uid);
+  if (!isFirebaseConfigured) return null;
+  const firestoreDb = requireDb();
+  const userRef = doc(firestoreDb, "users", uid);
   const snapshot = await getDoc(userRef);
   if (!snapshot.exists()) return null;
   return snapshot.data() as UserData;
 }
 
 export async function updatePlan(uid: string, plan: UserData["plan"]) {
-  const userRef = doc(db, "users", uid);
+  const firestoreDb = requireDb();
+  const userRef = doc(firestoreDb, "users", uid);
 
   const planLimits: Record<UserData["plan"], { modelsLimit: number; stepsLimit: number }> = {
     free: { modelsLimit: 1, stepsLimit: 50 },
@@ -173,7 +195,8 @@ export async function updatePlan(uid: string, plan: UserData["plan"]) {
 }
 
 export async function incrementModelsUsed(uid: string) {
-  const userRef = doc(db, "users", uid);
+  const firestoreDb = requireDb();
+  const userRef = doc(firestoreDb, "users", uid);
   const snapshot = await getDoc(userRef);
   if (snapshot.exists()) {
     const data = snapshot.data() as UserData;
@@ -184,5 +207,5 @@ export async function incrementModelsUsed(uid: string) {
   }
 }
 
-export { auth, db, analytics, onAuthStateChanged };
+export { auth, db, analytics, onAuthStateChanged, isFirebaseConfigured };
 export type { User };

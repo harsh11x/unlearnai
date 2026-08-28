@@ -55,7 +55,7 @@ const PLANS = [
 ];
 
 export default function AuthModal({ open, onClose, initialMode = "login", initialPlan }: AuthModalProps) {
-  const { user, userData, refreshUser } = useAuth();
+  const { user, userData, refreshUser, firebaseReady } = useAuth();
   const [view, setView] = useState<"auth" | "plan" | "profile">("auth");
   const [mode, setMode] = useState<"login" | "signup">(initialMode === "signup" || initialMode === "login" ? initialMode : "login");
   const [email, setEmail] = useState("");
@@ -258,6 +258,7 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
     setError("");
     setLoading(true);
     try {
+      if (!firebaseReady) { setError("Firebase is not configured. Add NEXT_PUBLIC_FIREBASE_API_KEY to your environment."); setLoading(false); return; }
       await loginWithGoogle();
       setSigningUp(false);
       setView("plan");
@@ -274,6 +275,7 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
     setError("");
     setLoading(true);
     try {
+      if (!firebaseReady) { setError("Firebase is not configured."); setLoading(false); return; }
       await loginWithApple();
       setSigningUp(false);
       setView("plan");
@@ -291,6 +293,7 @@ export default function AuthModal({ open, onClose, initialMode = "login", initia
     setError("");
     setLoading(true);
     try {
+      if (!firebaseReady) { setError("Firebase is not configured. Add NEXT_PUBLIC_FIREBASE_API_KEY to your environment."); setLoading(false); return; }
       if (mode === "login") {
         await loginWithEmail(email, password);
         setSigningUp(false);
