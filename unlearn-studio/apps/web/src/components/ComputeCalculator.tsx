@@ -34,13 +34,13 @@ export default function ComputeCalculator() {
   }, [params]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
       {/* Controls */}
       <div className="space-y-6">
         {/* Original model size */}
         <div>
           <div className="flex justify-between mb-2">
-            <label className="text-xs font-mono text-text-muted uppercase tracking-wider">
+            <label className="text-[10px] sm:text-xs font-mono text-text-muted uppercase tracking-wider">
               Original Model Size
             </label>
             <span className="text-xs font-mono text-text">{params.originalNodes} nodes</span>
@@ -63,7 +63,7 @@ export default function ComputeCalculator() {
         {/* Nodes removed */}
         <div>
           <div className="flex justify-between mb-2">
-            <label className="text-xs font-mono text-text-muted uppercase tracking-wider">
+            <label className="text-[10px] sm:text-xs font-mono text-text-muted uppercase tracking-wider">
               Nodes Removed
             </label>
             <span className="text-xs font-mono text-text">{params.removedPercent}%</span>
@@ -86,7 +86,7 @@ export default function ComputeCalculator() {
         {/* Retrain epochs */}
         <div>
           <div className="flex justify-between mb-2">
-            <label className="text-xs font-mono text-text-muted uppercase tracking-wider">
+            <label className="text-[10px] sm:text-xs font-mono text-text-muted uppercase tracking-wider">
               Retraining Epochs
             </label>
             <span className="text-xs font-mono text-text">{params.retrainEpochs} epochs</span>
@@ -109,7 +109,7 @@ export default function ComputeCalculator() {
         {/* Original training epochs */}
         <div>
           <div className="flex justify-between mb-2">
-            <label className="text-xs font-mono text-text-muted uppercase tracking-wider">
+            <label className="text-[10px] sm:text-xs font-mono text-text-muted uppercase tracking-wider">
               Original Training Epochs
             </label>
             <span className="text-xs font-mono text-text">{params.originalEpochs} epochs</span>
@@ -132,7 +132,7 @@ export default function ComputeCalculator() {
         {/* GPU rate */}
         <div>
           <div className="flex justify-between mb-2">
-            <label className="text-xs font-mono text-text-muted uppercase tracking-wider">
+            <label className="text-[10px] sm:text-xs font-mono text-text-muted uppercase tracking-wider">
               GPU Cost per 100 Compute Units
             </label>
             <span className="text-xs font-mono text-text">${params.gpuHoursRate.toFixed(2)}</span>

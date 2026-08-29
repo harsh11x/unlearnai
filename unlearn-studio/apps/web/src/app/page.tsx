@@ -20,30 +20,30 @@ export default function Home() {
       <Header />
 
       {/* ─── HERO ─── */}
-      <section className="pt-32 pb-20 px-6">
+      <section className="pt-24 sm:pt-32 pb-14 sm:pb-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="max-w-4xl">
             <span className="section-label mb-6 inline-block animate-fade-up">
               Machine Unlearning Platform
             </span>
 
-            <h1 className="heading-xl mt-6 animate-fade-up stagger-1">
+            <h1 className="heading-xl mt-4 sm:mt-6 animate-fade-up stagger-1">
               Your AI model knows{" "}
               <span className="line-through decoration-[3px] decoration-[#ef4444]/50">
                 too much
               </span>
               .
-              <br />
-              Delete what it doesn&apos;t need.
+              <br className="hidden sm:block" />
+              <span className="sm:hidden"> </span>Delete what it doesn&apos;t need.
             </h1>
 
-            <p className="body-lg mt-6 max-w-2xl animate-fade-up stagger-2">
+            <p className="body-lg mt-4 sm:mt-6 max-w-2xl animate-fade-up stagger-2">
               AI models hoard redundant knowledge — noise, biases, overfitted patterns.
               Remap Studios surgically removes unnecessary neurons, shrinks the architecture,
               and retrains a leaner model in a fraction of the compute.
             </p>
 
-            <div className="flex flex-wrap gap-4 mt-8 animate-fade-up stagger-3">
+            <div className="flex flex-wrap gap-3 sm:gap-4 mt-6 sm:mt-8 animate-fade-up stagger-3">
               <a href="/downloads" className="btn-primary no-underline">
                 ↓ Download Desktop App
               </a>
@@ -59,14 +59,14 @@ export default function Home() {
       </section>
 
       {/* ─── ANIMATED STATS ─── */}
-      <section className="py-4 px-6">
+      <section className="py-4 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <AnimatedStats />
         </div>
       </section>
 
       {/* ─── BEFORE / AFTER COMPARISON ─── */}
-      <section className="py-20 px-6" id="compare">
+      <section className="py-14 sm:py-20 px-4 sm:px-6" id="compare">
         <div className="max-w-7xl mx-auto">
           <span className="section-label mb-4 inline-block">Interactive Comparison</span>
           <h2 className="heading-lg mt-4 mb-3">See the difference unlearning makes</h2>
@@ -79,7 +79,7 @@ export default function Home() {
       </section>
 
       {/* ─── ARCHITECTURE EXPLORER ─── */}
-      <section className="py-20 px-6 bg-surface border-y border-border" id="architecture">
+      <section className="py-14 sm:py-20 px-4 sm:px-6 bg-surface border-y border-border" id="architecture">
         <div className="max-w-7xl mx-auto">
           <span className="section-label mb-4 inline-block">Interactive</span>
           <h2 className="heading-lg mt-4 mb-3">Explore how a neural network works</h2>
@@ -92,7 +92,7 @@ export default function Home() {
       </section>
 
       {/* ─── VISUALIZATION: NEURAL NETWORK BEFORE/AFTER ─── */}
-      <section className="py-20 px-6" id="visualization">
+      <section className="py-14 sm:py-20 px-4 sm:px-6" id="visualization">
         <div className="max-w-7xl mx-auto">
           <span className="section-label mb-4 inline-block">Interactive Visualization</span>
           <h2 className="heading-lg mt-4 mb-3">See the network. Then shrink it.</h2>
@@ -105,7 +105,7 @@ export default function Home() {
       </section>
 
       {/* ─── INTERACTIVE WALKTHROUGH ─── */}
-      <section className="py-20 px-6 bg-surface border-y border-border" id="walkthrough">
+      <section className="py-14 sm:py-20 px-4 sm:px-6 bg-surface border-y border-border" id="walkthrough">
         <div className="max-w-7xl mx-auto">
           <span className="section-label mb-4 inline-block">Step by Step</span>
           <h2 className="heading-lg mt-4 mb-3">How unlearning works — from start to finish</h2>
@@ -118,7 +118,7 @@ export default function Home() {
       </section>
 
       {/* ─── HOW IT WORKS ─── */}
-      <section className="py-20 px-6" id="how-it-works">
+      <section className="py-14 sm:py-20 px-4 sm:px-6" id="how-it-works">
         <div className="max-w-7xl mx-auto">
           <div className="max-w-2xl mb-12">
             <span className="section-label mb-4 inline-block">Process</span>
@@ -133,7 +133,7 @@ export default function Home() {
       </section>
 
       {/* ─── INTERACTIVE SANDBOX ─── */}
-      <section className="py-20 px-6 bg-surface border-y border-border" id="sandbox">
+      <section className="py-14 sm:py-20 px-4 sm:px-6 bg-surface border-y border-border" id="sandbox">
         <div className="max-w-7xl mx-auto">
           <span className="section-label mb-4 inline-block">Try It</span>
           <h2 className="heading-lg mt-4 mb-3">Erase Nodes Yourself</h2>
@@ -146,7 +146,7 @@ export default function Home() {
       </section>
 
       {/* ─── SUPPORTED MODELS ─── */}
-      <section className="py-20 px-6" id="models">
+      <section className="py-14 sm:py-20 px-4 sm:px-6" id="models">
         <div className="max-w-7xl mx-auto">
           <span className="section-label mb-4 inline-block">Models</span>
           <h2 className="heading-lg mt-4 mb-3">Works with the models you already use</h2>
@@ -159,7 +159,7 @@ export default function Home() {
       </section>
 
       {/* ─── ROI CALCULATOR ─── */}
-      <section className="py-20 px-6 bg-surface border-y border-border" id="roi">
+      <section className="py-14 sm:py-20 px-4 sm:px-6 bg-surface border-y border-border" id="roi">
         <div className="max-w-7xl mx-auto">
           <span className="section-label mb-4 inline-block">Calculator</span>
           <h2 className="heading-lg mt-4 mb-3">Calculate your ROI</h2>
@@ -172,7 +172,7 @@ export default function Home() {
       </section>
 
       {/* ─── COMPUTE CALCULATOR ─── */}
-      <section className="py-20 px-6" id="calculator">
+      <section className="py-14 sm:py-20 px-4 sm:px-6" id="calculator">
         <div className="max-w-7xl mx-auto">
           <span className="section-label mb-4 inline-block">Detailed Calculator</span>
           <h2 className="heading-lg mt-4 mb-3">Estimate compute savings</h2>
@@ -184,7 +184,7 @@ export default function Home() {
       </section>
 
       {/* ─── CTA ─── */}
-      <section className="py-24 px-6" id="cta">
+      <section className="py-16 sm:py-24 px-4 sm:px-6" id="cta">
         <div className="max-w-7xl mx-auto text-center">
           <span className="section-label mb-6 inline-block">Get Started</span>
           <h2 className="heading-lg mt-6 max-w-2xl mx-auto">

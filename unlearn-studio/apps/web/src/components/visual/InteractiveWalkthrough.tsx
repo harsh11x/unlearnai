@@ -84,7 +84,7 @@ export default function InteractiveWalkthrough() {
           <button
             key={i}
             onClick={() => goToStep(i)}
-            className={`flex-1 py-3 px-2 text-center transition-all border-r border-border last:border-r-0 ${
+            className={`flex-1 py-3.5 px-2 text-center transition-all border-r border-border last:border-r-0 min-h-[44px] ${
               i === activeStep
                 ? "bg-accent text-accent-inv"
                 : "bg-transparent text-text-subtle hover:bg-surface"
@@ -98,13 +98,13 @@ export default function InteractiveWalkthrough() {
       {/* Content */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
         {/* Left: Description */}
-        <div className="p-8 border-b lg:border-b-0 lg:border-r border-border">
+        <div className="p-4 sm:p-8 border-b lg:border-b-0 lg:border-r border-border">
           <span className="mono text-xs text-text-subtle">STEP {step.num}</span>
           <h3 className="heading-md mt-2 mb-4">{step.title}</h3>
           <p className="body-lg">{step.desc}</p>
 
           {/* Navigation */}
-          <div className="flex items-center gap-4 mt-8">
+          <div className="flex items-center gap-3 sm:gap-4 mt-6 sm:mt-8">
             <button
               onClick={() => goToStep(Math.max(0, activeStep - 1))}
               disabled={activeStep === 0}
@@ -126,7 +126,7 @@ export default function InteractiveWalkthrough() {
         </div>
 
         {/* Right: Visual + Stats */}
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           {/* Animated visual for each step */}
           <div className="h-48 flex items-center justify-center mb-6">
             {activeStep === 0 && (

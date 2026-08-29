@@ -98,7 +98,7 @@ export default function PricingPage() {
     <div className="min-h-screen">
       <Header />
 
-      <section className="pt-32 pb-20 px-6">
+      <section className="pt-24 sm:pt-32 pb-14 sm:pb-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="section-label mb-4 inline-block">Pricing</span>
@@ -109,12 +109,12 @@ export default function PricingPage() {
           </div>
 
           {/* Pricing Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0 border border-border">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px sm:gap-0 border border-border bg-border">
             {TIERS.map((tier) => (
               <div
                 key={tier.name}
-                className={`p-8 border-b lg:border-b-0 lg:border-r border-border last:border-r-0 ${
-                  tier.highlight ? "bg-accent text-accent-inv relative" : ""
+                className={`p-5 sm:p-8 ${
+                  tier.highlight ? "bg-accent text-accent-inv relative" : "bg-bg"
                 }`}
               >
                 {tier.highlight && (
@@ -196,7 +196,7 @@ export default function PricingPage() {
           </div>
 
           {/* Enterprise CTA */}
-          <div className="mt-12 border border-border p-10 text-center">
+          <div className="mt-10 sm:mt-12 border border-border p-6 sm:p-10 text-center">
             <h2 className="heading-md">Need more than Business?</h2>
             <p className="body-lg mt-3 max-w-xl mx-auto">
               For models over 70B parameters, custom deployments, on-premise solutions,
@@ -210,7 +210,7 @@ export default function PricingPage() {
                 Read the Documentation
               </a>
             </div>
-            <div className="flex flex-wrap justify-center gap-8 mt-8">
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-8 mt-6 sm:mt-8">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-highlight" />
                 <span className="body-sm">SOC 2 compliant</span>
@@ -231,7 +231,7 @@ export default function PricingPage() {
           </div>
 
           {/* FAQ */}
-          <div className="mt-20 max-w-3xl mx-auto">
+          <div className="mt-14 sm:mt-20 max-w-3xl mx-auto">
             <h2 className="heading-lg text-center mb-12">Frequently asked questions</h2>
 
             {[

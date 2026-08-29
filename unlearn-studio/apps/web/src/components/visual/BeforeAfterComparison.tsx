@@ -21,12 +21,12 @@ export default function BeforeAfterComparison() {
   return (
     <div className="border border-border">
       {/* Model selector tabs */}
-      <div className="flex border-b border-border overflow-x-auto">
+      <div className="flex border-b border-border scroll-x-mobile">
         {MODELS.map((m, i) => (
           <button
             key={m.name}
             onClick={() => { setSelected(i); setSliderVal(50); }}
-            className={`px-5 py-3 text-xs font-mono border-r border-border whitespace-nowrap transition-colors ${
+            className={`px-4 sm:px-5 py-3 text-xs font-mono border-r border-border whitespace-nowrap transition-colors min-h-[44px] ${
               i === selected ? "bg-accent text-accent-inv" : "bg-transparent text-text-muted hover:bg-surface"
             }`}
           >
@@ -37,16 +37,16 @@ export default function BeforeAfterComparison() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
         {/* Left: Visual comparison */}
-        <div className="p-8 border-b lg:border-b-0 lg:border-r border-border">
-          <div className="flex items-center justify-between mb-6">
+        <div className="p-4 sm:p-8 border-b lg:border-b-0 lg:border-r border-border">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
             <div>
               <span className="mono text-[10px] text-text-subtle uppercase tracking-wider">Before Unlearning</span>
-              <p className="font-display text-3xl font-bold mt-1">{model.beforeGB} GB</p>
+              <p className="font-display text-2xl sm:text-3xl font-bold mt-1">{model.beforeGB} GB</p>
               <p className="body-sm">{model.params} parameters</p>
             </div>
             <div className="text-right">
               <span className="mono text-[10px] text-highlight uppercase tracking-wider">After Unlearning</span>
-              <p className="font-display text-3xl font-bold mt-1 text-highlight">{currentGB} GB</p>
+              <p className="font-display text-2xl sm:text-3xl font-bold mt-1 text-highlight">{currentGB} GB</p>
               <p className="body-sm">{sizeReduction}% smaller</p>
             </div>
           </div>
@@ -83,7 +83,7 @@ export default function BeforeAfterComparison() {
         </div>
 
         {/* Right: Interactive slider */}
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           <span className="mono text-[10px] text-text-subtle uppercase tracking-wider">Unlearning Intensity</span>
 
           <div className="mt-4">

@@ -292,12 +292,22 @@ export default function NeuralNetworkCanvas() {
       mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
 
+    const handleTouch = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        mouseRef.current = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+      }
+    };
+
     const handleLeave = () => {
       mouseRef.current = { x: -1000, y: -1000 };
       setHoveredNode(null);
     };
 
     canvas.addEventListener("mousemove", handleMouse);
+    canvas.addEventListener("touchmove", handleTouch, { passive: true });
+    canvas.addEventListener("touchend", handleLeave);
     canvas.addEventListener("mouseleave", handleLeave);
 
     const animate = (time: number) => {
@@ -314,6 +324,8 @@ export default function NeuralNetworkCanvas() {
     return () => {
       cancelAnimationFrame(animationRef.current);
       canvas.removeEventListener("mousemove", handleMouse);
+      canvas.removeEventListener("touchmove", handleTouch);
+      canvas.removeEventListener("touchend", handleLeave);
       canvas.removeEventListener("mouseleave", handleLeave);
       ro.disconnect();
     };
@@ -339,7 +351,7 @@ export default function NeuralNetworkCanvas() {
 
   return (
     <div className="relative">
-      <div className="canvas-container" style={{ height: 420 }}>
+      <div className="canvas-container h-[300px] sm:h-[420px]">
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
 
         {/* Tooltip */}
@@ -365,7 +377,7 @@ export default function NeuralNetworkCanvas() {
       </div>
 
       {/* Toggle controls */}
-      <div className="flex items-center justify-between mt-4 px-1">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-4 gap-3 px-1">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-accent inline-block" />

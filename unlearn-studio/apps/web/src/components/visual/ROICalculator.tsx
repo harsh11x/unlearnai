@@ -33,7 +33,7 @@ export default function ROICalculator() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 border border-border">
       {/* Inputs */}
-      <div className="p-8 border-b lg:border-b-0 lg:border-r border-border space-y-6">
+      <div className="p-4 sm:p-8 border-b lg:border-b-0 lg:border-r border-border space-y-5 sm:space-y-6">
         <div>
           <span className="mono text-xs text-text-muted uppercase tracking-wider">Model Size</span>
           <div className="flex items-center gap-3 mt-2">
@@ -101,11 +101,11 @@ export default function ROICalculator() {
       </div>
 
       {/* Results */}
-      <div className="p-8 space-y-6">
+      <div className="p-4 sm:p-8 space-y-5 sm:space-y-6">
         {/* Hero stat */}
-        <div className="bg-accent text-accent-inv p-6">
+        <div className="bg-accent text-accent-inv p-4 sm:p-6">
           <span className="mono text-xs opacity-50">ANNUAL SAVINGS</span>
-          <p className="font-display text-5xl font-bold mt-1 tracking-tight">
+          <p className="font-display text-3xl sm:text-5xl font-bold mt-1 tracking-tight">
             ${Math.round(results.annualSavings).toLocaleString()}
           </p>
           <p className="text-sm opacity-60 mt-1">

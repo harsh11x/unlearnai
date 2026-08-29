@@ -85,18 +85,9 @@ export default function SupportedModels() {
       {MODELS.map((model, i) => (
         <div
           key={model.name}
-          className={`p-5 border-b ${
-            i % 4 < 3 ? "lg:border-r" : ""
-          } ${
-            i % 2 < 1 ? "md:border-r lg:border-r-0" : ""
-          } ${
-            i % 4 < 3 ? "" : "lg:border-r-0"
-          } border-border cursor-pointer transition-colors ${
+          className={`p-4 sm:p-5 border-b border-border cursor-pointer transition-colors ${
             expanded === i ? "bg-surface" : "hover:bg-surface/50"
           }`}
-          style={{
-            borderRight: (i % 4 < 3) ? "1px solid var(--color-border)" : undefined,
-          }}
           onClick={() => setExpanded(expanded === i ? null : i)}
         >
           <div className="flex items-start justify-between mb-3">

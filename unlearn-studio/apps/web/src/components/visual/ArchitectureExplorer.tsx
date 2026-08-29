@@ -109,7 +109,7 @@ export default function ArchitectureExplorer() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
         {/* Left: Visual diagram */}
-        <div className="lg:col-span-2 p-6 border-b lg:border-b-0 lg:border-r border-border">
+        <div className="lg:col-span-2 p-3 sm:p-6 border-b lg:border-b-0 lg:border-r border-border scroll-x-mobile">
           <svg viewBox="0 0 500 400" className="w-full" style={{ maxHeight: 400 }}>
             {/* Title */}
             <text x="250" y="20" textAnchor="middle" fill="#737373" fontSize="10" fontFamily="monospace">
@@ -202,7 +202,7 @@ export default function ArchitectureExplorer() {
         </div>
 
         {/* Right: Layer list */}
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           <span className="mono text-[10px] text-text-subtle uppercase tracking-wider">Layer Breakdown</span>
           <div className="mt-3 space-y-1">
             {LAYERS.map((layer, i) => (

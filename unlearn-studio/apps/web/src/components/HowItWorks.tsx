@@ -192,7 +192,7 @@ export default function HowItWorks() {
               }`}
             >
               {/* Text */}
-              <div className={`p-8 lg:p-12 ${!isEven ? "lg:order-2" : ""}`}>
+              <div className={`p-5 sm:p-8 lg:p-12 ${!isEven ? "lg:order-2" : ""}`}>
                 <span className="mono text-xs text-text-subtle">{step.number}</span>
                 <h3 className="heading-md mt-2 mb-3">{step.title}</h3>
                 <p className="body-sm max-w-md">{step.description}</p>
@@ -200,7 +200,7 @@ export default function HowItWorks() {
 
               {/* Visual */}
               <div
-                className={`bg-surface flex items-center justify-center p-8 min-h-[200px] ${
+                className={`bg-surface flex items-center justify-center p-5 sm:p-8 min-h-[160px] sm:min-h-[200px] ${
                   !isEven ? "lg:order-1" : ""
                 }`}
               >

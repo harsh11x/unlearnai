@@ -162,20 +162,20 @@ export default function NodeErasureSandbox() {
   return (
     <div ref={containerRef}>
       {/* Stats bar */}
-      <div className="flex flex-wrap items-center gap-6 mb-6">
+      <div className="flex flex-wrap items-center gap-3 sm:gap-6 mb-4 sm:mb-6">
         <div>
-          <span className="mono text-xs text-text-subtle">NODES</span>
-          <p className="stat-number text-xl">{stats.alive} <span className="text-text-subtle text-base">/ {stats.total}</span></p>
+          <span className="mono text-[10px] sm:text-xs text-text-subtle">NODES</span>
+          <p className="stat-number text-lg sm:text-xl">{stats.alive} <span className="text-text-subtle text-sm sm:text-base">/ {stats.total}</span></p>
         </div>
-        <div className="w-px h-10 bg-border" />
-        <div>
+        <div className="w-px h-8 sm:h-10 bg-border hidden sm:block" />
+        <div className="hidden sm:block">
           <span className="mono text-xs text-text-subtle">DELETED</span>
           <p className="stat-number text-xl text-[#ef4444]">{stats.deleted}</p>
         </div>
-        <div className="w-px h-10 bg-border" />
+        <div className="w-px h-8 sm:h-10 bg-border hidden sm:block" />
         <div>
-          <span className="mono text-xs text-text-subtle">COMPUTE SAVED</span>
-          <p className="stat-number text-xl">{stats.computeSaved}%</p>
+          <span className="mono text-[10px] sm:text-xs text-text-subtle">COMPUTE SAVED</span>
+          <p className="stat-number text-lg sm:text-xl">{stats.computeSaved}%</p>
         </div>
         <div className="ml-auto flex gap-2">
           <button onClick={eraseAllRedundant} className="btn-outline text-xs py-2 px-3">
@@ -188,11 +188,11 @@ export default function NodeErasureSandbox() {
       </div>
 
       {/* Canvas */}
-      <div className="canvas-container overflow-x-auto">
+      <div className="canvas-container scroll-x-mobile">
         <svg
           ref={svgRef}
           viewBox="0 0 800 360"
-          className="w-full min-w-[600px]"
+          className="w-full min-w-[500px]"
           style={{ height: 360 }}
         >
           {/* Edges */}
@@ -344,7 +344,7 @@ export default function NodeErasureSandbox() {
         </svg>
       </div>
 
-      <p className="body-sm mt-3 text-center">
+      <p className="body-sm mt-3 text-center px-2">
         Click any hidden-layer node to erase it. Use Auto-Erase to bulk-remove redundant nodes.
       </p>
     </div>

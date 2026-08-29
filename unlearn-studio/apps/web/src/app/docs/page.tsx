@@ -51,7 +51,7 @@ export default function DocsPage() {
     <div className="min-h-screen">
       <Header />
 
-      <section className="pt-32 pb-20 px-6">
+      <section className="pt-24 sm:pt-32 pb-14 sm:pb-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="max-w-2xl mb-16">
             <span className="section-label mb-4 inline-block">Documentation</span>
@@ -62,7 +62,7 @@ export default function DocsPage() {
           </div>
 
           {/* Quick links */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 border border-border mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px sm:gap-0 border border-border bg-border mb-12 sm:mb-16">
             {[
               { title: "Quick Start Guide", desc: "Go from zero to your first unlearned model", icon: "⚡" },
               { title: "API Reference", desc: "Complete REST API documentation", icon: "🔌" },
@@ -71,11 +71,7 @@ export default function DocsPage() {
               <a
                 key={i}
                 href="#"
-                className={`p-6 border-b md:border-b-0 ${
-                  i < 2 ? "md:border-r" : ""
-                } border-border no-underline hover:bg-surface transition-colors ${
-                  i === 2 ? "lg:border-r-0" : ""
-                }`}
+                className="p-5 sm:p-6 bg-bg no-underline hover:bg-surface transition-colors min-h-[44px] flex flex-col justify-center"
               >
                 <span className="text-2xl mb-3 block">{item.icon}</span>
                 <h3 className="font-display font-semibold text-base text-text mb-1">{item.title}</h3>
@@ -89,12 +85,12 @@ export default function DocsPage() {
             {SECTIONS.map((section) => (
               <div key={section.title}>
                 <h2 className="heading-md mb-4 pb-2 border-b border-border">{section.title}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-px sm:gap-0 bg-border border border-border">
                   {section.items.map((item) => (
                     <a
                       key={item.name}
                       href={item.href}
-                      className="p-4 border border-border -mt-px -ml-px no-underline hover:bg-surface transition-colors group"
+                      className="p-4 bg-bg no-underline hover:bg-surface transition-colors group min-h-[44px]"
                     >
                       <div className="flex items-center justify-between">
                         <h3 className="font-display font-semibold text-sm text-text group-hover:text-accent transition-colors">{item.name}</h3>

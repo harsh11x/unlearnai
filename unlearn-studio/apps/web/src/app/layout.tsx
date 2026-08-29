@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
@@ -25,6 +25,13 @@ export const metadata: Metadata = {
   title: "Remap Studios — Make AI Models Smaller, Faster, Smarter",
   description:
     "Remap unnecessary knowledge from AI models. Reduce compute costs, shrink model size, and retrain leaner — without losing accuracy.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({

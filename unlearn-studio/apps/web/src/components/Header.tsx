@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthModal } from "./AppShell";
 import { useAuth } from "./AuthProvider";
 
@@ -11,9 +11,28 @@ export default function Header() {
   const { user, userData } = useAuth();
   const planBadge = userData?.plan && userData.plan !== "free" ? userData.plan.toUpperCase() : null;
 
+  // Close mobile menu on resize to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) setMobileOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-bg/80 backdrop-blur-md border-b border-border">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2.5 no-underline">
           <div className="w-7 h-7 bg-accent flex items-center justify-center">
@@ -122,33 +141,59 @@ export default function Header() {
         {/* Mobile menu button */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="lg:hidden w-8 h-8 flex flex-col items-center justify-center gap-1.5 bg-transparent border-none cursor-pointer"
+          className="lg:hidden w-10 h-10 flex flex-col items-center justify-center gap-1.5 bg-transparent border-none cursor-pointer -mr-2"
           aria-label="Toggle menu"
         >
-          <span className={`w-5 h-[1.5px] bg-text transition-transform ${mobileOpen ? "rotate-45 translate-y-[4.5px]" : ""}`} />
-          <span className={`w-5 h-[1.5px] bg-text transition-opacity ${mobileOpen ? "opacity-0" : ""}`} />
-          <span className={`w-5 h-[1.5px] bg-text transition-transform ${mobileOpen ? "-rotate-45 -translate-y-[4.5px]" : ""}`} />
+          <span className={`w-5 h-[1.5px] bg-text transition-transform duration-200 ${mobileOpen ? "rotate-45 translate-y-[4.5px]" : ""}`} />
+          <span className={`w-5 h-[1.5px] bg-text transition-opacity duration-200 ${mobileOpen ? "opacity-0" : ""}`} />
+          <span className={`w-5 h-[1.5px] bg-text transition-transform duration-200 ${mobileOpen ? "-rotate-45 -translate-y-[4.5px]" : ""}`} />
         </button>
       </div>
 
-      {/* Mobile nav */}
+      {/* Mobile menu backdrop */}
       {mobileOpen && (
-        <nav className="lg:hidden border-t border-border bg-bg px-6 py-4 flex flex-col gap-3">
-          <a href="/#how-it-works" className="text-sm text-text-muted no-underline py-2" onClick={() => setMobileOpen(false)}>How it works</a>
-          <a href="/#sandbox" className="text-sm text-text-muted no-underline py-2" onClick={() => setMobileOpen(false)}>Sandbox</a>
-          <a href="/#architecture" className="text-sm text-text-muted no-underline py-2" onClick={() => setMobileOpen(false)}>Architecture</a>
-          <a href="/pricing" className="text-sm text-text-muted no-underline py-2" onClick={() => setMobileOpen(false)}>Pricing</a>
-          <a href="/docs" className="text-sm text-text-muted no-underline py-2" onClick={() => setMobileOpen(false)}>Docs</a>
-          <a href="/about" className="text-sm text-text-muted no-underline py-2" onClick={() => setMobileOpen(false)}>About</a>
-          <a href="/downloads" className="text-sm text-text-muted no-underline py-2" onClick={() => setMobileOpen(false)}>Download</a>
+        <div className="mobile-menu-backdrop lg:hidden" onClick={() => setMobileOpen(false)} />
+      )}
+
+      {/* Mobile nav */}
+      <nav
+        className={`lg:hidden fixed top-14 sm:top-16 left-0 right-0 bottom-0 bg-bg border-t border-border flex flex-col z-50 transition-transform duration-300 ${
+          mobileOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="space-y-1">
+            {[
+              { href: "/#how-it-works", label: "How it works" },
+              { href: "/#sandbox", label: "Sandbox" },
+              { href: "/#architecture", label: "Architecture" },
+              { href: "/pricing", label: "Pricing" },
+              { href: "/docs", label: "Docs" },
+              { href: "/about", label: "About" },
+              { href: "/downloads", label: "Download" },
+            ].map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="flex items-center text-base text-text-muted no-underline py-3 border-b border-border/50 hover:text-text transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile menu CTA */}
+        <div className="px-6 pb-6 pt-4 border-t border-border safe-bottom">
           <button
             onClick={() => { setMobileOpen(false); openAuth("signup"); }}
-            className="btn-primary text-sm py-2.5 px-5 no-underline text-center cursor-pointer border-none w-full font-display font-semibold"
+            className="btn-primary text-sm py-3.5 px-5 no-underline text-center cursor-pointer border-none w-full font-display font-semibold"
           >
             Get Started Free
           </button>
-        </nav>
-      )}
+        </div>
+      </nav>
     </header>
   );
 }

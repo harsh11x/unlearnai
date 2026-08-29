@@ -111,7 +111,7 @@ export default function DownloadsPage() {
     <div className="min-h-screen">
       <Header />
 
-      <section className="pt-32 pb-20 px-6">
+      <section className="pt-24 sm:pt-32 pb-14 sm:pb-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="section-label mb-4 inline-block">Download</span>
@@ -119,7 +119,7 @@ export default function DownloadsPage() {
             <p className="body-lg mt-4">
               Desktop app for macOS, Windows, and Linux. Requires Python 3.9+ with PyTorch.
             </p>
-            <div className="flex flex-wrap justify-center gap-3 mt-6">
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-4 sm:mt-6">
               <span className="mono text-xs text-text-subtle border border-border px-3 py-1.5">
                 PyTorch 2.x
               </span>
@@ -133,7 +133,7 @@ export default function DownloadsPage() {
           </div>
 
           {/* Platform sections */}
-          <div className="space-y-12">
+          <div className="space-y-8 sm:space-y-12">
             {PLATFORMS.map((platform) => (
               <div key={platform.os}>
                 {/* Platform header */}
@@ -207,7 +207,7 @@ export default function DownloadsPage() {
           </div>
 
           {/* Requirements */}
-          <div className="mt-16 border border-border p-8 md:p-10">
+          <div className="mt-10 sm:mt-16 border border-border p-4 sm:p-8 md:p-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div>
                 <h3 className="font-display font-bold text-lg mb-4">System Requirements</h3>

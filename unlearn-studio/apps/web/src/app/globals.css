@@ -35,6 +35,8 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
   }
 
   body {
@@ -42,11 +44,29 @@
     background-color: var(--color-bg);
     color: var(--color-text);
     line-height: 1.6;
+    overflow-x: hidden;
+    min-height: 100dvh;
+  }
+
+  /* Ensure tap targets are at least 44px */
+  button, a, input[type="range"], select {
+    min-height: 44px;
+  }
+
+  /* Make range inputs touch-friendly */
+  input[type="range"] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   ::selection {
     background-color: var(--color-accent);
     color: var(--color-accent-inv);
+  }
+
+  /* Prevent horizontal scroll from any element */
+  img, video, canvas, svg {
+    max-width: 100%;
   }
 }
 
@@ -192,6 +212,42 @@
   .stagger-3 { animation-delay: 0.3s; }
   .stagger-4 { animation-delay: 0.4s; }
   .stagger-5 { animation-delay: 0.5s; }
+
+  /* Mobile scroll container for overflow content */
+  .scroll-x-mobile {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .scroll-x-mobile::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .scroll-x-mobile::-webkit-scrollbar-track {
+    background: var(--color-surface);
+  }
+
+  .scroll-x-mobile::-webkit-scrollbar-thumb {
+    background: var(--color-border-strong);
+  }
+}
+
+/* Mobile menu backdrop */
+.mobile-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 40;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* Safe area padding for notched devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 @keyframes fadeUp {

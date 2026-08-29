@@ -6,7 +6,7 @@ export default function AboutPage() {
     <div className="min-h-screen">
       <Header />
 
-      <section className="pt-32 pb-20 px-6">
+      <section className="pt-24 sm:pt-32 pb-14 sm:pb-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="max-w-3xl">
             <span className="section-label mb-4 inline-block">About</span>
@@ -25,7 +25,7 @@ export default function AboutPage() {
       </section>
 
       {/* Mission */}
-      <section className="py-20 px-6 bg-surface border-y border-border">
+      <section className="py-14 sm:py-20 px-4 sm:px-6 bg-surface border-y border-border">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-border">
             {[
@@ -52,7 +52,7 @@ export default function AboutPage() {
       </section>
 
       {/* Stats */}
-      <section className="py-20 px-6">
+      <section className="py-14 sm:py-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-0 border border-border">
             <div className="p-8 border-b md:border-b-0 md:border-r border-border">
@@ -76,7 +76,7 @@ export default function AboutPage() {
       </section>
 
       {/* Research */}
-      <section className="py-20 px-6 bg-surface border-y border-border">
+      <section className="py-14 sm:py-20 px-4 sm:px-6 bg-surface border-y border-border">
         <div className="max-w-7xl mx-auto">
           <div className="max-w-2xl">
             <span className="section-label mb-4 inline-block">Research</span>
@@ -95,7 +95,7 @@ export default function AboutPage() {
       </section>
 
       {/* Open Source */}
-      <section className="py-20 px-6">
+      <section className="py-14 sm:py-20 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="heading-lg">Open source at heart</h2>
           <p className="body-lg mt-4 max-w-xl mx-auto">
