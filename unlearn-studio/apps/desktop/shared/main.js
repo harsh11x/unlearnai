@@ -245,7 +245,7 @@ ipcMain.handle("dialog:saveFile", async () => {
 ipcMain.handle("rpc", async (_event, method, params) => {
   try {
     const result = await sendToBackend(method, params);
-    return { result };
+    return result;
   } catch (e) {
     return { error: e.message };
   }

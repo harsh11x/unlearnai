@@ -4,6 +4,158 @@
 
 const API = window.electronAPI;
 
+// ══════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBI6mgxY6uWTDb_ib8tCgPhz-3xCWQzukI",
+  authDomain: "remapstudios-5b9b0.firebaseapp.com",
+  projectId: "remapstudios-5b9b0",
+  storageBucket: "remapstudios-5b9b0.firebasestorage.app",
+  messagingSenderId: "215400190992",
+  appId: "1:215400190992:web:ed670be9ba1794acf9e695",
+};
+
+let firebaseApp = null;
+let firebaseAuth = null;
+let currentUser = null;
+
+function initFirebase() {
+  try {
+    if (typeof firebase === "undefined") { skipAuth(); return; }
+    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseAuth = firebase.auth();
+
+    // Handle redirect result from Google/Apple sign-in in browser
+    firebaseAuth.getRedirectResult().then((result) => {
+      if (result && result.user) {
+        currentUser = { uid: result.user.uid, email: result.user.email, displayName: result.user.displayName, photoURL: result.user.photoURL };
+        localStorage.setItem("remap_user", JSON.stringify(currentUser));
+        showApp();
+      }
+    }).catch(() => {});
+
+    // Check persisted auth
+    const savedUser = localStorage.getItem("remap_user");
+    if (savedUser) {
+      try { currentUser = JSON.parse(savedUser); showApp(); } catch { showAuthScreen(); }
+    } else { showAuthScreen(); }
+
+    // Listen for auth state changes
+    firebaseAuth.onAuthStateChanged((user) => {
+      if (user) {
+        currentUser = { uid: user.uid, email: user.email, displayName: user.displayName, photoURL: user.photoURL };
+        localStorage.setItem("remap_user", JSON.stringify(currentUser));
+        showApp();
+      } else {
+        currentUser = null;
+        localStorage.removeItem("remap_user");
+        showAuthScreen();
+      }
+    });
+  } catch (e) { skipAuth(); }
+}
+
+function skipAuth() {
+  const el = document.getElementById("auth-screen");
+  if (el) el.classList.add("hidden");
+  showApp();
+}
+
+function showAuthScreen() {
+  const auth = document.getElementById("auth-screen");
+  const main = document.getElementById("main-layout");
+  const bar = document.getElementById("bottombar");
+  const panel = document.getElementById("bottom-panel");
+  if (auth) auth.classList.remove("hidden");
+  if (main) main.style.display = "none";
+  if (bar) bar.style.display = "none";
+  if (panel) panel.style.display = "none";
+}
+
+function showApp() {
+  const auth = document.getElementById("auth-screen");
+  const main = document.getElementById("main-layout");
+  const bar = document.getElementById("bottombar");
+  const panel = document.getElementById("bottom-panel");
+  if (auth) auth.classList.add("hidden");
+  if (main) main.style.display = "";
+  if (bar) bar.style.display = "";
+  if (panel) panel.style.display = "";
+}
+
+function initAuthHandlers() {
+  // Toggle login/signup
+  document.getElementById("auth-toggle-signup")?.addEventListener("click", () => {
+    document.getElementById("auth-login-form").style.display = "none";
+    document.getElementById("auth-signup-form").style.display = "";
+  });
+  document.getElementById("auth-toggle-login")?.addEventListener("click", () => {
+    document.getElementById("auth-signup-form").style.display = "none";
+    document.getElementById("auth-login-form").style.display = "";
+  });
+
+  // Google sign-in — opens in default browser via redirect
+  const googleHandler = async (errorId) => {
+    if (!firebaseAuth) return;
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      await firebaseAuth.signInWithRedirect(provider);
+    } catch (e) { showAuthErr(errorId, e.message || "Google sign-in failed"); }
+  };
+  document.getElementById("auth-google-btn")?.addEventListener("click", () => googleHandler("auth-error"));
+  document.getElementById("auth-google-btn-signup")?.addEventListener("click", () => googleHandler("auth-signup-error"));
+
+  // Apple sign-in — opens in default browser via redirect
+  const appleHandler = async (errorId) => {
+    if (!firebaseAuth) return;
+    try {
+      const provider = new firebase.auth.OAuthProvider("apple.com");
+      await firebaseAuth.signInWithRedirect(provider);
+    } catch (e) { showAuthErr(errorId, e.message || "Apple sign-in failed"); }
+  };
+  document.getElementById("auth-apple-btn")?.addEventListener("click", () => appleHandler("auth-error"));
+  document.getElementById("auth-apple-btn-signup")?.addEventListener("click", () => appleHandler("auth-signup-error"));
+
+  // Email login
+  document.getElementById("auth-email-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("auth-email").value;
+    const password = document.getElementById("auth-password").value;
+    const btn = document.getElementById("auth-submit-btn");
+    btn.disabled = true; btn.textContent = "Signing in...";
+    try { await firebaseAuth.signInWithEmailAndPassword(email, password); }
+    catch (err) {
+      const errors = { "auth/user-not-found": "No account found", "auth/wrong-password": "Incorrect password", "auth/invalid-credential": "Invalid email or password", "auth/too-many-requests": "Too many attempts" };
+      showAuthErr("auth-error", errors[err.code] || err.message);
+    } finally { btn.disabled = false; btn.textContent = "Sign In"; }
+  });
+
+  // Email signup
+  document.getElementById("auth-signup-email-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = document.getElementById("auth-signup-name").value;
+    const email = document.getElementById("auth-signup-email").value;
+    const password = document.getElementById("auth-signup-password").value;
+    const btn = document.getElementById("auth-signup-submit-btn");
+    btn.disabled = true; btn.textContent = "Creating account...";
+    try {
+      const cred = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+      if (name && cred.user) await cred.user.updateProfile({ displayName: name });
+    } catch (err) {
+      const errors = { "auth/email-already-in-use": "Account already exists", "auth/weak-password": "Password must be 6+ characters", "auth/invalid-email": "Invalid email" };
+      showAuthErr("auth-signup-error", errors[err.code] || err.message);
+    } finally { btn.disabled = false; btn.textContent = "Create Account"; }
+  });
+}
+
+function showAuthErr(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.style.display = "block"; }
+}
+
 // ── State ──
 const state = {
   model: null,
@@ -51,6 +203,9 @@ const state = {
 // ══════════════════════════════════════════
 
 document.addEventListener("DOMContentLoaded", () => {
+  initFirebase();
+  initAuthHandlers();
+
   initTabs();
   initResizeHandles();
   initBottomPanel();
@@ -787,11 +942,11 @@ async function loadModel(filePath, fileName, fileSize) {
 
     const layersResult = await API.rpc("model_layers");
     if (layersResult.error) throw new Error(layersResult.error);
-    state.layers = layersResult.layers;
+    state.layers = Array.isArray(layersResult.layers) ? layersResult.layers : [];
 
     const tensorsResult = await API.rpc("weight_list");
     if (tensorsResult.error) throw new Error(tensorsResult.error);
-    state.tensors = tensorsResult.tensors;
+    state.tensors = Array.isArray(tensorsResult.tensors) ? tensorsResult.tensors : [];
 
     const summaryResult = await API.rpc("model_summary");
     if (summaryResult.error) throw new Error(summaryResult.error);
