@@ -48,7 +48,7 @@ async def upload_model(
 ):
     """Upload a model file for validation and inspection."""
     # Validate file type
-    allowed_extensions = [".safetensors", ".bin", ".pt", ".pth", ".gguf"]
+    allowed_extensions = [".safetensors", ".bin", ".pt", ".pth", ".gguf", ".ipynb"]
     ext = Path(file.filename).suffix.lower()
     if ext not in allowed_extensions:
         raise HTTPException(

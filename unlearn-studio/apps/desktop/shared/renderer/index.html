@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;" />
   <title>Remap Studios</title>
   <link rel="stylesheet" href="styles/main.css" />
 </head>
@@ -12,8 +12,8 @@
   <header id="topbar">
     <div class="topbar-left">
       <div class="app-logo">
-        <div class="logo-mark">U</div>
-        <span class="logo-text">remap<span class="logo-muted">studios</span></span>
+        <div class="logo-mark">R</div>
+        <span class="logo-text">Remap<span class="logo-muted"> Studios</span></span>
       </div>
       <nav class="topbar-menu">
         <button class="menu-btn" data-menu="file">File</button>
@@ -24,35 +24,348 @@
       </nav>
     </div>
     <div class="topbar-center">
-      <div class="breadcrumb" id="breadcrumb">
-        <span class="breadcrumb-item breadcrumb-empty">No model loaded</span>
-      </div>
+      <button class="topbar-search" id="btn-command-palette" title="Command Palette (Cmd+K)">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M9.5 9.5L13 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <span>Search commands...</span>
+        <kbd>⌘K</kbd>
+      </button>
     </div>
     <div class="topbar-right">
-      <button class="topbar-btn" id="btn-open-model" title="Open Model">
+      <button class="topbar-btn" id="btn-open-folder" title="Open Folder (Cmd+Shift+O)">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4.5C2 3.67 2.67 3 3.5 3H6l1.5 1.5H12.5c.83 0 1.5.67 1.5 1.5V11.5c0 .83-.67 1.5-1.5 1.5h-9C2.67 13 2 12.33 2 11.5V4.5z" stroke="currentColor" stroke-width="1.2"/></svg>
       </button>
-      <button class="topbar-btn" id="btn-settings" title="Settings">
+      <button class="topbar-btn" id="btn-open-model" title="Open File (Cmd+O)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 2h5l3 3v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v3h3" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+      <div class="topbar-divider"></div>
+      <button class="topbar-btn" id="btn-export" title="Export Model (Cmd+E)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 10v2a1 1 0 001 1h8a1 1 0 001-1v-2M8 2v8M5 5l3-3 3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="topbar-btn" id="btn-settings" title="Settings (Cmd+,)">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2"/></svg>
       </button>
     </div>
   </header>
 
+  <!-- ── DROPDOWN MENUS ── -->
+  <div class="dropdown-overlay" id="dropdown-overlay"></div>
+  <div class="dropdown-menu" id="dropdown-file">
+    <div class="dropdown-item" data-action="open-file"><span>Open File</span><kbd>⌘O</kbd></div>
+    <div class="dropdown-item" data-action="open-folder"><span>Open Folder</span><kbd>⌘⇧O</kbd></div>
+    <div class="dropdown-sep"></div>
+    <div class="dropdown-item" data-action="recent"><span>Recent Models</span><span class="dropdown-arrow">▸</span></div>
+    <div class="dropdown-sep"></div>
+    <div class="dropdown-item" data-action="export"><span>Export Model…</span><kbd>⌘E</kbd></div>
+    <div class="dropdown-item" data-action="export-json"><span>Export Config…</span></div>
+    <div class="dropdown-sep"></div>
+    <div class="dropdown-item" data-action="quit"><span>Quit</span><kbd>⌘Q</kbd></div>
+  </div>
+  <div class="dropdown-menu" id="dropdown-edit">
+    <div class="dropdown-item" data-action="undo"><span>Undo</span><kbd>⌘Z</kbd></div>
+    <div class="dropdown-item" data-action="redo"><span>Redo</span><kbd>⌘⇧Z</kbd></div>
+    <div class="dropdown-sep"></div>
+    <div class="dropdown-item" data-action="copy"><span>Copy</span><kbd>⌘C</kbd></div>
+    <div class="dropdown-item" data-action="paste"><span>Paste</span><kbd>⌘V</kbd></div>
+    <div class="dropdown-sep"></div>
+    <div class="dropdown-item" data-action="select-all"><span>Select All</span><kbd>⌘A</kbd></div>
+    <div class="dropdown-sep"></div>
+    <div class="dropdown-item" data-action="settings"><span>Settings…</span><kbd>⌘,</kbd></div>
+  </div>
+  <div class="dropdown-menu" id="dropdown-view">
+    <div class="dropdown-item" data-action="toggle-sidebar"><span>Toggle Sidebar</span><kbd>⌘B</kbd></div>
+    <div class="dropdown-item" data-action="toggle-props"><span>Toggle Properties</span><kbd>⌘⇧P</kbd></div>
+    <div class="dropdown-item" data-action="toggle-terminal"><span>Toggle Terminal</span><kbd>⌘`</kbd></div>
+    <div class="dropdown-sep"></div>
+    <div class="dropdown-item" data-action="zoom-in"><span>Zoom In</span><kbd>⌘+</kbd></div>
+    <div class="dropdown-item" data-action="zoom-out"><span>Zoom Out</span><kbd>⌘-</kbd></div>
+    <div class="dropdown-item" data-action="zoom-reset"><span>Reset Zoom</span><kbd>⌘0</kbd></div>
+    <div class="dropdown-sep"></div>
+    <div class="dropdown-item" data-action="fullscreen"><span>Fullscreen</span><kbd>⌘↵</kbd></div>
+  </div>
+  <div class="dropdown-menu" id="dropdown-run">
+    <div class="dropdown-item" data-action="start-unlearn"><span>Start Unlearning</span><kbd>⌘⇧R</kbd></div>
+    <div class="dropdown-item" data-action="stop-unlearn"><span>Stop Unlearning</span></div>
+    <div class="dropdown-sep"></div>
+    <div class="dropdown-item" data-action="run-analysis"><span>Run Analysis</span></div>
+    <div class="dropdown-item" data-action="benchmark"><span>Benchmark Model</span></div>
+  </div>
+  <div class="dropdown-menu" id="dropdown-help">
+    <div class="dropdown-item" data-action="shortcuts"><span>Keyboard Shortcuts</span><kbd>⌘/</kbd></div>
+    <div class="dropdown-item" data-action="docs"><span>Documentation</span></div>
+    <div class="dropdown-sep"></div>
+    <div class="dropdown-item" data-action="report-issue"><span>Report Issue</span></div>
+    <div class="dropdown-sep"></div>
+    <div class="dropdown-item" data-action="about"><span>About Remap Studios</span></div>
+  </div>
+
+  <!-- ── COMMAND PALETTE ── -->
+  <div class="command-palette-overlay" id="command-palette-overlay">
+    <div class="command-palette">
+      <div class="command-palette-input-wrap">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M9.5 9.5L13 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <input type="text" id="command-palette-input" placeholder="Type a command or search…" autocomplete="off" spellcheck="false" />
+        <kbd>esc</kbd>
+      </div>
+      <div class="command-palette-list" id="command-palette-list"></div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS PANEL ── -->
+  <div class="modal-overlay" id="settings-overlay">
+    <div class="modal-panel settings-panel">
+      <div class="modal-header">
+        <span class="modal-title">SETTINGS</span>
+        <button class="modal-close" id="settings-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <div class="settings-group-title">GENERAL</div>
+          <div class="settings-row">
+            <div class="settings-label">Auto-load last model</div>
+            <label class="toggle"><input type="checkbox" id="setting-autoload" checked /><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">Show welcome screen on startup</div>
+            <label class="toggle"><input type="checkbox" id="setting-welcome" checked /><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">Enable GPU acceleration</div>
+            <label class="toggle"><input type="checkbox" id="setting-gpu" checked /><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-group-title">VISUALIZATION</div>
+          <div class="settings-row">
+            <div class="settings-label">Node animation speed</div>
+            <select class="settings-select" id="setting-anim-speed">
+              <option value="slow">Slow</option>
+              <option value="normal" selected>Normal</option>
+              <option value="fast">Fast</option>
+              <option value="off">Off</option>
+            </select>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">Show connection lines</div>
+            <label class="toggle"><input type="checkbox" id="setting-connections" checked /><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">Heatmap color scheme</div>
+            <select class="settings-select" id="setting-heatmap-color">
+              <option value="grayscale" selected>Grayscale</option>
+              <option value="viridis">Viridis</option>
+              <option value="magma">Magma</option>
+              <option value="inferno">Inferno</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-group-title">UNLEARNING</div>
+          <div class="settings-row">
+            <div class="settings-label">Default method</div>
+            <select class="settings-select" id="setting-default-method">
+              <option value="retain_aware" selected>Retain-Aware</option>
+              <option value="gradient_forget">Gradient Forgetting</option>
+            </select>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">Auto-save checkpoints</div>
+            <label class="toggle"><input type="checkbox" id="setting-autosave" checked /><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-group-title">BACKEND</div>
+          <div class="settings-row">
+            <div class="settings-label">Python path</div>
+            <input type="text" class="settings-input" id="setting-python" value="python3" />
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">Backend port</div>
+            <input type="number" class="settings-input" id="setting-port" value="8420" style="width:80px" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EXPORT DIALOG ── -->
+  <div class="modal-overlay" id="export-overlay">
+    <div class="modal-panel export-panel">
+      <div class="modal-header">
+        <span class="modal-title">EXPORT MODEL</span>
+        <button class="modal-close" id="export-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="export-options">
+          <div class="export-option" data-format="safetensors">
+            <div class="export-option-icon">📦</div>
+            <div class="export-option-info">
+              <div class="export-option-name">Safetensors</div>
+              <div class="export-option-desc">Standard format, compatible with HuggingFace, PyTorch</div>
+            </div>
+            <div class="export-option-check">✓</div>
+          </div>
+          <div class="export-option" data-format="pt">
+            <div class="export-option-icon">📦</div>
+            <div class="export-option-info">
+              <div class="export-option-name">PyTorch Checkpoint</div>
+              <div class="export-option-desc">Legacy PyTorch format (.pt)</div>
+            </div>
+            <div class="export-option-check">✓</div>
+          </div>
+          <div class="export-option" data-format="gguf">
+            <div class="export-option-icon">📦</div>
+            <div class="export-option-info">
+              <div class="export-option-name">GGUF (Quantized)</div>
+              <div class="export-option-desc">For llama.cpp, Ollama — requires conversion</div>
+            </div>
+            <div class="export-option-check">✓</div>
+          </div>
+          <div class="export-option" data-format="onnx">
+            <div class="export-option-icon">📦</div>
+            <div class="export-option-info">
+              <div class="export-option-name">ONNX</div>
+              <div class="export-option-desc">Cross-platform inference format</div>
+            </div>
+            <div class="export-option-check">✓</div>
+          </div>
+        </div>
+        <div class="config-group" style="margin-top:16px">
+          <label class="config-label">EXPORT OPTIONS</label>
+          <div class="settings-row">
+            <div class="settings-label">Include optimizer state</div>
+            <label class="toggle"><input type="checkbox" id="export-optimizer" /><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">Shard large models (>4GB)</div>
+            <label class="toggle"><input type="checkbox" id="export-shard" checked /><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <button class="btn-primary" id="btn-do-export" style="margin-top:16px;width:100%">Export Model</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── KEYBOARD SHORTCUTS PANEL ── -->
+  <div class="modal-overlay" id="shortcuts-overlay">
+    <div class="modal-panel shortcuts-panel">
+      <div class="modal-header">
+        <span class="modal-title">KEYBOARD SHORTCUTS</span>
+        <button class="modal-close" id="shortcuts-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="shortcuts-grid">
+          <div class="shortcut-group">
+            <div class="shortcut-group-title">General</div>
+            <div class="shortcut-row"><kbd>⌘O</kbd><span>Open File</span></div>
+            <div class="shortcut-row"><kbd>⌘⇧O</kbd><span>Open Folder</span></div>
+            <div class="shortcut-row"><kbd>⌘E</kbd><span>Export Model</span></div>
+            <div class="shortcut-row"><kbd>⌘,</kbd><span>Settings</span></div>
+            <div class="shortcut-row"><kbd>⌘K</kbd><span>Command Palette</span></div>
+          </div>
+          <div class="shortcut-group">
+            <div class="shortcut-group-title">Navigation</div>
+            <div class="shortcut-row"><kbd>⌘B</kbd><span>Toggle Sidebar</span></div>
+            <div class="shortcut-row"><kbd>⌘⇧P</kbd><span>Toggle Properties</span></div>
+            <div class="shortcut-row"><kbd>⌘`</kbd><span>Toggle Terminal</span></div>
+            <div class="shortcut-row"><kbd>⌘1-5</kbd><span>Switch Tab</span></div>
+          </div>
+          <div class="shortcut-group">
+            <div class="shortcut-group-title">Unlearning</div>
+            <div class="shortcut-row"><kbd>⌘⇧R</kbd><span>Start Unlearning</span></div>
+            <div class="shortcut-row"><kbd>⌘⇧S</kbd><span>Stop Unlearning</span></div>
+          </div>
+          <div class="shortcut-group">
+            <div class="shortcut-group-title">View</div>
+            <div class="shortcut-row"><kbd>⌘+</kbd><span>Zoom In</span></div>
+            <div class="shortcut-row"><kbd>⌘-</kbd><span>Zoom Out</span></div>
+            <div class="shortcut-row"><kbd>⌘0</kbd><span>Reset Zoom</span></div>
+            <div class="shortcut-row"><kbd>⌘↵</kbd><span>Fullscreen</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ABOUT DIALOG ── -->
+  <div class="modal-overlay" id="about-overlay">
+    <div class="modal-panel about-panel">
+      <div class="modal-header">
+        <span class="modal-title">ABOUT</span>
+        <button class="modal-close" id="about-close">✕</button>
+      </div>
+      <div class="modal-body" style="text-align:center;padding:32px">
+        <div class="logo-mark" style="width:48px;height:48px;font-size:24px;margin:0 auto 16px;border-radius:12px">R</div>
+        <h2 style="font-size:18px;font-weight:700;margin-bottom:4px">Remap Studios</h2>
+        <p style="font-size:12px;color:var(--text-subtle);margin-bottom:16px">v1.0.0 — Neural Network Unlearning IDE</p>
+        <p style="font-size:11px;color:var(--text-subtle);line-height:1.6">Advanced model analysis and capability unlearning<br>for Safetensors, GGUF, PyTorch, ONNX, and IPYNB formats.</p>
+      </div>
+    </div>
+  </div>
+
   <!-- ── MAIN LAYOUT ── -->
-  <div id="workspace">
+  <div id="main-layout">
+    <!-- ACTIVITY BAR -->
+    <aside id="activity-bar">
+      <div class="activity-icons-top">
+        <button class="activity-btn active" data-panel="explorer" title="Explorer (⌘⇧E)">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 5.5C3 4.67 3.67 4 4.5 4H7l1.5 1.5H13.5c.83 0 1.5.67 1.5 1.5v6c0 .83-.67 1.5-1.5 1.5h-9C3.67 14.5 3 13.83 3 13V5.5z" stroke="currentColor" stroke-width="1.3"/></svg>
+          <span class="activity-label">Explorer</span>
+        </button>
+        <button class="activity-btn" data-panel="search" title="Search">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M12 12l4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <span class="activity-label">Search</span>
+        </button>
+        <button class="activity-btn" data-panel="models" title="Model Catalog">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="3" y="3" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="10" y="3" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="3" y="10" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="10" y="10" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+          <span class="activity-label">Catalog</span>
+        </button>
+        <button class="activity-btn" data-panel="unlearn" title="Unlearning">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9h12M11 5l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="activity-label">Unlearn</span>
+        </button>
+      </div>
+      <div class="activity-icons-bottom">
+        <button class="activity-btn" id="btn-activity-settings" title="Settings">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M9 2v2M9 14v2M2 9h2M14 9h2M4.2 4.2l1.4 1.4M12.4 12.4l1.4 1.4M4.2 13.8l1.4-1.4M12.4 5.6l1.4-1.4" stroke="currentColor" stroke-width="1.3"/></svg>
+          <span class="activity-label">Settings</span>
+        </button>
+      </div>
+    </aside>
+
     <!-- LEFT SIDEBAR -->
     <aside id="sidebar" class="panel">
       <div class="panel-header">
         <span class="panel-title">MODEL EXPLORER</span>
-        <button class="panel-action" id="btn-refresh-tree" title="Refresh">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10.5 6A4.5 4.5 0 002 3.5M1.5 6a4.5 4.5 0 008.5 2.5" stroke="currentColor" stroke-width="1.2"/><path d="M10.5 1.5v3h-3M1.5 10.5v-3h3" stroke="currentColor" stroke-width="1.2"/></svg>
-        </button>
+        <div class="panel-header-actions">
+          <button class="panel-action" id="btn-new-file" title="New File">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </button>
+          <button class="panel-action" id="btn-refresh-tree" title="Refresh">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10.5 6A4.5 4.5 0 002 3.5M1.5 6a4.5 4.5 0 008.5 2.5" stroke="currentColor" stroke-width="1.2"/><path d="M10.5 1.5v3h-3M1.5 10.5v-3h3" stroke="currentColor" stroke-width="1.2"/></svg>
+          </button>
+          <button class="panel-action" id="btn-collapse-all" title="Collapse All">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5l3 3 3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
       </div>
       <div class="panel-body" id="model-tree">
         <div class="empty-state">
+          <div class="empty-icon">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" opacity="0.3">
+              <rect x="8" y="12" width="32" height="24" rx="2" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M8 18h32" stroke="currentColor" stroke-width="1"/>
+              <circle cx="12" cy="15" r="1" fill="currentColor"/>
+              <circle cx="16" cy="15" r="1" fill="currentColor"/>
+              <circle cx="20" cy="15" r="1" fill="currentColor"/>
+              <path d="M14 24h20M14 28h14M14 32h8" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+            </svg>
+          </div>
           <p class="empty-title">No model loaded</p>
-          <p class="empty-desc">Open a .safetensors or model directory to begin</p>
-          <button class="btn-primary-sm" id="btn-open-model-empty">Open Model</button>
+          <p class="empty-desc">Open a model file or directory to begin exploring</p>
+          <div class="empty-actions">
+            <button class="btn-primary-sm" id="btn-open-model-empty">Open File</button>
+            <button class="btn-outline-sm" id="btn-open-folder-empty">Open Folder</button>
+          </div>
         </div>
       </div>
     </aside>
@@ -65,16 +378,29 @@
       <!-- TABS -->
       <div id="tab-bar">
         <div class="tab active" data-tab="visualization">
+          <svg class="tab-icon" width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="3" cy="6" r="1.5" stroke="currentColor" stroke-width="1"/><circle cx="9" cy="3" r="1.5" stroke="currentColor" stroke-width="1"/><circle cx="9" cy="9" r="1.5" stroke="currentColor" stroke-width="1"/><path d="M4.5 6L7.5 3M4.5 6L7.5 9" stroke="currentColor" stroke-width="0.8"/></svg>
           <span class="tab-label">Visualization</span>
+          <button class="tab-close" title="Close">✕</button>
         </div>
         <div class="tab" data-tab="weights">
+          <svg class="tab-icon" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M2 6h8M2 9h5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
           <span class="tab-label">Weight Explorer</span>
+          <button class="tab-close" title="Close">✕</button>
         </div>
         <div class="tab" data-tab="heatmap">
+          <svg class="tab-icon" width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="2" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1"/><rect x="3" y="3" width="2" height="2" fill="currentColor" opacity="0.3"/><rect x="7" y="3" width="2" height="2" fill="currentColor" opacity="0.6"/><rect x="3" y="7" width="2" height="2" fill="currentColor" opacity="0.8"/><rect x="7" y="7" width="2" height="2" fill="currentColor" opacity="0.2"/></svg>
           <span class="tab-label">Heatmap</span>
+          <button class="tab-close" title="Close">✕</button>
         </div>
         <div class="tab" data-tab="unlearn">
+          <svg class="tab-icon" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span class="tab-label">Unlearn</span>
+          <button class="tab-close" title="Close">✕</button>
+        </div>
+        <div class="tab" data-tab="models">
+          <svg class="tab-icon" width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="2" width="3.5" height="3.5" rx="0.5" stroke="currentColor" stroke-width="0.8"/><rect x="6.5" y="2" width="3.5" height="3.5" rx="0.5" stroke="currentColor" stroke-width="0.8"/><rect x="2" y="6.5" width="3.5" height="3.5" rx="0.5" stroke="currentColor" stroke-width="0.8"/><rect x="6.5" y="6.5" width="3.5" height="3.5" rx="0.5" stroke="currentColor" stroke-width="0.8"/></svg>
+          <span class="tab-label">Models</span>
+          <button class="tab-close" title="Close">✕</button>
         </div>
       </div>
 
@@ -86,23 +412,32 @@
           <div class="canvas-overlay" id="canvas-overlay">
             <div class="welcome-screen">
               <div class="welcome-icon">
-                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                  <rect x="8" y="28" width="10" height="10" rx="2" fill="#a3a3a3"/>
-                  <rect x="27" y="8" width="10" height="10" rx="2" fill="#a3a3a3"/>
-                  <rect x="27" y="28" width="10" height="10" rx="2" fill="#171717"/>
-                  <rect x="27" y="48" width="10" height="10" rx="2" fill="#a3a3a3"/>
-                  <rect x="48" y="28" width="10" height="10" rx="2" fill="#171717"/>
-                  <line x1="18" y1="33" x2="27" y2="13" stroke="#d4d4d4" stroke-width="1"/>
-                  <line x1="18" y1="33" x2="27" y2="33" stroke="#d4d4d4" stroke-width="1"/>
-                  <line x1="18" y1="33" x2="27" y2="53" stroke="#d4d4d4" stroke-width="1"/>
-                  <line x1="37" y1="13" x2="48" y2="33" stroke="#d4d4d4" stroke-width="1"/>
-                  <line x1="37" y1="33" x2="48" y2="33" stroke="#d4d4d4" stroke-width="1"/>
-                  <line x1="37" y1="53" x2="48" y2="33" stroke="#d4d4d4" stroke-width="1"/>
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" opacity="0.25">
+                  <rect x="10" y="34" width="12" height="12" rx="3" fill="currentColor"/>
+                  <rect x="34" y="10" width="12" height="12" rx="3" fill="currentColor"/>
+                  <rect x="34" y="34" width="12" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                  <rect x="34" y="58" width="12" height="12" rx="3" fill="currentColor"/>
+                  <rect x="58" y="34" width="12" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                  <line x1="22" y1="40" x2="34" y2="16" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+                  <line x1="22" y1="40" x2="34" y2="40" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+                  <line x1="22" y1="40" x2="34" y2="64" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+                  <line x1="46" y1="16" x2="58" y2="40" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+                  <line x1="46" y1="40" x2="58" y2="40" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+                  <line x1="46" y1="64" x2="58" y2="40" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
                 </svg>
               </div>
               <h2 class="welcome-title">Open a model to visualize</h2>
-              <p class="welcome-desc">Load a .safetensors file or model directory to see its architecture, weights, and layers in an interactive 2D/3D visualization.</p>
-              <button class="btn-primary" id="btn-open-welcome">Open Model</button>
+              <p class="welcome-desc">Load a .safetensors, .pt, .gguf, .ipynb file or model directory to see its architecture, weights, and layers in an interactive visualization.</p>
+              <div class="welcome-actions">
+                <button class="btn-primary" id="btn-open-welcome">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4C2 3.45 2.45 3 3 3H5.5l1.2 1.2H11c.55 0 1 .45 1 1V10c0 .55-.45 1-1 1H3c-.55 0-1-.45-1-1V4z" stroke="currentColor" stroke-width="1.2"/></svg>
+                  Open Model
+                </button>
+                <button class="btn-outline" id="btn-open-welcome-folder">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.5 3.5C1.5 2.67 2.17 2 3 2H5.5l1.2 1.2H11c.83 0 1.5.67 1.5 1.5V10c0 .83-.67 1.5-1.5 1.5H3c-.83 0-1.5-.67-1.5-1.5V3.5z" stroke="currentColor" stroke-width="1.2"/></svg>
+                  Open Folder
+                </button>
+              </div>
               <p class="welcome-hint">or drag & drop a file here</p>
             </div>
           </div>
@@ -113,6 +448,9 @@
           <div class="panel-header">
             <span class="panel-title">WEIGHT EXPLORER</span>
             <div class="panel-actions">
+              <button class="panel-action" id="btn-filter-weights" title="Filter">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 2h10L7 6v4l-2 1V6L1 2z" stroke="currentColor" stroke-width="1.2"/></svg>
+              </button>
               <select id="weight-layer-select" class="panel-select">
                 <option value="">Select a layer...</option>
               </select>
@@ -131,6 +469,12 @@
           <div class="panel-header">
             <span class="panel-title">WEIGHT HEATMAP</span>
             <div class="panel-actions">
+              <button class="panel-action" id="btn-heatmap-zoom-in" title="Zoom In">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </button>
+              <button class="panel-action" id="btn-heatmap-zoom-out" title="Zoom Out">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </button>
               <select id="heatmap-layer-select" class="panel-select">
                 <option value="">Select a layer...</option>
               </select>
@@ -138,6 +482,45 @@
           </div>
           <div class="heatmap-body" id="heatmap-body">
             <canvas id="heatmap-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Models Tab -->
+        <div class="tab-panel" id="panel-models">
+          <div class="models-layout">
+            <div class="models-sidebar">
+              <div class="panel-header">
+                <span class="panel-title">MODEL CATALOG</span>
+                <button class="panel-action" id="btn-refresh-catalog" title="Refresh">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10.5 6A4.5 4.5 0 002 3.5M1.5 6a4.5 4.5 0 008.5 2.5" stroke="currentColor" stroke-width="1.2"/><path d="M10.5 1.5v3h-3M1.5 10.5v-3h3" stroke="currentColor" stroke-width="1.2"/></svg>
+                </button>
+              </div>
+              <div class="models-search-wrap">
+                <svg class="models-search-icon" width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1"/><path d="M8 8l3 3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
+                <input type="text" id="models-search" class="models-search" placeholder="Search models..." />
+              </div>
+              <div class="models-filters">
+                <button class="models-filter active" data-filter="all">All</button>
+                <button class="models-filter" data-filter="ollama">Ollama</button>
+                <button class="models-filter" data-filter="hf">HuggingFace</button>
+                <button class="models-filter" data-filter="compatible">My HW</button>
+              </div>
+              <div class="models-list" id="models-list"></div>
+            </div>
+            <div class="models-detail" id="models-detail">
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" opacity="0.2">
+                    <rect x="6" y="6" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="28" y="6" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="6" y="28" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                    <rect x="28" y="28" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                  </svg>
+                </div>
+                <p class="empty-title">Select a model</p>
+                <p class="empty-desc">Browse the catalog and pick a model to download</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -149,53 +532,77 @@
                 <span class="panel-title">UNLEARN CONFIGURATION</span>
               </div>
               <div class="unlearn-config" id="unlearn-config">
-                <div class="config-group">
-                  <label class="config-label">TARGET CAPABILITY</label>
-                  <select id="unlearn-target" class="config-select">
-                    <option value="">Select target...</option>
-                    <option value="python">Python</option>
-                    <option value="javascript">JavaScript</option>
-                    <option value="typescript">TypeScript</option>
-                    <option value="c_cpp">C / C++</option>
-                    <option value="algorithms">Algorithms</option>
-                    <option value="reasoning">Reasoning</option>
-                  </select>
-                </div>
-                <div class="config-group">
-                  <label class="config-label">METHOD</label>
-                  <select id="unlearn-method" class="config-select">
-                    <option value="retain_aware">Retain-Aware Unlearning</option>
-                    <option value="gradient_forget">Gradient Forgetting Baseline</option>
-                  </select>
-                </div>
-                <div class="config-group">
-                  <label class="config-label">TRAINING STEPS</label>
-                  <div class="config-range">
-                    <input type="range" id="unlearn-steps" min="10" max="500" value="200" />
-                    <span class="config-range-val" id="unlearn-steps-val">200</span>
+                <div class="config-section">
+                  <div class="config-section-title">Target</div>
+                  <div class="config-group">
+                    <label class="config-label">TARGET CAPABILITY</label>
+                    <select id="unlearn-target" class="config-select">
+                      <option value="">Select target...</option>
+                      <option value="python">Python</option>
+                      <option value="javascript">JavaScript</option>
+                      <option value="typescript">TypeScript</option>
+                      <option value="c_cpp">C / C++</option>
+                      <option value="algorithms">Algorithms</option>
+                      <option value="reasoning">Reasoning</option>
+                      <option value="math">Mathematics</option>
+                      <option value="code_review">Code Review</option>
+                    </select>
+                  </div>
+                  <div class="config-group">
+                    <label class="config-label">METHOD</label>
+                    <select id="unlearn-method" class="config-select">
+                      <option value="retain_aware">Retain-Aware Unlearning</option>
+                      <option value="gradient_forget">Gradient Forgetting Baseline</option>
+                      <option value="knowledge_distill">Knowledge Distillation</option>
+                    </select>
                   </div>
                 </div>
-                <div class="config-group">
-                  <label class="config-label">LEARNING RATE</label>
-                  <div class="config-range">
-                    <input type="range" id="unlearn-lr" min="-7" max="-3" step="0.5" value="-5" />
-                    <span class="config-range-val" id="unlearn-lr-val">1e-5</span>
+                <div class="config-section">
+                  <div class="config-section-title">Hyperparameters</div>
+                  <div class="config-group">
+                    <label class="config-label">TRAINING STEPS</label>
+                    <div class="config-range">
+                      <input type="range" id="unlearn-steps" min="10" max="500" value="200" />
+                      <span class="config-range-val" id="unlearn-steps-val">200</span>
+                    </div>
+                  </div>
+                  <div class="config-group">
+                    <label class="config-label">LEARNING RATE</label>
+                    <div class="config-range">
+                      <input type="range" id="unlearn-lr" min="-7" max="-3" step="0.5" value="-5" />
+                      <span class="config-range-val" id="unlearn-lr-val">1e-5</span>
+                    </div>
+                  </div>
+                  <div class="config-group">
+                    <label class="config-label">RETAIN WEIGHT</label>
+                    <div class="config-range">
+                      <input type="range" id="unlearn-retain" min="0.1" max="5" step="0.1" value="2.0" />
+                      <span class="config-range-val" id="unlearn-retain-val">2.0</span>
+                    </div>
+                  </div>
+                  <div class="config-group">
+                    <label class="config-label">BATCH SIZE</label>
+                    <div class="config-range">
+                      <input type="range" id="unlearn-batch" min="1" max="32" step="1" value="8" />
+                      <span class="config-range-val" id="unlearn-batch-val">8</span>
+                    </div>
                   </div>
                 </div>
-                <div class="config-group">
-                  <label class="config-label">RETAIN WEIGHT</label>
-                  <div class="config-range">
-                    <input type="range" id="unlearn-retain" min="0.1" max="5" step="0.1" value="2.0" />
-                    <span class="config-range-val" id="unlearn-retain-val">2.0</span>
-                  </div>
-                </div>
-                <button class="btn-primary" id="btn-start-unlearn" disabled>Start Unlearning</button>
+                <button class="btn-primary" id="btn-start-unlearn" disabled>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 2.5l8 4.5-8 4.5V2.5z" fill="currentColor"/></svg>
+                  Start Unlearning
+                </button>
               </div>
             </div>
             <div class="resize-handle" data-resize="unlearn"></div>
             <div class="unlearn-right">
               <div class="panel-header">
                 <span class="panel-title">UNLEARNING VISUALIZATION</span>
+                <div class="panel-actions">
+                  <button class="panel-action" id="btn-unlearn-reset" title="Reset View">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10.5 6A4.5 4.5 0 002 3.5M1.5 6a4.5 4.5 0 008.5 2.5" stroke="currentColor" stroke-width="1.2"/><path d="M10.5 1.5v3h-3M1.5 10.5v-3h3" stroke="currentColor" stroke-width="1.2"/></svg>
+                  </button>
+                </div>
               </div>
               <canvas id="unlearn-canvas"></canvas>
             </div>
@@ -207,15 +614,47 @@
     <!-- RESIZE HANDLE -->
     <div class="resize-handle" data-resize="props"></div>
 
-    <!-- RIGHT PANEL -->
+    <!-- RIGHT PANEL (split: Properties top + Chat bottom) -->
     <aside id="properties" class="panel">
-      <div class="panel-header">
-        <span class="panel-title">PROPERTIES</span>
+      <div id="props-top">
+        <div class="panel-header">
+          <span class="panel-title">PROPERTIES</span>
+        </div>
+        <div class="panel-body" id="properties-body">
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none" opacity="0.2">
+                <rect x="4" y="4" width="24" height="24" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M10 12h12M10 16h12M10 20h8" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+              </svg>
+            </div>
+            <p class="empty-title">Select a node</p>
+            <p class="empty-desc">Click any node in the visualization to inspect its properties</p>
+          </div>
+        </div>
       </div>
-      <div class="panel-body" id="properties-body">
-        <div class="empty-state">
-          <p class="empty-title">Select a node</p>
-          <p class="empty-desc">Click any node in the visualization to inspect its properties</p>
+      <div class="resize-handle" data-resize="props-chat"></div>
+      <div id="props-chat">
+        <div class="panel-header">
+          <div class="chatbot-title">
+            <div class="chatbot-title-dot"></div>
+            <span class="panel-title">AI ASSISTANT</span>
+          </div>
+        </div>
+        <div class="chatbot-messages" id="chatbot-messages">
+          <div class="chat-msg assistant">
+            Hi! I'm your AI assistant for model analysis. Load a model, then ask me anything.
+            <div class="chat-suggestions">
+              <button class="chat-suggestion" onclick="document.getElementById('chatbot-input').value='Tell me about the model';document.getElementById('chatbot-send').click()">Tell me about the model</button>
+              <button class="chat-suggestion" onclick="document.getElementById('chatbot-input').value='Which method should I use?';document.getElementById('chatbot-send').click()">Which method should I use?</button>
+              <button class="chat-suggestion" onclick="document.getElementById('chatbot-input').value='List layers';document.getElementById('chatbot-send').click()">List layers</button>
+              <button class="chat-suggestion" onclick="document.getElementById('chatbot-input').value='Start unlearning';document.getElementById('chatbot-send').click()">Start unlearning</button>
+            </div>
+          </div>
+        </div>
+        <div class="chatbot-input">
+          <input type="text" id="chatbot-input" placeholder="Ask about your model..." />
+          <button class="chatbot-send" id="chatbot-send">Send</button>
         </div>
       </div>
     </aside>
@@ -224,61 +663,70 @@
   <!-- ── BOTTOM BAR ── -->
   <div id="bottombar">
     <div class="bottombar-left">
-      <span class="status-item" id="status-model">No model</span>
+      <div class="status-branch">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="3" cy="6" r="1.5" stroke="currentColor" stroke-width="1"/><circle cx="9" cy="3" r="1.5" stroke="currentColor" stroke-width="1"/><circle cx="9" cy="9" r="1.5" stroke="currentColor" stroke-width="1"/><path d="M3 4.5V3M3 7.5V9" stroke="currentColor" stroke-width="1"/><path d="M4.5 6H7.5" stroke="currentColor" stroke-width="1"/></svg>
+        <span id="status-model">No model</span>
+      </div>
       <span class="status-separator">|</span>
       <span class="status-item" id="status-params">—</span>
+      <span class="status-separator">|</span>
+      <span class="status-item" id="status-format">—</span>
+    </div>
+    <div class="bottombar-center">
+      <button class="status-btn" id="btn-toggle-terminal" title="Toggle Terminal">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 9h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <span>Terminal</span>
+      </button>
     </div>
     <div class="bottombar-right">
+      <span class="status-item" id="status-device">—</span>
+      <span class="status-separator">|</span>
       <span class="status-item" id="status-zoom">100%</span>
       <span class="status-separator">|</span>
       <span class="status-item" id="status-platform">—</span>
+      <span class="status-separator">|</span>
+      <span class="status-item" id="status-ram">—</span>
     </div>
   </div>
 
   <!-- ── BOTTOM PANEL (Terminal / Log) ── -->
   <div id="bottom-panel" class="collapsed">
     <div class="bottom-panel-header" id="bottom-panel-toggle">
-      <span class="panel-title">OUTPUT</span>
-      <svg class="bottom-panel-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.2"/></svg>
+      <div class="bottom-panel-tabs">
+        <button class="bottom-panel-tab active" data-bptab="output">OUTPUT</button>
+        <button class="bottom-panel-tab" data-bptab="problems">PROBLEMS</button>
+        <button class="bottom-panel-tab" data-bptab="log">LOG</button>
+      </div>
+      <div class="bottom-panel-actions">
+        <button class="panel-action" id="btn-clear-terminal" title="Clear">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </button>
+        <svg class="bottom-panel-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.2"/></svg>
+      </div>
     </div>
     <div class="bottom-panel-body" id="terminal-output">
       <div class="terminal-line"><span class="terminal-prompt">❯</span> <span class="terminal-text">Remap Studios v1.0.0</span></div>
-      <div class="terminal-line"><span class="terminal-prompt">❯</span> <span class="terminal-text muted">Ready. Open a model to begin.</span></div>
+      <div class="terminal-line"><span class="terminal-prompt">❯</span> <span class="terminal-text muted">Ready. Open a model to begin. Type 'help' for commands.</span></div>
     </div>
-  </div>
-
-  <!-- ── CHATBOT PANEL ── -->
-  <div id="chatbot-panel">
-    <div class="chatbot-header">
-      <div class="chatbot-title">
-        <div class="chatbot-title-dot"></div>
-        <span class="chatbot-title-text">AI Assistant</span>
-      </div>
-      <button class="topbar-btn" id="chatbot-close" title="Close">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.2"/></svg>
+    <div class="terminal-input-bar">
+      <span class="terminal-prompt">❯</span>
+      <input type="text" id="terminal-input" placeholder="Type a command..." autocomplete="off" spellcheck="false" />
+      <button id="terminal-send" class="terminal-send-btn" title="Send">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
-    <div class="chatbot-messages" id="chatbot-messages">
-      <div class="chat-msg system">Remap Studios AI — Ask about your model</div>
-      <div class="chat-msg assistant">
-        Hi! I can help you analyze and unlearn knowledge from your model. Load a model first, then ask me things like:
-        <br><br>
-        • "Which layers have the most redundant weights?"<br>
-        • "What's the best unlearning method for my model?"<br>
-        • "Show me the weight distribution of layer 0"<br>
-        • "Start unlearning with retain weight 2.5"
-      </div>
-    </div>
-    <div class="chatbot-input">
-      <input type="text" id="chatbot-input" placeholder="Ask about your model..." />
-      <button class="chatbot-send" id="chatbot-send">Send</button>
-    </div>
   </div>
 
-  <!-- Chat toggle -->
-  <button id="chatbot-toggle" title="AI Assistant">
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2C5.58 2 2 5.13 2 9c0 2.13 1.17 4.04 3 5.3V18l3.5-2c.65.18 1.34.28 2.07.28h-.07C14.42 16.28 18 12.85 18 9c0-3.87-3.58-7-8-7z" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="7" cy="9" r="1" fill="currentColor"/><circle cx="10" cy="9" r="1" fill="currentColor"/><circle cx="13" cy="9" r="1" fill="currentColor"/></svg>
-  </button>
+  <!-- ── Context Menu ── -->
+  <div class="context-menu" id="context-menu">
+    <div class="context-menu-item" data-action="copy-name">Copy Name</div>
+    <div class="context-menu-item" data-action="copy-path">Copy Path</div>
+    <div class="context-menu-sep"></div>
+    <div class="context-menu-item" data-action="view-properties">View Properties</div>
+    <div class="context-menu-item" data-action="view-heatmap">View Heatmap</div>
+    <div class="context-menu-sep"></div>
+    <div class="context-menu-item" data-action="export-tensor">Export Tensor…</div>
+  </div>
 
   <!-- ── Resource Monitor ── -->
   <div class="resource-monitor" id="resource-monitor">

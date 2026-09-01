@@ -82,7 +82,7 @@ class StorageConfig:
 class SecurityConfig:
     """Security settings for model handling."""
     max_model_size_gb: float = 10.0
-    allowed_formats: list[str] = field(default_factory=lambda: [".safetensors", ".bin"])
+    allowed_formats: list[str] = field(default_factory=lambda: [".safetensors", ".bin", ".pt", ".pth", ".gguf", ".ipynb", ".onnx"])
     require_safetensors: bool = False
     isolation_mode: bool = True
     max_upload_size_gb: float = 10.0

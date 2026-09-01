@@ -34,7 +34,7 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-bg/80 backdrop-blur-md border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2.5 no-underline">
+        <a href="/" className="flex items-center gap-2.5 no-underline shrink-0">
           <div className="w-7 h-7 bg-accent flex items-center justify-center">
             <span className="text-accent-inv text-xs font-bold font-display">R</span>
           </div>
@@ -44,17 +44,17 @@ export default function Header() {
         </a>
 
         {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-6">
-          <a href="/#how-it-works" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium">
+        <nav className="hidden lg:flex items-center gap-1 lg:gap-3 xl:gap-5">
+          <a href="/#how-it-works" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1">
             How it works
           </a>
-          <a href="/#sandbox" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium">
+          <a href="/#sandbox" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1">
             Sandbox
           </a>
-          <a href="/#architecture" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium">
+          <a href="/#architecture" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1">
             Architecture
           </a>
-          <a href="/docs" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium">
+          <a href="/docs" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1">
             Docs
           </a>
 
@@ -64,7 +64,7 @@ export default function Header() {
             onMouseEnter={() => setPricingOpen(true)}
             onMouseLeave={() => setPricingOpen(false)}
           >
-            <a href="/pricing" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium">
+            <a href="/pricing" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1">
               Pricing ▾
             </a>
 
@@ -104,13 +104,13 @@ export default function Header() {
             )}
           </div>
 
-          <a href="/downloads" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium">
+          <a href="/downloads" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1">
             Download
           </a>
 
           {/* CTA */}
           {user ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {planBadge && (
                 <span className="mono text-[9px] font-bold tracking-widest text-highlight border border-highlight/30 px-2 py-0.5">
                   {planBadge}
@@ -131,7 +131,7 @@ export default function Header() {
           ) : (
             <button
               onClick={() => openAuth("signup")}
-              className="bg-accent text-accent-inv text-sm font-display font-semibold py-2 px-5 no-underline hover:opacity-85 transition-opacity cursor-pointer border-none"
+              className="bg-accent text-accent-inv text-sm font-display font-semibold py-2 px-5 no-underline hover:opacity-85 transition-opacity cursor-pointer border-none whitespace-nowrap shrink-0"
             >
               Get Started
             </button>

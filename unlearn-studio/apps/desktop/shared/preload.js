@@ -15,6 +15,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Platform
   getPlatform: () => ipcRenderer.invoke("app:getPlatform"),
 
+  // Hardware info
+  getHardwareInfo: () => ipcRenderer.invoke("app:hardwareInfo"),
+
+  // Model downloads
+  downloadModel: (url, filename) => ipcRenderer.invoke("model:download", { url, filename }),
+  getDownloads: () => ipcRenderer.invoke("model:getDownloads"),
+
   // Event listeners
   onBackendReady: (callback) => {
     ipcRenderer.on("backend:ready", (_event, info) => callback(info));
@@ -24,5 +31,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
   onUnlearnProgress: (callback) => {
     ipcRenderer.on("unlearn:progress", (_event, data) => callback(data));
+  },
+  onDownloadProgress: (callback) => {
+    ipcRenderer.on("model:download-progress", (_event, data) => callback(data));
   },
 });

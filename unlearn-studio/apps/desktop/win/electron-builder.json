@@ -3,11 +3,23 @@
   "productName": "Remap Studios",
   "copyright": "Copyright © 2026 Remap Studios",
   "directories": {
-    "output": "../../dist/win",
-    "buildResources": "./build"
+    "output": "../dist/win",
+    "buildResources": "../mac/build"
   },
   "files": [
-    "../shared/**/*"
+    "**/*",
+    "!node_modules/.cache/**",
+    "!build-mac.sh",
+    "!../mac/**",
+    "!../win/**",
+    "!../dist/**"
+  ],
+  "extraResources": [
+    {
+      "from": "../backend",
+      "to": "backend",
+      "filter": ["**/*.py", "requirements.txt"]
+    }
   ],
   "win": {
     "target": [
@@ -20,23 +32,20 @@
         "arch": ["x64"]
       }
     ],
-    "icon": "./build/icon.ico",
-    "artifactName": "${productName}-${version}-win-${arch}.${ext}"
+    "icon": "../mac/build/icon.ico",
+    "artifactName": "${productName}-${version}-${arch}.${ext}"
   },
   "nsis": {
     "oneClick": false,
-    "perMachine": false,
-    "allowElevation": true,
     "allowToChangeInstallationDirectory": true,
-    "installerIcon": "./build/icon.ico",
-    "uninstallerIcon": "./build/icon.ico",
-    "installerHeaderIcon": "./build/icon.ico",
+    "installerIcon": "../mac/build/icon.ico",
+    "uninstallerIcon": "../mac/build/icon.ico",
+    "installerHeaderIcon": "../mac/build/icon.ico",
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "Remap Studios",
-    "include": "./installer.nsh"
+    "shortcutName": "Remap Studios"
   },
   "portable": {
-    "artifactName": "${productName}-portable-${version}.${ext}"
+    "artifactName": "${productName}-${version}-portable.${ext}"
   }
 }

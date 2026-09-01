@@ -270,9 +270,13 @@ class HuggingFaceAdapter(ModelAdapter):
         if resolved_path and resolved_path.is_dir():
             safetensors_files = list(resolved_path.glob("*.safetensors"))
             bin_files = list(resolved_path.glob("*.bin"))
+            gguf_files = list(resolved_path.glob("*.gguf"))
             if safetensors_files:
                 model_format = "safetensors"
                 model_size = sum(f.stat().st_size for f in safetensors_files)
+            elif gguf_files:
+                model_format = "gguf"
+                model_size = sum(f.stat().st_size for f in gguf_files)
             elif bin_files:
                 model_format = "pytorch_bin"
                 model_size = sum(f.stat().st_size for f in bin_files)

@@ -11,6 +11,8 @@ const MODELS = [
     accuracy: "99.1%",
     speed: "2.3×",
     status: "Verified",
+    downloadUrl: "https://huggingface.co/meta-llama/Llama-2-7b-chat-hf",
+    downloadLabel: "HuggingFace",
   },
   {
     name: "Mistral 7B",
@@ -20,6 +22,8 @@ const MODELS = [
     accuracy: "98.8%",
     speed: "2.1×",
     status: "Verified",
+    downloadUrl: "https://huggingface.co/mistralai/Mistral-7B-v0.1",
+    downloadLabel: "HuggingFace",
   },
   {
     name: "CodeLlama",
@@ -29,6 +33,8 @@ const MODELS = [
     accuracy: "99.3%",
     speed: "2.5×",
     status: "Verified",
+    downloadUrl: "https://huggingface.co/codellama/CodeLlama-7b-hf",
+    downloadLabel: "HuggingFace",
   },
   {
     name: "Falcon",
@@ -38,6 +44,8 @@ const MODELS = [
     accuracy: "98.5%",
     speed: "1.9×",
     status: "Verified",
+    downloadUrl: "https://huggingface.co/tiiuae/falcon-7b",
+    downloadLabel: "HuggingFace",
   },
   {
     name: "Phi-2",
@@ -47,6 +55,8 @@ const MODELS = [
     accuracy: "99.0%",
     speed: "2.8×",
     status: "Verified",
+    downloadUrl: "https://huggingface.co/microsoft/phi-2",
+    downloadLabel: "HuggingFace",
   },
   {
     name: "Gemma",
@@ -56,6 +66,8 @@ const MODELS = [
     accuracy: "98.9%",
     speed: "2.2×",
     status: "Verified",
+    downloadUrl: "https://huggingface.co/google/gemma-7b",
+    downloadLabel: "HuggingFace",
   },
   {
     name: "Qwen 2",
@@ -65,6 +77,8 @@ const MODELS = [
     accuracy: "98.7%",
     speed: "2.0×",
     status: "Beta",
+    downloadUrl: "https://huggingface.co/Qwen/Qwen2-7B",
+    downloadLabel: "HuggingFace",
   },
   {
     name: "DeepSeek",
@@ -74,6 +88,8 @@ const MODELS = [
     accuracy: "98.6%",
     speed: "2.1×",
     status: "Beta",
+    downloadUrl: "https://huggingface.co/deepseek-ai/DeepSeek-Coder-V2-Lite-Base",
+    downloadLabel: "HuggingFace",
   },
 ];
 
@@ -106,6 +122,22 @@ export default function SupportedModels() {
 
           <p className="mono text-xs text-text-muted mb-3">{model.params}</p>
 
+          {/* Download link */}
+          <a
+            href={model.downloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 mono text-[10px] text-text-subtle hover:text-highlight transition-colors no-underline mb-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download from {model.downloadLabel}
+          </a>
+
           {/* Stats */}
           <div className="grid grid-cols-3 gap-2">
             <div>
@@ -131,11 +163,17 @@ export default function SupportedModels() {
                 Inference speed improves to {model.speed} the original.
               </p>
               <div className="mt-3 flex gap-2">
+                <a
+                  href={model.downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs bg-accent text-accent-inv hover:opacity-85 transition-opacity no-underline px-3 py-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Download {model.name} →
+                </a>
                 <a href="/docs" className="text-xs text-text-muted hover:text-text transition-colors no-underline border border-border px-3 py-1">
                   View benchmark →
-                </a>
-                <a href="/downloads" className="text-xs bg-accent text-accent-inv hover:opacity-85 transition-opacity no-underline px-3 py-1">
-                  Download
                 </a>
               </div>
             </div>

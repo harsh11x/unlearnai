@@ -249,7 +249,7 @@ export default function PricingPage() {
               },
               {
                 q: "What models are supported?",
-                a: "Any HuggingFace-compatible causal language model in .safetensors or .pt format. We support models up to your plan's parameter limit.",
+                a: "Any HuggingFace-compatible causal language model in .safetensors, .pt, .gguf, or .ipynb format. We support models up to your plan's parameter limit.",
               },
               {
                 q: "Is my data private?",

@@ -6,9 +6,9 @@ const STEPS = [
   {
     num: "01",
     title: "Upload Model",
-    desc: "Load any HuggingFace-compatible model in .safetensors or .pt format. The system analyzes architecture, counts parameters, and maps every tensor.",
+    desc: "Load any HuggingFace-compatible model in .safetensors, .pt, .gguf, or .ipynb format. The system analyzes architecture, counts parameters, and maps every tensor.",
     stats: [
-      { label: "Formats", value: "safetensors, .pt, .bin" },
+      { label: "Formats", value: "safetensors, .pt, .bin, .gguf, .ipynb" },
       { label: "Max size", value: "70B parameters" },
       { label: "Parse time", value: "< 5 seconds" },
     ],
@@ -48,7 +48,7 @@ const STEPS = [
     title: "Export & Deploy",
     desc: "Save the modified model in any format. The exported model is smaller, faster, and retains accuracy on non-target capabilities.",
     stats: [
-      { label: "Output formats", value: "safetensors, .pt" },
+      { label: "Output formats", value: "safetensors, .pt, .gguf" },
       { label: "Verification", value: "89 probe evaluation" },
       { label: "Size reduction", value: "35–70%" },
     ],

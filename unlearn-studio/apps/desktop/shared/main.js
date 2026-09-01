@@ -170,13 +170,8 @@ function sendToBackend(method, params = {}, id = null) {
 ipcMain.handle("dialog:openFile", async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     title: "Open Model File",
-    filters: [
-      { name: "Safetensors", extensions: ["safetensors"] },
-      { name: "PyTorch Checkpoint", extensions: ["pt", "pth", "bin"] },
-      { name: "ONNX Model", extensions: ["onnx"] },
-      { name: "JSON Config", extensions: ["json"] },
-      { name: "All Files", extensions: ["*"] },
-    ],
+    // No filters — on macOS the default filter greys out non-matching files.
+    // We accept any file and let the Python backend validate the format.
     properties: ["openFile"],
   });
 
@@ -200,7 +195,14 @@ ipcMain.handle("dialog:openFolder", async () => {
   });
 
   if (result.canceled) return null;
-  return result.filePaths[0];
+  const folderPath = result.filePaths[0];
+  const folderName = path.basename(folderPath);
+  return {
+    path: folderPath,
+    name: folderName,
+    size: 0,
+    isDirectory: true,
+  };
 });
 
 ipcMain.handle("dialog:saveFile", async () => {
@@ -229,6 +231,118 @@ ipcMain.handle("rpc", async (_event, method, params) => {
 ipcMain.handle("app:getPlatform", () => process.platform);
 
 ipcMain.handle("app:isBackendReady", () => backendReady);
+
+// ── Hardware Info ──
+
+ipcMain.handle("app:hardwareInfo", () => {
+  const os = require("os");
+  const totalRAM = Math.round(os.totalmem() / (1024 * 1024 * 1024));
+  const freeRAM = Math.round(os.freemem() / (1024 * 1024 * 1024));
+  const cpus = os.cpus();
+  const platform = process.platform;
+  const arch = process.arch;
+
+  return {
+    platform,
+    arch,
+    totalRAM,
+    freeRAM,
+    cpuCount: cpus.length,
+    cpuModel: cpus.length > 0 ? cpus[0].model : "unknown",
+    cpuSpeed: cpus.length > 0 ? cpus[0].speed : 0,
+    platformName: platform === "darwin" ? "macOS" : platform === "win32" ? "Windows" : "Linux",
+  };
+});
+
+// ── Model Download ──
+
+const https = require("https");
+const http = require("http");
+const { app: appUtil } = require("electron");
+
+const downloadProgress = new Map();
+
+ipcMain.handle("model:download", async (_event, { url, filename }) => {
+  const downloadsDir = path.join(appUtil.getPath("home"), "Downloads", "remap-studio-models");
+  fs.mkdirSync(downloadsDir, { recursive: true });
+
+  const destPath = path.join(downloadsDir, filename);
+  const downloadId = `dl_${Date.now()}`;
+
+  return new Promise((resolve, reject) => {
+    const protocol = url.startsWith("https") ? https : http;
+
+    const makeRequest = (requestUrl, redirectCount = 0) => {
+      if (redirectCount > 5) {
+        reject(new Error("Too many redirects"));
+        return;
+      }
+
+      protocol.get(requestUrl, (response) => {
+        if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+          makeRequest(response.headers.location, redirectCount + 1);
+          return;
+        }
+
+        if (response.statusCode !== 200) {
+          reject(new Error(`HTTP ${response.statusCode}`));
+          return;
+        }
+
+        const totalBytes = parseInt(response.headers["content-length"] || "0", 10);
+        let downloadedBytes = 0;
+        const fileStream = fs.createWriteStream(destPath);
+
+        downloadProgress.set(downloadId, { destPath, totalBytes, downloadedBytes, filename, status: "downloading" });
+
+        response.on("data", (chunk) => {
+          downloadedBytes += chunk.length;
+          const progress = totalBytes > 0 ? (downloadedBytes / totalBytes) * 100 : 0;
+          downloadProgress.set(downloadId, { destPath, totalBytes, downloadedBytes, filename, status: "downloading", progress });
+
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("model:download-progress", {
+              id: downloadId,
+              filename,
+              progress,
+              downloadedBytes,
+              totalBytes,
+            });
+          }
+        });
+
+        response.pipe(fileStream);
+
+        fileStream.on("finish", () => {
+          fileStream.close();
+          downloadProgress.set(downloadId, { destPath, totalBytes, downloadedBytes: totalBytes, filename, status: "completed", progress: 100 });
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("model:download-progress", { id: downloadId, filename, progress: 100, downloadedBytes: totalBytes, totalBytes, status: "completed" });
+          }
+          resolve({ id: downloadId, path: destPath, size: totalBytes });
+        });
+
+        fileStream.on("error", (err) => {
+          fs.unlink(destPath, () => {});
+          reject(err);
+        });
+      }).on("error", (err) => {
+        reject(err);
+      });
+    };
+
+    makeRequest(url);
+  });
+});
+
+ipcMain.handle("model:getDownloads", () => {
+  const downloadsDir = path.join(appUtil.getPath("home"), "Downloads", "remap-studio-models");
+  if (!fs.existsSync(downloadsDir)) return [];
+  return fs.readdirSync(downloadsDir).filter(f => f.endsWith(".gguf") || f.endsWith(".safetensors") || f.endsWith(".bin") || f.endsWith(".pt") || f.endsWith(".pth")).map(f => {
+    const stat = fs.statSync(path.join(downloadsDir, f));
+    return { name: f, size: stat.size, path: path.join(downloadsDir, f), modified: stat.mtime };
+  });
+});
 
 // ── App Lifecycle ──
 
