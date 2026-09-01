@@ -21,7 +21,7 @@ export default function Footer() {
               <a href="/downloads" className="text-text-subtle hover:text-text transition-colors no-underline text-sm py-1">
                 Downloads
               </a>
-              <a href="mailto:hello@remapstudios.ai" className="text-text-subtle hover:text-text transition-colors no-underline text-sm py-1">
+              <a href="mailto:remapstudios@gmail.com" className="text-text-subtle hover:text-text transition-colors no-underline text-sm py-1">
                 Contact
               </a>
             </div>
@@ -56,8 +56,8 @@ export default function Footer() {
               <li><a href="/about" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">About</a></li>
               <li><a href="/about#research" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Research</a></li>
               <li><a href="/careers" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Careers</a></li>
-              <li><a href="mailto:hello@remapstudios.ai" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Contact</a></li>
-              <li><a href="mailto:enterprise@remapstudios.ai" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Enterprise</a></li>
+              <li><a href="mailto:remapstudios@gmail.com" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Contact</a></li>
+              <li><a href="mailto:remapstudios@gmail.com" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Enterprise</a></li>
               <li><a href="/pricing" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Pricing</a></li>
             </ul>
           </div>

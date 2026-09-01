@@ -194,7 +194,7 @@ export default function CareersPage() {
                   </ul>
 
                   <a
-                    href={`mailto:careers@remapstudios.ai?subject=Application: ${role.title}`}
+                    href={`mailto:remapstudios@gmail.com?subject=Application: ${role.title}`}
                     className="btn-primary no-underline inline-flex items-center"
                   >
                     Apply for {role.title} →
@@ -216,7 +216,7 @@ export default function CareersPage() {
           </p>
           <div className="flex flex-wrap justify-center gap-4 mt-8">
             <a
-              href="mailto:careers@remapstudios.ai"
+              href="mailto:remapstudios@gmail.com"
               className="btn-primary no-underline"
             >
               Send Your Resume

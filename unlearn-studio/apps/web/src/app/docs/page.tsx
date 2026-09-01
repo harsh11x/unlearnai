@@ -462,7 +462,7 @@ pip install torch safetensors psutil numpy`}</pre>
               Can&apos;t find what you&apos;re looking for? Reach out through any of these channels:
             </p>
             <div className="flex flex-wrap gap-4">
-              <a href="mailto:support@remapstudios.ai" className="btn-primary no-underline">Email Support</a>
+              <a href="mailto:remapstudios@gmail.com" className="btn-primary no-underline">Email Support</a>
               <a href="/careers" className="btn-outline no-underline">Join the Team</a>
             </div>
           </div>

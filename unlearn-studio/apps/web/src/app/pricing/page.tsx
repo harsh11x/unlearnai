@@ -203,7 +203,7 @@ export default function PricingPage() {
               or volume licensing — let&apos;s talk.
             </p>
             <div className="flex flex-wrap justify-center gap-4 mt-6">
-              <a href="mailto:enterprise@remapstudios.ai" className="btn-primary no-underline">
+              <a href="mailto:remapstudios@gmail.com" className="btn-primary no-underline">
                 Contact Enterprise Sales
               </a>
               <a href="/docs" className="btn-outline no-underline">

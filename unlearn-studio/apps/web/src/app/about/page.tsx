@@ -183,7 +183,7 @@ export default function AboutPage() {
             Have questions, feedback, or want to partner? We&apos;d love to hear from you.
           </p>
           <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <a href="mailto:hello@remapstudios.ai" className="btn-primary no-underline">
+            <a href="mailto:remapstudios@gmail.com" className="btn-primary no-underline">
               Contact Us
             </a>
             <a href="/careers" className="btn-outline no-underline">

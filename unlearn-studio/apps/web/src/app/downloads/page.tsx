@@ -256,7 +256,7 @@ pip3 install torch safetensors psutil numpy`}
               <a href="/docs" className="text-text hover:text-text-muted transition-colors underline">
                 Documentation
               </a>{" "}
-              or contact us at support@remapstudios.ai.
+              or contact us at remapstudios@gmail.com.
             </p>
           </div>
         </div>
