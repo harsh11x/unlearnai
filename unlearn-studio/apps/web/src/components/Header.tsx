@@ -43,27 +43,28 @@ export default function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden lg:flex items-center gap-1 lg:gap-2.5 xl:gap-4 flex-nowrap min-w-0">
-          <a href="/#how-it-works" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1">
+          <a href="/#how-it-works" className="inline-flex items-center text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1 leading-none">
             How it works
           </a>
-          <a href="/#sandbox" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1">
+          <a href="/#sandbox" className="inline-flex items-center text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1 leading-none">
             Sandbox
           </a>
-          <a href="/#architecture" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1">
+          <a href="/#architecture" className="inline-flex items-center text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1 leading-none">
             Architecture
           </a>
-          <a href="/docs" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1">
+          <a href="/docs" className="inline-flex items-center text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1 leading-none">
             Docs
           </a>
 
           {/* Pricing dropdown */}
           <div
-            className="relative"
+            className="relative inline-flex items-center leading-none"
             onMouseEnter={() => setPricingOpen(true)}
             onMouseLeave={() => setPricingOpen(false)}
           >
-            <a href="/pricing" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1">
-              Pricing ▾
+            <a href="/pricing" className="inline-flex items-center text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1 leading-none">
+              Pricing
+              <svg className="ml-0.5 w-3 h-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 5l3 3 3-3" /></svg>
             </a>
 
             {pricingOpen && (
@@ -102,7 +103,7 @@ export default function Header() {
             )}
           </div>
 
-          <a href="/downloads" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1">
+          <a href="/downloads" className="inline-flex items-center text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1 leading-none">
             Download
           </a>
 
