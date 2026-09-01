@@ -252,11 +252,11 @@ pip3 install torch safetensors psutil numpy`}
           {/* Changelog teaser */}
           <div className="mt-12 text-center">
             <p className="body-sm">
-              Looking for release notes? Check the{" "}
-              <a href="https://github.com/harsh11x/unlearnai/releases" className="text-text hover:text-text-muted transition-colors underline">
-                GitHub Releases
+              Need help? Check the{" "}
+              <a href="/docs" className="text-text hover:text-text-muted transition-colors underline">
+                Documentation
               </a>{" "}
-              page for version history and changelogs.
+              or contact us at support@remapstudios.ai.
             </p>
           </div>
         </div>

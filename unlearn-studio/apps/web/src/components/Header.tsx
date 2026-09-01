@@ -75,7 +75,7 @@ export default function Header() {
                     {[
                       { name: "Free", price: "$0", desc: "1 model, CPU only" },
                       { name: "Basic", price: "$20/mo", desc: "5 models, GPU access" },
-                      { name: "Pro", price: "$59/mo", desc: "Unlimited, API access", highlight: true },
+                      { name: "Pro", price: "$59/mo", desc: "Unlimited models, GPU", highlight: true },
                       { name: "Business", price: "$99/mo", desc: "Multi-GPU, SLA" },
                     ].map((plan) => (
                       <a

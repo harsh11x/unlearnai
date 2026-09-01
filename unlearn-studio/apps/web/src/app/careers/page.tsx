@@ -64,11 +64,11 @@ const OPEN_ROLES = [
     location: "Remote",
     type: "Full-time",
     description:
-      "Build and scale the Python backend that powers model loading, unlearning pipelines, and the API. Optimize for performance and reliability.",
+      "Build and scale the Python backend that powers model loading, unlearning pipelines, and the desktop app. Optimize for performance and reliability.",
     requirements: [
       "Strong Python skills, async/concurrency",
       "Experience with PyTorch internals or model serving",
-      "Familiarity with RPC / API design",
+      "Familiarity with Electron IPC or desktop app architecture",
       "Performance optimization mindset",
     ],
   },
@@ -113,7 +113,7 @@ export default function CareersPage() {
               },
               {
                 title: "Research Culture",
-                text: "We publish, we open-source, we share. Your work reaches the broader ML community, not just internal dashboards.",
+                text: "We publish our research and share benchmarks. Your work reaches the broader ML community, not just internal dashboards.",
               },
               {
                 title: "Small Team, Big Vision",

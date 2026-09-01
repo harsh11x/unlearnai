@@ -175,20 +175,19 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Open Source */}
+      {/* Contact */}
       <section className="py-14 sm:py-20 px-4 sm:px-6 bg-surface border-y border-border">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="heading-lg">Open source at heart</h2>
+          <h2 className="heading-lg">Get in touch</h2>
           <p className="body-lg mt-4 max-w-xl mx-auto">
-            The core unlearning engine is open source. We believe in building in public
-            and contributing to the ML community.
+            Have questions, feedback, or want to partner? We&apos;d love to hear from you.
           </p>
           <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <a href="https://github.com/harsh11x/unlearnai" className="btn-outline no-underline" target="_blank" rel="noopener noreferrer">
-              View on GitHub
-            </a>
             <a href="mailto:hello@remapstudios.ai" className="btn-primary no-underline">
-              Get in Touch
+              Contact Us
+            </a>
+            <a href="/careers" className="btn-outline no-underline">
+              View Careers
             </a>
           </div>
         </div>

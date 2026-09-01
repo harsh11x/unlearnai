@@ -18,8 +18,8 @@ export default function Footer() {
               unnecessary knowledge — without losing accuracy.
             </p>
             <div className="flex gap-4">
-              <a href="https://github.com/harsh11x/unlearnai" className="text-text-subtle hover:text-text transition-colors no-underline text-sm py-1" target="_blank" rel="noopener noreferrer">
-                GitHub
+              <a href="/downloads" className="text-text-subtle hover:text-text transition-colors no-underline text-sm py-1">
+                Downloads
               </a>
               <a href="mailto:hello@remapstudios.ai" className="text-text-subtle hover:text-text transition-colors no-underline text-sm py-1">
                 Contact
@@ -44,7 +44,6 @@ export default function Footer() {
             <h4 className="font-display font-semibold text-sm mb-3 text-text">Resources</h4>
             <ul className="space-y-1 list-none">
               <li><a href="/docs" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Documentation</a></li>
-              <li><a href="/docs#api" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">API Reference</a></li>
               <li><a href="/docs#installation" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Installation Guide</a></li>
               <li><a href="/downloads" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Downloads</a></li>
             </ul>

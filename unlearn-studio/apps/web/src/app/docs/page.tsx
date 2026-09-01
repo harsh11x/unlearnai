@@ -31,19 +31,6 @@ export default function DocsPage() {
 # Linux — chmod +x the AppImage and run it`}</pre>
             </div>
 
-            <h3 className="heading-md mb-3 mt-8">Python SDK (CLI)</h3>
-            <p className="body-sm mb-4">
-              For programmatic access or headless unlearning pipelines, install the Python package:
-            </p>
-            <div className="bg-surface border border-border p-5 mb-6">
-              <pre className="mono text-xs text-text-muted leading-relaxed overflow-x-auto">{`pip install remap-studios
-
-# Or install from source
-git clone https://github.com/harsh11x/unlearnai.git
-cd unlearnai
-pip install -e .`}</pre>
-            </div>
-
             <h3 className="heading-md mb-3 mt-8">Dependencies</h3>
             <p className="body-sm mb-4">
               Remap Studios requires Python 3.9+ and PyTorch 2.1+. Install core dependencies:
@@ -396,111 +383,6 @@ pip install torch safetensors psutil numpy`}</pre>
             </div>
           </div>
 
-          {/* ─── REST API ─── */}
-          <div className="mt-16" id="api">
-            <h2 className="heading-lg mb-6 pb-3 border-b border-border">REST API</h2>
-            <p className="body-sm mb-4">
-              The Remap Studios API lets you manage models, run unlearning, and query results programmatically.
-              Available on Pro and Business plans.
-            </p>
-            <div className="bg-surface border border-border p-5 mb-6">
-              <pre className="mono text-xs text-text-muted leading-relaxed overflow-x-auto">{`# Base URL
-https://api.remapstudios.ai/v1
-
-# Authentication
-Authorization: Bearer YOUR_API_KEY
-
-# Load a model
-POST /models/load
-{ "path": "meta-llama/Llama-2-7b-hf" }
-
-# Start unlearning
-POST /unlearn/start
-{
-  "model_id": "model_abc123",
-  "target": "profanity",
-  "method": "retain_aware",
-  "num_steps": 500
-}
-
-# Check progress
-GET /unlearn/{job_id}/progress
-
-# Export result
-POST /models/export
-{ "model_id": "model_abc123", "format": "safetensors" }`}</pre>
-            </div>
-          </div>
-
-          {/* ─── PYTHON SDK ─── */}
-          <div className="mt-16" id="sdk">
-            <h2 className="heading-lg mb-6 pb-3 border-b border-border">Python SDK</h2>
-            <p className="body-sm mb-4">
-              The Python SDK provides full programmatic access to all Remap Studios features:
-            </p>
-            <div className="bg-surface border border-border p-5 mb-6">
-              <pre className="mono text-xs text-text-muted leading-relaxed overflow-x-auto">{`from remap_studios import Model, Unlearner
-
-# Load a model
-model = Model.load("meta-llama/Llama-2-7b-hf")
-print(f"Loaded: {model.name}")
-print(f"Layers: {model.num_layers}")
-print(f"Parameters: {model.num_params:,}")
-
-# Analyze weights
-for layer in model.layers:
-    stats = layer.weight_stats()
-    print(f"{layer.name}: mean={stats.mean:.4f}, std={stats.std:.4f}")
-
-# Run unlearning
-unlearner = Unlearner(model)
-result = unlearner.run(
-    target="profanity",
-    method="retain_aware",
-    num_steps=500,
-    learning_rate=1e-5,
-    retain_weight=2.0,
-)
-
-print(f"Forgotten: {result.forget_loss:.4f}")
-print(f"Retained: {result.retain_loss:.4f}")
-print(f"Params reduced: {result.params_removed:,}")
-
-# Export
-model.save("lean_model.safetensors")`}</pre>
-            </div>
-          </div>
-
-          {/* ─── AUTHENTICATION ─── */}
-          <div className="mt-16" id="auth">
-            <h2 className="heading-lg mb-6 pb-3 border-b border-border">Authentication</h2>
-            <p className="body-sm mb-4">
-              API access requires an API key. Generate keys from your account dashboard.
-            </p>
-            <div className="space-y-4">
-              <div className="border-l-2 border-border pl-4">
-                <h3 className="font-display font-semibold text-sm text-text">API Key</h3>
-                <p className="body-sm mt-1">
-                  Include your key in the Authorization header:{" "}
-                  <code className="mono text-xs bg-surface px-1 py-0.5 border border-border">Authorization: Bearer YOUR_KEY</code>
-                </p>
-              </div>
-              <div className="border-l-2 border-border pl-4">
-                <h3 className="font-display font-semibold text-sm text-text">Rate Limits</h3>
-                <p className="body-sm mt-1">
-                  Pro: 1,000 requests/month. Business: Unlimited. Free tier: API not available.
-                </p>
-              </div>
-              <div className="border-l-2 border-border pl-4">
-                <h3 className="font-display font-semibold text-sm text-text">OAuth (Enterprise)</h3>
-                <p className="body-sm mt-1">
-                  Enterprise customers can use OAuth 2.0 for team-wide access management.
-                  Contact enterprise@remapstudios.ai for setup.
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* ─── DESKTOP APP ─── */}
           <div className="mt-16" id="ide">
             <h2 className="heading-lg mb-6 pb-3 border-b border-border">Desktop App — IDE Overview</h2>
@@ -581,7 +463,6 @@ model.save("lean_model.safetensors")`}</pre>
             </p>
             <div className="flex flex-wrap gap-4">
               <a href="mailto:support@remapstudios.ai" className="btn-primary no-underline">Email Support</a>
-              <a href="https://github.com/harsh11x/unlearnai/issues" className="btn-outline no-underline" target="_blank" rel="noopener noreferrer">GitHub Issues</a>
               <a href="/careers" className="btn-outline no-underline">Join the Team</a>
             </div>
           </div>

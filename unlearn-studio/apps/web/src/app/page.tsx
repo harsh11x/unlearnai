@@ -191,8 +191,7 @@ export default function Home() {
             Ready to make your model leaner?
           </h2>
           <p className="body-lg mt-4 max-w-xl mx-auto">
-            Remap Studios is in early access. Download the desktop app or join
-            the waitlist for API access.
+            Remap Studios is in early access. Download the desktop app to get started.
           </p>
           <CTAButtons />
 
