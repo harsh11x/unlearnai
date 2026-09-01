@@ -6,17 +6,12 @@ export default function Footer() {
           {/* Brand */}
           <div className="sm:col-span-2 md:col-span-2">
             <div className="mb-6">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-text flex items-center justify-center rounded-sm">
-                  <span className="text-bg text-sm font-bold font-display">R</span>
-                </div>
-                <span className="font-display font-bold text-2xl tracking-tight text-text">
-                  remap<span className="text-text-subtle font-normal">studios</span>
-                </span>
+              <div className="flex items-center gap-4 sm:gap-5">
+                <img src="/logo.png" alt="Remap Studios" className="w-16 h-16 sm:w-20 sm:h-20 object-contain" />
+                <h3 className="font-display font-black text-4xl sm:text-5xl tracking-tighter text-text leading-none">
+                  REMAP<br />STUDIOS
+                </h3>
               </div>
-              <h3 className="font-display font-black text-4xl sm:text-5xl tracking-tighter text-text leading-none">
-                REMAP<br />STUDIOS
-              </h3>
             </div>
             <p className="body-sm max-w-sm mb-4">
               Making AI models smaller, faster, and smarter by unlearning
