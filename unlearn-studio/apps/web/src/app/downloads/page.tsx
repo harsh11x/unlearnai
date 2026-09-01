@@ -18,6 +18,7 @@ const PLATFORMS = [
         size: "~94 MB",
         format: "DMG",
         primary: true,
+        comingSoon: false,
       },
       {
         name: "Intel Mac",
@@ -27,6 +28,7 @@ const PLATFORMS = [
         size: "~102 MB",
         format: "DMG",
         primary: false,
+        comingSoon: true,
       },
     ],
   },
@@ -46,6 +48,7 @@ const PLATFORMS = [
         size: "~88 MB",
         format: "EXE Installer",
         primary: true,
+        comingSoon: true,
       },
       {
         name: "Windows x64 Portable",
@@ -55,6 +58,7 @@ const PLATFORMS = [
         size: "~82 MB",
         format: "Portable EXE",
         primary: false,
+        comingSoon: true,
       },
       {
         name: "Windows ARM64",
@@ -64,6 +68,7 @@ const PLATFORMS = [
         size: "~85 MB",
         format: "EXE Installer",
         primary: false,
+        comingSoon: true,
       },
     ],
   },
@@ -83,6 +88,7 @@ const PLATFORMS = [
         size: "~96 MB",
         format: "AppImage",
         primary: true,
+        comingSoon: true,
       },
       {
         name: "Debian / Ubuntu",
@@ -92,6 +98,7 @@ const PLATFORMS = [
         size: "~88 MB",
         format: ".deb",
         primary: false,
+        comingSoon: true,
       },
       {
         name: "Fedora / RHEL",
@@ -101,6 +108,7 @@ const PLATFORMS = [
         size: "~86 MB",
         format: ".rpm",
         primary: false,
+        comingSoon: true,
       },
     ],
   },
@@ -184,16 +192,25 @@ export default function DownloadsPage() {
                         </span>
                       </div>
 
-                      <a
-                        href="#"
-                        className={`block text-center py-2.5 px-5 no-underline font-display font-semibold text-sm transition-all ${
-                          build.primary
-                            ? "bg-accent text-accent-inv hover:opacity-85"
-                            : "border border-border text-text hover:bg-surface hover:border-border-strong"
-                        }`}
-                      >
-                        Download {build.format}
-                      </a>
+                      <div className="flex gap-2">
+                        <a
+                          href="#"
+                          className={`flex-1 block text-center py-2.5 px-5 no-underline font-display font-semibold text-sm transition-all ${
+                            build.primary && !build.comingSoon
+                              ? "bg-accent text-accent-inv hover:opacity-85"
+                              : build.comingSoon
+                              ? "border border-border text-text-subtle cursor-not-allowed"
+                              : "border border-border text-text hover:bg-surface hover:border-border-strong"
+                          }`}
+                        >
+                          {build.comingSoon ? "Coming Soon" : `Download ${build.format}`}
+                        </a>
+                        {build.comingSoon && (
+                          <span className="mono text-[9px] font-bold tracking-widest uppercase text-text-subtle border border-border px-2 py-1 flex items-center">
+                            Soon
+                          </span>
+                        )}
+                      </div>
 
                       {/* File info */}
                       <p className="mono text-[10px] text-text-subtle mt-3 text-center opacity-0 group-hover:opacity-100 transition-opacity">

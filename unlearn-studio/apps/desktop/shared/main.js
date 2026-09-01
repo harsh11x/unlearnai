@@ -23,10 +23,33 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      // Required for Firebase Auth (which checks location.protocol)
+      // Firebase needs http/https, but Electron loads via file:// by default
+      webSecurity: false,
     },
   });
 
-  mainWindow.loadFile(path.join(__dirname, "renderer", "index.html"));
+  // Serve renderer via local HTTP server so Firebase Auth works
+  // (Firebase requires http/https protocol, not file://)
+  const http = require("http");
+  const server = http.createServer((req, res) => {
+    let filePath = path.join(__dirname, "renderer", req.url === "/" ? "index.html" : req.url);
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeTypes = {
+      ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
+      ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml",
+      ".ico": "image/x-icon", ".woff": "font/woff", ".woff2": "font/woff2",
+    };
+    fs.readFile(filePath, (err, data) => {
+      if (err) { res.writeHead(404); res.end(); return; }
+      res.writeHead(200, { "Content-Type": mimeTypes[ext] || "application/octet-stream" });
+      res.end(data);
+    });
+  });
+  server.listen(0, "localhost", () => {
+    const port = server.address().port;
+    mainWindow.loadURL(`http://localhost:${port}/`);
+  });
 
   if (process.env.NODE_ENV === "development") {
     mainWindow.webContents.openDevTools({ mode: "detach" });

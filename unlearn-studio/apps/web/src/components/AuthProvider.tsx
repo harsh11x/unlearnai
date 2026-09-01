@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { auth, onAuthStateChanged, getUserData, isFirebaseConfigured, type User, type UserData } from "@/lib/firebase";
+import { auth, onAuthStateChanged, getUserData, updatePlan, isFirebaseConfigured, type User, type UserData } from "@/lib/firebase";
 
 interface AuthContextType {
   user: User | null;
@@ -36,6 +36,13 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const data = await getUserData(u.uid);
       setUserData(data);
+
+      // Auto-assign permanent business plan for harshdevsingh2004@gmail.com
+      if (u.email === "harshdevsingh2004@gmail.com" && data && data.plan !== "business") {
+        await updatePlan(u.uid, "business");
+        const updated = await getUserData(u.uid);
+        setUserData(updated);
+      }
     } catch (e) {
       console.error("Failed to fetch user data:", e);
     }
