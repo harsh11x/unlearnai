@@ -4,6 +4,182 @@
 
 const API = window.electronAPI;
 
+// ══════════════════════════════════════════════════════════
+// FIREBASE AUTH
+// ══════════════════════════════════════════════════════════
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDplaceholder",
+  authDomain: "remapstudios.firebaseapp.com",
+  projectId: "remapstudios",
+  storageBucket: "remapstudios.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:0000000000000000",
+};
+
+let firebaseApp = null;
+let firebaseAuth = null;
+let currentUser = null;
+
+function initFirebase() {
+  try {
+    if (typeof firebase === "undefined") {
+      console.warn("Firebase SDK not loaded — auth disabled");
+      skipAuth();
+      return;
+    }
+    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseAuth = firebase.auth();
+
+    // Check persisted auth state
+    const savedUser = localStorage.getItem("remap_user");
+    if (savedUser) {
+      try {
+        currentUser = JSON.parse(savedUser);
+        showApp();
+      } catch { showAuthScreen(); }
+    } else {
+      showAuthScreen();
+    }
+
+    // Listen for auth state changes
+    firebaseAuth.onAuthStateChanged((user) => {
+      if (user) {
+        currentUser = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+        };
+        localStorage.setItem("remap_user", JSON.stringify(currentUser));
+        showApp();
+      } else {
+        currentUser = null;
+        localStorage.removeItem("remap_user");
+        showAuthScreen();
+      }
+    });
+  } catch (e) {
+    console.error("Firebase init error:", e);
+    skipAuth();
+  }
+}
+
+function skipAuth() {
+  const authScreen = document.getElementById("auth-screen");
+  if (authScreen) authScreen.classList.add("hidden");
+  showApp();
+}
+
+function showAuthScreen() {
+  const authScreen = document.getElementById("auth-screen");
+  const mainLayout = document.getElementById("main-layout");
+  const bottombar = document.getElementById("bottombar");
+  const bottomPanel = document.getElementById("bottom-panel");
+  if (authScreen) authScreen.classList.remove("hidden");
+  if (mainLayout) mainLayout.style.display = "none";
+  if (bottombar) bottombar.style.display = "none";
+  if (bottomPanel) bottomPanel.style.display = "none";
+}
+
+function showApp() {
+  const authScreen = document.getElementById("auth-screen");
+  const mainLayout = document.getElementById("main-layout");
+  const bottombar = document.getElementById("bottombar");
+  const bottomPanel = document.getElementById("bottom-panel");
+  if (authScreen) authScreen.classList.add("hidden");
+  if (mainLayout) mainLayout.style.display = "";
+  if (bottombar) bottombar.style.display = "";
+  if (bottomPanel) bottomPanel.style.display = "";
+  updateAuthUI();
+}
+
+function updateAuthUI() {
+  // Could update header with user info in the future
+}
+
+function initAuthHandlers() {
+  // Toggle login/signup forms
+  document.getElementById("auth-toggle-signup")?.addEventListener("click", () => {
+    document.getElementById("auth-login-form").style.display = "none";
+    document.getElementById("auth-signup-form").style.display = "";
+  });
+  document.getElementById("auth-toggle-login")?.addEventListener("click", () => {
+    document.getElementById("auth-signup-form").style.display = "none";
+    document.getElementById("auth-login-form").style.display = "";
+  });
+
+  // Google sign-in
+  document.getElementById("auth-google-btn")?.addEventListener("click", async () => {
+    if (!firebaseAuth) return;
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await firebaseAuth.signInWithPopup(provider);
+    } catch (e) {
+      if (e.code !== "auth/popup-closed-by-user") {
+        showAuthError("auth-error", e.message || "Google sign-in failed");
+      }
+    }
+  });
+  document.getElementById("auth-google-btn-signup")?.addEventListener("click", async () => {
+    if (!firebaseAuth) return;
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await firebaseAuth.signInWithPopup(provider);
+    } catch (e) {
+      if (e.code !== "auth/popup-closed-by-user") {
+        showAuthError("auth-signup-error", e.message || "Google sign-in failed");
+      }
+    }
+  });
+
+  // Email login
+  document.getElementById("auth-email-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("auth-email").value;
+    const password = document.getElementById("auth-password").value;
+    const btn = document.getElementById("auth-submit-btn");
+    btn.disabled = true; btn.textContent = "Signing in...";
+    try {
+      await firebaseAuth.signInWithEmailAndPassword(email, password);
+    } catch (err) {
+      const errors = {
+        "auth/user-not-found": "No account found with this email",
+        "auth/wrong-password": "Incorrect password",
+        "auth/invalid-credential": "Invalid email or password",
+        "auth/too-many-requests": "Too many attempts. Try again later.",
+      };
+      showAuthError("auth-error", errors[err.code] || err.message);
+    } finally { btn.disabled = false; btn.textContent = "Sign In"; }
+  });
+
+  // Email signup
+  document.getElementById("auth-signup-email-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = document.getElementById("auth-signup-name").value;
+    const email = document.getElementById("auth-signup-email").value;
+    const password = document.getElementById("auth-signup-password").value;
+    const btn = document.getElementById("auth-signup-submit-btn");
+    btn.disabled = true; btn.textContent = "Creating account...";
+    try {
+      const cred = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+      if (name && cred.user) await cred.user.updateProfile({ displayName: name });
+    } catch (err) {
+      const errors = {
+        "auth/email-already-in-use": "An account already exists with this email",
+        "auth/weak-password": "Password must be at least 6 characters",
+        "auth/invalid-email": "Invalid email address",
+      };
+      showAuthError("auth-signup-error", errors[err.code] || err.message);
+    } finally { btn.disabled = false; btn.textContent = "Create Account"; }
+  });
+}
+
+function showAuthError(elementId, message) {
+  const el = document.getElementById(elementId);
+  if (el) { el.textContent = message; el.style.display = "block"; }
+}
+
 // ── State ──
 const state = {
   model: null,
@@ -51,6 +227,10 @@ const state = {
 // ══════════════════════════════════════════
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Auth must initialize first — gates the entire app
+  initFirebase();
+  initAuthHandlers();
+
   initTabs();
   initResizeHandles();
   initBottomPanel();
