@@ -35,16 +35,14 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2.5 no-underline shrink-0">
-          <div className="w-7 h-7 bg-accent flex items-center justify-center">
-            <span className="text-accent-inv text-xs font-bold font-display">R</span>
-          </div>
+          <img src="/logo.png" alt="Remap Studios" className="w-7 h-7 object-contain" />
           <span className="font-display font-bold text-lg tracking-tight text-text">
             remap<span className="text-text-subtle font-normal">studios</span>
           </span>
         </a>
 
         {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-1 lg:gap-3 xl:gap-5">
+        <nav className="hidden lg:flex items-center gap-1 lg:gap-2.5 xl:gap-4 flex-nowrap min-w-0">
           <a href="/#how-it-works" className="text-sm text-text-muted hover:text-text transition-colors no-underline font-medium whitespace-nowrap px-2 py-1">
             How it works
           </a>

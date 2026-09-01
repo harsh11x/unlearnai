@@ -5,19 +5,24 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8 sm:gap-10">
           {/* Brand */}
           <div className="sm:col-span-2 md:col-span-2">
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-6 h-6 bg-accent flex items-center justify-center">
-                <span className="text-accent-inv text-[10px] font-bold font-display">U</span>
+            <div className="mb-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-text flex items-center justify-center rounded-sm">
+                  <span className="text-bg text-sm font-bold font-display">R</span>
+                </div>
+                <span className="font-display font-bold text-2xl tracking-tight text-text">
+                  remap<span className="text-text-subtle font-normal">studios</span>
+                </span>
               </div>
-              <span className="font-display font-bold text-base tracking-tight text-text">
-                text-remap<span className="text-text-subtle font-normal">studios</span>
-              </span>
+              <h3 className="font-display font-black text-4xl sm:text-5xl tracking-tighter text-text leading-none">
+                REMAP<br />STUDIOS
+              </h3>
             </div>
-            <p className="body-sm max-w-sm">
+            <p className="body-sm max-w-sm mb-4">
               Making AI models smaller, faster, and smarter by unlearning
               unnecessary knowledge — without losing accuracy.
             </p>
-            <div className="flex gap-4 mt-4">
+            <div className="flex gap-4">
               <a href="https://github.com/harsh11x/unlearnai" className="text-text-subtle hover:text-text transition-colors no-underline text-sm py-1" target="_blank" rel="noopener noreferrer">
                 GitHub
               </a>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0a0a0a"/>
+  <!-- Geometric R mark -->
+  <path d="M140 100h180c80 0 140 60 140 140s-60 140-140 140H220v80H140V100z" fill="#ffffff" fill-opacity="0"/>
+  <!-- Top bar -->
+  <path d="M130 100h200l100 120H130z" fill="#ffffff"/>
+  <!-- Vertical left -->
+  <path d="M130 100v240h80V100z" fill="#ffffff"/>
+  <!-- Top right cap -->
+  <path d="M210 100h160l60 80H210z" fill="#ffffff"/>
+  <!-- Bottom curve/r -->
+  <path d="M210 220h100c40 0 70 30 70 70s-30 70-70 70h-40v60h-60V220z" fill="#ffffff"/>
+  <!-- Leg -->
+  <path d="M300 290l80 120h-70l-60-80z" fill="#ffffff"/>
+</svg>

@@ -25,6 +25,11 @@ export const metadata: Metadata = {
   title: "Remap Studios — Make AI Models Smaller, Faster, Smarter",
   description:
     "Remap unnecessary knowledge from AI models. Reduce compute costs, shrink model size, and retrain leaner — without losing accuracy.",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export const viewport: Viewport = {
