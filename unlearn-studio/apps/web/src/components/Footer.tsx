@@ -46,7 +46,7 @@ export default function Footer() {
               <li><a href="/docs" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Documentation</a></li>
               <li><a href="/docs#api" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">API Reference</a></li>
               <li><a href="/docs#installation" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Installation Guide</a></li>
-              <li><a href="https://github.com/harsh11x/unlearnai" className="body-sm no-underline hover:text-text transition-colors inline-block py-1" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+              <li><a href="/downloads" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Downloads</a></li>
             </ul>
           </div>
 
@@ -56,6 +56,7 @@ export default function Footer() {
             <ul className="space-y-1 list-none">
               <li><a href="/about" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">About</a></li>
               <li><a href="/about#research" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Research</a></li>
+              <li><a href="/careers" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Careers</a></li>
               <li><a href="mailto:hello@remapstudios.ai" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Contact</a></li>
               <li><a href="mailto:enterprise@remapstudios.ai" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Enterprise</a></li>
               <li><a href="/pricing" className="body-sm no-underline hover:text-text transition-colors inline-block py-1">Pricing</a></li>
