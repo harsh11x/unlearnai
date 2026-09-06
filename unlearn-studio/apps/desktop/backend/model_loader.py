@@ -1,11 +1,18 @@
 """
 Model Loader — Load models from various formats:
 - .safetensors (single file)
-- .pt / .bin / .pth (PyTorch checkpoints)
+- .pt / .bin / .pth / .ckpt (PyTorch checkpoints)
 - HuggingFace directories (config.json + weights)
 - .onnx (ONNX models — metadata only, no training support)
 - .gguf (GGUF quantized models — metadata + weight extraction)
 - .ipynb (Jupyter notebooks — extract embedded model data)
+- .h5 / .hdf5 (Keras/HDF5 models)
+- .pkl / .pickle / .joblib (Pickle/joblib serialized models)
+- .npy / .npz (NumPy arrays)
+- .pb / .tflite (TensorFlow models)
+- .mlmodel / .mlpackage (CoreML models)
+- .weights / .dat / .model / .caffemodel (generic weight files)
+- .yaml / .yml (model config files)
 """
 
 import os
@@ -44,7 +51,7 @@ class ModelLoader:
 
         if ext == ".safetensors":
             return self._load_safetensors(path)
-        elif ext in (".pt", ".pth", ".bin"):
+        elif ext in (".pt", ".pth", ".bin", ".ckpt"):
             return self._load_pytorch(path)
         elif ext == ".onnx":
             return self._load_onnx(path)
@@ -52,10 +59,23 @@ class ModelLoader:
             return self._load_gguf(path)
         elif ext == ".ipynb":
             return self._load_ipynb(path)
-        elif ext == ".json":
+        elif ext in (".h5", ".hdf5"):
+            return self._load_h5(path)
+        elif ext in (".pkl", ".pickle", ".joblib"):
+            return self._load_pickle(path)
+        elif ext in (".npy", ".npz"):
+            return self._load_numpy(path)
+        elif ext in (".pb", ".tflite"):
+            return self._load_tensorflow(path)
+        elif ext in (".mlmodel", ".mlpackage"):
+            return self._load_coreml(path)
+        elif ext in (".weights", ".dat", ".model", ".caffemodel"):
+            return self._load_generic_weights(path)
+        elif ext in (".json", ".yaml", ".yml"):
             return self._load_config(path)
         else:
-            raise ValueError(f"Unsupported file format: {ext}. Supported: .safetensors, .pt, .pth, .bin, .gguf, .ipynb, .onnx, .json")
+            # Try to load as PyTorch checkpoint (many formats use .bin, .pt, etc.)
+            return self._try_load_as_pytorch(path)
 
     def load_folder(self, path: str) -> Tuple[Optional[torch.nn.Module], dict]:
         """Load a model from a HuggingFace-style directory."""
@@ -66,11 +86,18 @@ class ModelLoader:
         with open(config_path, "r") as f:
             config = json.load(f)
 
-        # Try to find weight files (safetensors, pytorch, gguf)
+        # Try to find weight files (all supported formats)
         weight_files = []
+        _weight_exts = {
+            ".safetensors", ".bin", ".pt", ".pth", ".ckpt",
+            ".gguf", ".onnx", ".h5", ".hdf5",
+            ".pkl", ".pickle", ".joblib",
+            ".npy", ".npz", ".pb", ".tflite",
+            ".weights", ".dat", ".model",
+        }
         for fname in os.listdir(path):
             ext = os.path.splitext(fname)[1].lower()
-            if ext in (".safetensors", ".bin", ".pt", ".pth", ".gguf"):
+            if ext in _weight_exts:
                 weight_files.append(os.path.join(path, fname))
 
         if not weight_files:
@@ -169,21 +196,44 @@ class ModelLoader:
         }
 
         with open(path, "rb") as f:
+            file_size = os.path.getsize(path)
+            if file_size < 24:
+                raise ValueError(f"File too small to be GGUF ({file_size} bytes)")
+
             # Read magic number (4 bytes)
-            magic = struct.unpack("<I", f.read(4))[0]
+            raw = f.read(4)
+            if len(raw) < 4:
+                raise ValueError("File too short to contain GGUF magic")
+            magic = struct.unpack("<I", raw)[0]
             if magic != GGUF_MAGIC:
                 raise ValueError(f"Not a valid GGUF file (magic: 0x{magic:08x})")
 
             # Read version (4 bytes)
-            version = struct.unpack("<I", f.read(4))[0]
+            raw = f.read(4)
+            if len(raw) < 4:
+                raise ValueError("Truncated GGUF header: cannot read version")
+            version = struct.unpack("<I", raw)[0]
             metadata["gguf_version"] = version
 
             # Read tensor count (8 bytes)
-            tensor_count = struct.unpack("<Q", f.read(8))[0]
+            raw = f.read(8)
+            if len(raw) < 8:
+                raise ValueError("Truncated GGUF header: cannot read tensor count")
+            tensor_count = struct.unpack("<Q", raw)[0]
             metadata["tensor_count"] = tensor_count
 
             # Read metadata KV count (8 bytes)
-            kv_count = struct.unpack("<Q", f.read(8))[0]
+            raw = f.read(8)
+            if len(raw) < 8:
+                raise ValueError("Truncated GGUF header: cannot read KV count")
+            kv_count = struct.unpack("<Q", raw)[0]
+
+            # Sanity check: kv_count and tensor_count should be reasonable
+            if kv_count > 100000 or tensor_count > 1000000:
+                raise ValueError(
+                    f"Suspicious GGUF header: {kv_count} KV pairs, {tensor_count} tensors. "
+                    "File may be corrupted or format version unsupported."
+                )
 
             # Parse metadata key-value pairs
             for _ in range(kv_count):
@@ -200,17 +250,37 @@ class ModelLoader:
             if tensor_count > 0 and tensor_count < 100000:
                 # Read tensor name + n_dims + dims + type for each tensor
                 for _ in range(tensor_count):
-                    tensor_name = self._read_gguf_string(f)
-                    n_dims = struct.unpack("<Q", f.read(8))[0]
-                    dims = []
-                    for _ in range(n_dims):
-                        dims.append(struct.unpack("<Q", f.read(8))[0])
-                    tensor_type = struct.unpack("<I", f.read(4))[0]
-                    dtype_name = GGUF_DTYPE_MAP.get(tensor_type, f"unknown_{tensor_type}")
-                    metadata["tensor_info"][tensor_name] = {
-                        "shape": dims,
-                        "dtype": dtype_name,
-                    }
+                    # Check we haven't hit EOF
+                    pos = f.tell()
+                    if pos >= file_size:
+                        break
+                    try:
+                        tensor_name = self._read_gguf_string(f)
+                        raw = f.read(8)
+                        if len(raw) < 8:
+                            break
+                        n_dims = struct.unpack("<Q", raw)[0]
+                        if n_dims > 100:  # sanity check
+                            break
+                        dims = []
+                        for _ in range(n_dims):
+                            raw = f.read(8)
+                            if len(raw) < 8:
+                                break
+                            dims.append(struct.unpack("<Q", raw)[0])
+                        if len(dims) < n_dims:
+                            break
+                        raw = f.read(4)
+                        if len(raw) < 4:
+                            break
+                        tensor_type = struct.unpack("<I", raw)[0]
+                        dtype_name = GGUF_DTYPE_MAP.get(tensor_type, f"unknown_{tensor_type}")
+                        metadata["tensor_info"][tensor_name] = {
+                            "shape": dims,
+                            "dtype": dtype_name,
+                        }
+                    except (struct.error, OSError):
+                        break  # Partial parse is OK — we still have metadata
 
             # Compute total parameters
             total_params = 0
@@ -227,41 +297,59 @@ class ModelLoader:
 
     def _read_gguf_string(self, f) -> str:
         """Read a length-prefixed string from a GGUF file."""
-        length = struct.unpack("<Q", f.read(8))[0]
-        return f.read(length).decode("utf-8", errors="replace")
+        raw = f.read(8)
+        if len(raw) < 8:
+            raise ValueError("Unexpected EOF reading GGUF string length")
+        length = struct.unpack("<Q", raw)[0]
+        if length > 10_000_000:  # sanity: no string should be >10MB
+            raise ValueError(f"GGUF string too long: {length} bytes")
+        data = f.read(length)
+        return data.decode("utf-8", errors="replace")
 
     def _read_gguf_kv_value(self, f, dtype: int):
         """Read a single value based on GGUF dtype."""
-        if dtype == 0:  # uint8
-            return struct.unpack("<B", f.read(1))[0]
-        elif dtype == 1:  # int8
-            return struct.unpack("<b", f.read(1))[0]
-        elif dtype == 2:  # uint16
-            return struct.unpack("<H", f.read(2))[0]
-        elif dtype == 3:  # int16
-            return struct.unpack("<h", f.read(2))[0]
-        elif dtype == 4:  # uint32
-            return struct.unpack("<I", f.read(4))[0]
-        elif dtype == 5:  # int32
-            return struct.unpack("<i", f.read(4))[0]
-        elif dtype == 6:  # float32
-            return struct.unpack("<f", f.read(4))[0]
-        elif dtype == 7:  # bool
-            return struct.unpack("<B", f.read(1))[0] != 0
-        elif dtype == 8:  # string
+        # Map dtype to (struct format, byte count)
+        _dtype_sizes = {
+            0: ("<B", 1),   # uint8
+            1: ("<b", 1),   # int8
+            2: ("<H", 2),   # uint16
+            3: ("<h", 2),   # int16
+            4: ("<I", 4),   # uint32
+            5: ("<i", 4),   # int32
+            6: ("<f", 4),   # float32
+            7: ("<B", 1),   # bool (stored as uint8)
+            10: ("<Q", 8),  # uint64
+            11: ("<q", 8),  # int64
+            12: ("<d", 8),  # float64
+            13: ("<e", 2),  # float16
+        }
+
+        if dtype == 8:  # string
             return self._read_gguf_string(f)
-        elif dtype == 10:  # uint64
-            return struct.unpack("<Q", f.read(8))[0]
-        elif dtype == 11:  # int64
-            return struct.unpack("<q", f.read(8))[0]
-        elif dtype == 12:  # float64
-            return struct.unpack("<d", f.read(8))[0]
-        elif dtype == 13:  # float16
-            return struct.unpack("<e", f.read(2))[0]
         elif dtype == 9:  # array
-            arr_type = struct.unpack("<I", f.read(4))[0]
-            arr_len = struct.unpack("<Q", f.read(8))[0]
+            raw = f.read(4)
+            if len(raw) < 4:
+                raise ValueError("Unexpected EOF reading array element type")
+            arr_type = struct.unpack("<I", raw)[0]
+            raw = f.read(8)
+            if len(raw) < 8:
+                raise ValueError("Unexpected EOF reading array length")
+            arr_len = struct.unpack("<Q", raw)[0]
+            if arr_len > 10_000_000:  # sanity check
+                raise ValueError(f"Array too long: {arr_len}")
             return [self._read_gguf_kv_value(f, arr_type) for _ in range(arr_len)]
+        elif dtype in _dtype_sizes:
+            fmt, size = _dtype_sizes[dtype]
+            raw = f.read(size)
+            if len(raw) < size:
+                raise ValueError(
+                    f"Unexpected EOF reading GGUF value: expected {size} bytes, "
+                    f"got {len(raw)} (dtype={dtype})"
+                )
+            value = struct.unpack(fmt, raw)[0]
+            if dtype == 7:  # bool
+                return value != 0
+            return value
         else:
             raise ValueError(f"Unknown GGUF dtype: {dtype}")
 
@@ -269,7 +357,10 @@ class ModelLoader:
         """Read a single key-value pair from GGUF header."""
         try:
             key = self._read_gguf_string(f)
-            value_type = struct.unpack("<I", f.read(4))[0]
+            raw = f.read(4)
+            if len(raw) < 4:
+                raise ValueError("Unexpected EOF reading KV value type")
+            value_type = struct.unpack("<I", raw)[0]
             value = self._read_gguf_kv_value(f, value_type)
             return key, value
         except Exception:
@@ -381,16 +472,292 @@ class ModelLoader:
         return None, ipynb_metadata
 
     def _load_config(self, path: str) -> Tuple[None, dict]:
-        """Load a JSON config file."""
+        """Load a JSON/YAML config file."""
+        import yaml
         with open(path, "r") as f:
-            config = json.load(f)
+            if path.endswith((".yaml", ".yml")):
+                config = yaml.safe_load(f)
+            else:
+                config = json.load(f)
         return None, {
             "format": "config",
             "path": path,
             "filename": os.path.basename(path),
+            "size_bytes": os.path.getsize(path),
             "config": config,
             "trainable": False,
         }
+
+    def _load_h5(self, path: str) -> Tuple[Optional[dict], dict]:
+        """Load Keras/HDF5 model."""
+        try:
+            import h5py
+            with h5py.File(path, "r") as f:
+                # Extract metadata from HDF5 file structure
+                attrs = dict(f.attrs) if hasattr(f, "attrs") else {}
+                model_config = attrs.get("model_config", None)
+                if isinstance(model_config, str):
+                    try:
+                        model_config = json.loads(model_config)
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+
+                # List weight datasets
+                weight_names = []
+                def _visit(name, obj):
+                    if isinstance(obj, h5py.Dataset):
+                        weight_names.append(name)
+                f.visititems(_visit)
+
+                metadata = {
+                    "format": "h5",
+                    "path": path,
+                    "filename": os.path.basename(path),
+                    "size_bytes": os.path.getsize(path),
+                    "trainable": True,
+                    "weight_count": len(weight_names),
+                    "weight_names": weight_names[:50],
+                    "model_config": model_config,
+                    "attributes": {k: str(v)[:200] for k, v in attrs.items() if k != "model_config"},
+                }
+                return None, metadata
+        except ImportError:
+            return None, {
+                "format": "h5",
+                "path": path,
+                "filename": os.path.basename(path),
+                "size_bytes": os.path.getsize(path),
+                "trainable": False,
+                "error": "h5py not installed. Install with: pip install h5py",
+            }
+        except Exception as e:
+            return None, {
+                "format": "h5",
+                "path": path,
+                "filename": os.path.basename(path),
+                "size_bytes": os.path.getsize(path),
+                "trainable": False,
+                "error": f"Failed to parse H5 file: {e}",
+            }
+
+    def _load_pickle(self, path: str) -> Tuple[Optional[dict], dict]:
+        """Load pickle/joblib serialized model."""
+        try:
+            import pickle
+            with open(path, "rb") as f:
+                data = pickle.load(f)
+
+            metadata = {
+                "format": "pickle",
+                "path": path,
+                "filename": os.path.basename(path),
+                "size_bytes": os.path.getsize(path),
+                "python_type": type(data).__name__,
+                "python_module": type(data).__module__,
+                "trainable": hasattr(data, "fit") or hasattr(data, "parameters"),
+            }
+
+            # If it's a dict with state_dict, treat as model checkpoint
+            if isinstance(data, dict):
+                if "state_dict" in data:
+                    state_dict = data["state_dict"]
+                    metadata.update(self._build_metadata(state_dict, path, "pickle"))
+                    return state_dict, metadata
+                elif "model" in data and isinstance(data["model"], dict):
+                    metadata.update(self._build_metadata(data["model"], path, "pickle"))
+                    return data["model"], metadata
+                metadata["keys"] = list(data.keys())[:20]
+
+            # If it's a torch model
+            if hasattr(data, "state_dict"):
+                state_dict = data.state_dict()
+                metadata.update(self._build_metadata(state_dict, path, "pickle"))
+                return state_dict, metadata
+
+            # If it's a sklearn model
+            if hasattr(data, "get_params"):
+                try:
+                    metadata["sklearn_params"] = str(data.get_params())[:500]
+                except Exception:
+                    pass
+
+            return None, metadata
+        except Exception as e:
+            return None, {
+                "format": "pickle",
+                "path": path,
+                "filename": os.path.basename(path),
+                "size_bytes": os.path.getsize(path),
+                "trainable": False,
+                "error": f"Failed to load pickle file: {e}",
+            }
+
+    def _load_numpy(self, path: str) -> Tuple[Optional[dict], dict]:
+        """Load NumPy array file."""
+        try:
+            import numpy as np
+            if path.endswith(".npz"):
+                data = np.load(path, allow_pickle=True)
+                arrays = {k: data[k] for k in data.files}
+                total_params = sum(a.size for a in arrays.values())
+                total_bytes = sum(a.nbytes for a in arrays.values())
+                metadata = {
+                    "format": "numpy",
+                    "path": path,
+                    "filename": os.path.basename(path),
+                    "size_bytes": os.path.getsize(path),
+                    "trainable": False,
+                    "array_count": len(arrays),
+                    "arrays": {k: {"shape": list(v.shape), "dtype": str(v.dtype)} for k, v in arrays.items()},
+                    "total_params": total_params,
+                    "total_bytes": total_bytes,
+                }
+                # Wrap as state_dict for compatibility
+                state_dict = {k: torch.from_numpy(v) if v.dtype.kind in ("f", "i", "u") else torch.tensor(v) for k, v in arrays.items()}
+                return state_dict, metadata
+            else:
+                arr = np.load(path, allow_pickle=True)
+                metadata = {
+                    "format": "numpy",
+                    "path": path,
+                    "filename": os.path.basename(path),
+                    "size_bytes": os.path.getsize(path),
+                    "trainable": False,
+                    "shape": list(arr.shape),
+                    "dtype": str(arr.dtype),
+                    "total_params": arr.size,
+                    "total_bytes": arr.nbytes,
+                }
+                tensor = torch.from_numpy(arr) if arr.dtype.kind in ("f", "i", "u") else torch.tensor(arr)
+                state_dict = {"array": tensor}
+                return state_dict, metadata
+        except ImportError:
+            return None, {
+                "format": "numpy",
+                "path": path,
+                "filename": os.path.basename(path),
+                "size_bytes": os.path.getsize(path),
+                "trainable": False,
+                "error": "numpy not installed. Install with: pip install numpy",
+            }
+        except Exception as e:
+            return None, {
+                "format": "numpy",
+                "path": path,
+                "filename": os.path.basename(path),
+                "size_bytes": os.path.getsize(path),
+                "trainable": False,
+                "error": f"Failed to load NumPy file: {e}",
+            }
+
+    def _load_tensorflow(self, path: str) -> Tuple[None, dict]:
+        """Load TensorFlow model (metadata only — no training in this app)."""
+        ext = os.path.splitext(path)[1].lower()
+        fmt = "tflite" if ext == ".tflite" else "tensorflow_pb"
+        metadata = {
+            "format": fmt,
+            "path": path,
+            "filename": os.path.basename(path),
+            "size_bytes": os.path.getsize(path),
+            "trainable": False,
+            "error": (
+                f"TensorFlow {fmt} models are read-only in this app. "
+                "Convert to PyTorch/Safetensors first for training and unlearning."
+            ),
+        }
+        # Try to extract some metadata from TFLite flatbuffer
+        if ext == ".tflite":
+            try:
+                with open(path, "rb") as f:
+                    header = f.read(8)
+                    if len(header) >= 4:
+                        metadata["tflite_version"] = header[1] if len(header) > 1 else "unknown"
+            except Exception:
+                pass
+        return None, metadata
+
+    def _load_coreml(self, path: str) -> Tuple[None, dict]:
+        """Load CoreML model (metadata only)."""
+        ext = os.path.splitext(path)[1].lower()
+        metadata = {
+            "format": "coreml",
+            "path": path,
+            "filename": os.path.basename(path),
+            "size_bytes": os.path.getsize(path),
+            "trainable": False,
+            "error": (
+                "CoreML models are read-only in this app. "
+                "Convert to PyTorch/Safetensors first for training and unlearning."
+            ),
+        }
+        # Try to read CoreML protobuf header for model type
+        if ext == ".mlmodel":
+            try:
+                with open(path, "rb") as f:
+                    header = f.read(100)
+                    metadata["file_preview_hex"] = header[:20].hex()
+            except Exception:
+                pass
+        return None, metadata
+
+    def _load_generic_weights(self, path: str) -> Tuple[None, dict]:
+        """Load generic weight file — try to detect format."""
+        size = os.path.getsize(path)
+        metadata = {
+            "format": "unknown_weights",
+            "path": path,
+            "filename": os.path.basename(path),
+            "size_bytes": size,
+            "trainable": False,
+        }
+
+        # Try to detect if it's a PyTorch checkpoint (starts with PK zip)
+        try:
+            with open(path, "rb") as f:
+                header = f.read(10)
+                if header[:2] == b"PK":
+                    # Likely a PyTorch checkpoint (ZIP format)
+                    metadata["error"] = "Appears to be a PyTorch checkpoint. Try renaming to .pt or .pth."
+                    return self._load_pytorch(path)
+                elif header[:4] == b"\x89HDF" or header[:4] == b"\x08\x08\x04\x04":
+                    metadata["error"] = "Appears to be an HDF5 file. Try renaming to .h5 or .hdf5."
+                    return self._load_h5(path)
+                else:
+                    # Check if it's all zeros or random — likely not a real model
+                    if size < 1000:
+                        metadata["error"] = f"File too small ({size} bytes) to be a model."
+                    else:
+                        metadata["error"] = (
+                            f"Unknown weight format ({size:,} bytes). "
+                            "Try renaming with a known extension (.pt, .safetensors, .h5, .gguf, .onnx, .pkl) "
+                            "or place in a HuggingFace-style directory with config.json."
+                        )
+                    return None, metadata
+        except Exception:
+            metadata["error"] = "Could not determine file format."
+            return None, metadata
+
+    def _try_load_as_pytorch(self, path: str) -> Tuple[Optional[dict], dict]:
+        """Try to load an unknown file as a PyTorch checkpoint."""
+        try:
+            return self._load_pytorch(path)
+        except Exception:
+            # Not a valid PyTorch file — provide helpful error
+            ext = os.path.splitext(path)[1].lower()
+            return None, {
+                "format": "unknown",
+                "path": path,
+                "filename": os.path.basename(path),
+                "size_bytes": os.path.getsize(path),
+                "trainable": False,
+                "error": (
+                    f"Could not load '{ext or '(no extension)'}' file. "
+                    "Supported formats: .safetensors, .pt, .pth, .bin, .ckpt, .gguf, .onnx, "
+                    ".h5, .hdf5, .pkl, .pickle, .joblib, .npy, .npz, .pb, .tflite, "
+                    ".mlmodel, .mlpackage, .weights, .dat, .model, .caffemodel, .ipynb, .json, .yaml. "
+                    "Try renaming the file with the correct extension, or place it in a directory with config.json."
+                ),
+            }
 
     def _build_metadata(self, state_dict: dict, path: str, fmt: str) -> dict:
         """Build comprehensive metadata from a state dict."""

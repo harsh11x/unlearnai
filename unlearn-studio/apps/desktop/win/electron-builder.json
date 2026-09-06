@@ -4,12 +4,13 @@
   "copyright": "Copyright © 2026 Remap Studios",
   "directories": {
     "output": "../dist/win",
-    "buildResources": "../mac/build"
+    "buildResources": "../win/build"
   },
   "files": [
     "**/*",
     "!node_modules/.cache/**",
     "!build-mac.sh",
+    "!build-win.sh",
     "!../mac/**",
     "!../win/**",
     "!../dist/**"
@@ -32,18 +33,19 @@
         "arch": ["x64"]
       }
     ],
-    "icon": "../mac/build/icon.ico",
+    "icon": "../win/build/icon.ico",
     "artifactName": "${productName}-${version}-${arch}.${ext}"
   },
   "nsis": {
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,
-    "installerIcon": "../mac/build/icon.ico",
-    "uninstallerIcon": "../mac/build/icon.ico",
-    "installerHeaderIcon": "../mac/build/icon.ico",
+    "installerIcon": "../win/build/icon.ico",
+    "uninstallerIcon": "../win/build/icon.ico",
+    "installerHeaderIcon": "../win/build/icon.ico",
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "Remap Studios"
+    "shortcutName": "Remap Studios",
+    "include": "installer.nsh"
   },
   "portable": {
     "artifactName": "${productName}-${version}-portable.${ext}"

@@ -16,6 +16,13 @@ npm run dev         # Development mode
 npm run build:win   # Production build
 ```
 
+Or use the build script directly:
+
+```bash
+cd shared
+./build-win.sh      # Production build (creates .exe installer + portable)
+```
+
 ## Output
 
 Two builds are generated in `../../dist/win/`:
@@ -57,3 +64,14 @@ Some antivirus software may flag Electron apps. To reduce false positives:
 1. Code sign the executable
 2. Submit the binary to major AV vendors for whitelisting
 3. The NSIS installer format is generally less likely to trigger false positives than the portable exe
+
+## Cross-Compilation (macOS → Windows)
+
+You can build the Windows app from macOS using Wine:
+
+```bash
+cd shared
+./build-win.sh
+```
+
+This requires Wine to be installed on macOS. electron-builder handles the cross-compilation automatically.

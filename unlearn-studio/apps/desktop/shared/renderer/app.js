@@ -4,6 +4,26 @@
 
 const API = window.electronAPI;
 
+// ── Server API ──
+const SERVER_URL = "https://13.204.245.212:3001";
+
+async function serverAPI(endpoint, options = {}) {
+  const user = firebaseAuth?.currentUser;
+  const headers = { "Content-Type": "application/json", ...options.headers };
+  if (user) {
+    const token = await user.getIdToken();
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  try {
+    const res = await fetch(`${SERVER_URL}${endpoint}`, { ...options, headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (e) {
+    console.error(`[ServerAPI] ${endpoint} failed:`, e.message);
+    throw e;
+  }
+}
+
 // ══════════════════════════════════════════
 // AUTH
 // ══════════════════════════════════════════
@@ -21,103 +41,141 @@ let firebaseApp = null;
 let firebaseAuth = null;
 let currentUser = null;
 
-function initFirebase() {
-  try {
-    if (typeof firebase === "undefined") { skipAuth(); return; }
-    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
-    firebaseAuth = firebase.auth();
-
-    // Handle redirect result from Google/Apple sign-in in browser
-    firebaseAuth.getRedirectResult().then((result) => {
-      if (result && result.user) {
-        currentUser = { uid: result.user.uid, email: result.user.email, displayName: result.user.displayName, photoURL: result.user.photoURL };
-        localStorage.setItem("remap_user", JSON.stringify(currentUser));
-        showApp();
-      }
-    }).catch(() => {});
-
-    // Check persisted auth
-    const savedUser = localStorage.getItem("remap_user");
-    if (savedUser) {
-      try { currentUser = JSON.parse(savedUser); showApp(); } catch { showAuthScreen(); }
-    } else { showAuthScreen(); }
-
-    // Listen for auth state changes
-    firebaseAuth.onAuthStateChanged((user) => {
-      if (user) {
-        currentUser = { uid: user.uid, email: user.email, displayName: user.displayName, photoURL: user.photoURL };
-        localStorage.setItem("remap_user", JSON.stringify(currentUser));
-        showApp();
-      } else {
-        currentUser = null;
-        localStorage.removeItem("remap_user");
-        showAuthScreen();
-      }
-    });
-  } catch (e) { skipAuth(); }
-}
-
-function skipAuth() {
-  const el = document.getElementById("auth-screen");
-  if (el) el.classList.add("hidden");
-  showApp();
-}
-
 function showAuthScreen() {
-  const auth = document.getElementById("auth-screen");
+  document.getElementById("auth-screen")?.classList.remove("hidden");
   const main = document.getElementById("main-layout");
   const bar = document.getElementById("bottombar");
   const panel = document.getElementById("bottom-panel");
-  if (auth) auth.classList.remove("hidden");
   if (main) main.style.display = "none";
   if (bar) bar.style.display = "none";
   if (panel) panel.style.display = "none";
 }
 
 function showApp() {
-  const auth = document.getElementById("auth-screen");
+  document.getElementById("auth-screen")?.classList.add("hidden");
   const main = document.getElementById("main-layout");
   const bar = document.getElementById("bottombar");
   const panel = document.getElementById("bottom-panel");
-  if (auth) auth.classList.add("hidden");
   if (main) main.style.display = "";
   if (bar) bar.style.display = "";
   if (panel) panel.style.display = "";
 }
 
+function initFirebase() {
+  if (typeof firebase === "undefined") {
+    console.warn("Firebase SDK not loaded, skipping auth");
+    showApp();
+    return;
+  }
+
+  try {
+    if (!firebaseApp) {
+      firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+    }
+    firebaseAuth = firebase.auth();
+
+    // CRITICAL: setPersistence → getRedirectResult → registerAuthListener
+    // getRedirectResult MUST run BEFORE onAuthStateChanged
+    firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      .then(() => {
+        console.log("[Auth] Persistence set, checking redirect...");
+        return firebaseAuth.getRedirectResult();
+      })
+      .then((result) => {
+        if (result && result.credential) {
+          console.log("[Auth] Redirect sign-in OK:", result.user?.email);
+        } else {
+          console.log("[Auth] No redirect result");
+        }
+        registerAuthListener();
+      })
+      .catch((e) => {
+        console.warn("[Auth] Redirect/persistence error:", e.message);
+        registerAuthListener();
+      });
+  } catch (e) {
+    console.error("[Auth] Firebase init error:", e);
+    showApp();
+  }
+}
+
+function registerAuthListener() {
+  firebaseAuth.onAuthStateChanged((user) => {
+    if (user) {
+      currentUser = {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+      };
+      localStorage.setItem("remap_user", JSON.stringify(currentUser));
+      console.log("[Auth] Signed in:", user.email);
+      showApp();
+      updateSettingsUserInfo();
+      if (user.email === "harshdevsingh2004@gmail.com") {
+        assignBusinessPlan(user.uid);
+      }
+    } else {
+      currentUser = null;
+      localStorage.removeItem("remap_user");
+      console.log("[Auth] No user, showing login");
+      showAuthScreen();
+    }
+  });
+
+  // Safety: show app after 5s if auth never resolves
+  setTimeout(() => {
+    if (!currentUser) {
+      console.warn("[Auth] Timed out, showing app anyway");
+      showApp();
+    }
+  }, 5000);
+}
+
+function assignBusinessPlan(uid) {
+  if (!firebaseAuth) return;
+  firebaseAuth.currentUser?.getIdToken(true).then(() => {
+    fetch(`https://firestore.googleapis.com/v1/projects/${FIREBASE_CONFIG.projectId}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=plan&updateMask.fieldPaths=modelLimit&updateMask.fieldPaths=stepLimit`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: {
+          plan: { stringValue: "business" },
+          modelLimit: { integerValue: 999 },
+          stepLimit: { integerValue: 10000 },
+        },
+      }),
+    }).catch(() => {});
+  }).catch(() => {});
+}
+
 function initAuthHandlers() {
-  // Toggle login/signup
-  document.getElementById("auth-toggle-signup")?.addEventListener("click", () => {
-    document.getElementById("auth-login-form").style.display = "none";
-    document.getElementById("auth-signup-form").style.display = "";
-  });
-  document.getElementById("auth-toggle-login")?.addEventListener("click", () => {
-    document.getElementById("auth-signup-form").style.display = "none";
-    document.getElementById("auth-login-form").style.display = "";
-  });
+  // Logout
+  document.getElementById("settings-logout-btn")?.addEventListener("click", logoutUser);
 
-  // Google sign-in — opens in default browser via redirect
-  const googleHandler = async (errorId) => {
-    if (!firebaseAuth) return;
+  // Google sign-in via Firebase redirect (works in Electron)
+  document.getElementById("auth-google-btn")?.addEventListener("click", async () => {
+    const btn = document.getElementById("auth-google-btn");
+    if (!firebaseAuth) return showAuthErr("auth-error", "Auth not ready");
     try {
+      btn.disabled = true;
+      btn.textContent = "Redirecting to Google...";
       const provider = new firebase.auth.GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: "select_account" });
+      provider.addScope("profile");
+      provider.addScope("email");
       await firebaseAuth.signInWithRedirect(provider);
-    } catch (e) { showAuthErr(errorId, e.message || "Google sign-in failed"); }
-  };
-  document.getElementById("auth-google-btn")?.addEventListener("click", () => googleHandler("auth-error"));
-  document.getElementById("auth-google-btn-signup")?.addEventListener("click", () => googleHandler("auth-signup-error"));
+    } catch (e) {
+      console.error("[Auth] Google sign-in error:", e);
+      showAuthErr("auth-error", e.message || "Google sign-in failed");
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Continue with Google';
+    }
+  });
 
-  // Apple sign-in — opens in default browser via redirect
-  const appleHandler = async (errorId) => {
-    if (!firebaseAuth) return;
-    try {
-      const provider = new firebase.auth.OAuthProvider("apple.com");
-      await firebaseAuth.signInWithRedirect(provider);
-    } catch (e) { showAuthErr(errorId, e.message || "Apple sign-in failed"); }
-  };
-  document.getElementById("auth-apple-btn")?.addEventListener("click", () => appleHandler("auth-error"));
-  document.getElementById("auth-apple-btn-signup")?.addEventListener("click", () => appleHandler("auth-signup-error"));
+  // Apple sign-in (not yet implemented)
+  document.getElementById("auth-apple-btn")?.addEventListener("click", () => {
+    showAuthErr("auth-error", "Apple sign-in is not yet supported");
+  });
 
   // Email login
   document.getElementById("auth-email-form")?.addEventListener("submit", async (e) => {
@@ -126,28 +184,20 @@ function initAuthHandlers() {
     const password = document.getElementById("auth-password").value;
     const btn = document.getElementById("auth-submit-btn");
     btn.disabled = true; btn.textContent = "Signing in...";
-    try { await firebaseAuth.signInWithEmailAndPassword(email, password); }
-    catch (err) {
-      const errors = { "auth/user-not-found": "No account found", "auth/wrong-password": "Incorrect password", "auth/invalid-credential": "Invalid email or password", "auth/too-many-requests": "Too many attempts" };
-      showAuthErr("auth-error", errors[err.code] || err.message);
-    } finally { btn.disabled = false; btn.textContent = "Sign In"; }
-  });
-
-  // Email signup
-  document.getElementById("auth-signup-email-form")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const name = document.getElementById("auth-signup-name").value;
-    const email = document.getElementById("auth-signup-email").value;
-    const password = document.getElementById("auth-signup-password").value;
-    const btn = document.getElementById("auth-signup-submit-btn");
-    btn.disabled = true; btn.textContent = "Creating account...";
     try {
-      const cred = await firebaseAuth.createUserWithEmailAndPassword(email, password);
-      if (name && cred.user) await cred.user.updateProfile({ displayName: name });
+      await firebaseAuth.signInWithEmailAndPassword(email, password);
     } catch (err) {
-      const errors = { "auth/email-already-in-use": "Account already exists", "auth/weak-password": "Password must be 6+ characters", "auth/invalid-email": "Invalid email" };
-      showAuthErr("auth-signup-error", errors[err.code] || err.message);
-    } finally { btn.disabled = false; btn.textContent = "Create Account"; }
+      const errors = {
+        "auth/user-not-found": "No account found",
+        "auth/wrong-password": "Incorrect password",
+        "auth/invalid-credential": "Invalid email or password",
+        "auth/too-many-requests": "Too many attempts",
+        "auth/invalid-email": "Invalid email address",
+      };
+      showAuthErr("auth-error", errors[err.code] || err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = "Sign In";
+    }
   });
 }
 
@@ -216,6 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initWeightExplorer();
   loadPlatform();
   initBackendListeners();
+  checkForUpdates();
   initChatbot();
   initResourceMonitor();
   initModelCatalog();
@@ -254,6 +305,33 @@ function initBackendListeners() {
   API.isBackendReady().then((ready) => {
     if (!ready) log("Waiting for Python backend...", "info");
   });
+}
+
+// ══════════════════════════════════════════
+// AUTO-UPDATE
+// ══════════════════════════════════════════
+
+async function checkForUpdates() {
+  try {
+    const result = await API.checkForUpdates();
+    if (result.updateAvailable) {
+      log(`Update available: v${result.version}`, "info");
+      log(`Download: ${result.downloadUrl}`, "info");
+      if (result.releaseNotes) {
+        log(`Release notes: ${result.releaseNotes}`, "info");
+      }
+      // Show update notification in status bar
+      const statusEl = document.getElementById("status-model");
+      if (statusEl) {
+        statusEl.textContent = `Update: v${result.version}`;
+        statusEl.style.color = "var(--accent)";
+        statusEl.style.cursor = "pointer";
+        statusEl.onclick = () => API.openExternal(result.downloadUrl);
+      }
+    }
+  } catch (e) {
+    // Silent fail — updates are optional
+  }
 }
 
 // ══════════════════════════════════════════
@@ -748,6 +826,248 @@ function initSettingsPanel() {
   document.getElementById("about-overlay")?.addEventListener("click", (e) => {
     if (e.target.id === "about-overlay") toggleModal("about-overlay");
   });
+
+  // Settings navigation
+  document.querySelectorAll(".settings-nav-item").forEach(item => {
+    item.addEventListener("click", () => {
+      document.querySelectorAll(".settings-nav-item").forEach(i => i.classList.remove("active"));
+      document.querySelectorAll(".settings-section-page").forEach(s => s.classList.remove("active"));
+      item.classList.add("active");
+      const sectionId = `settings-section-${item.dataset.settingsSection}`;
+      document.getElementById(sectionId)?.classList.add("active");
+    });
+  });
+
+  // Initialize settings user info
+  updateSettingsUserInfo();
+}
+
+function updateSettingsUserInfo() {
+  const nameEl = document.getElementById("settings-user-name");
+  const emailEl = document.getElementById("settings-user-email");
+  const avatarEl = document.getElementById("settings-user-avatar");
+  const planEl = document.getElementById("settings-user-plan");
+
+  if (currentUser) {
+    if (nameEl) nameEl.textContent = currentUser.displayName || currentUser.email?.split("@")[0] || "User";
+    if (emailEl) emailEl.textContent = currentUser.email || "";
+    if (avatarEl) {
+      if (currentUser.photoURL) {
+        avatarEl.innerHTML = `<img src="${currentUser.photoURL}" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover" />`;
+      } else {
+        const initials = (currentUser.displayName || currentUser.email || "U").charAt(0).toUpperCase();
+        avatarEl.innerHTML = `<span style="font-size:20px;font-weight:700;color:var(--bg)">${initials}</span>`;
+      }
+    }
+    // Fetch subscription info from server
+    loadSubscriptionInfo();
+  } else {
+    if (nameEl) nameEl.textContent = "Not signed in";
+    if (emailEl) emailEl.textContent = "";
+    if (planEl) planEl.textContent = "—";
+  }
+}
+
+// ══════════════════════════════════════════
+// SUBSCRIPTION MANAGEMENT
+// ══════════════════════════════════════════
+
+let currentSubscription = null;
+
+async function loadSubscriptionInfo() {
+  try {
+    const data = await serverAPI("/api/subscription");
+    currentSubscription = data;
+    updateSubscriptionUI(data);
+  } catch (e) {
+    console.warn("[Subscription] Failed to load:", e.message);
+  }
+}
+
+function updateSubscriptionUI(sub) {
+  const planEl = document.getElementById("settings-user-plan");
+  const planNameEl = document.getElementById("settings-plan-name");
+  const featuresEl = document.getElementById("settings-plan-features");
+  const upgradeProBtn = document.getElementById("btn-upgrade-pro");
+  const upgradeBizBtn = document.getElementById("btn-upgrade-business");
+  const cancelBtn = document.getElementById("btn-cancel-subscription");
+  const billingInfo = document.getElementById("settings-subscription-info");
+  const billingDate = document.getElementById("settings-billing-date");
+  const billingAmount = document.getElementById("settings-billing-amount");
+
+  const plan = sub.plan || "free";
+  const planNames = { free: "Free Plan", pro: "Pro Plan", business: "Business Plan" };
+  const planPrices = { free: "", pro: "₹999/month", business: "₹2,999/month" };
+
+  // Update badge
+  if (planEl) {
+    planEl.textContent = planNames[plan] || "Free Plan";
+    planEl.style.background = plan === "free" ? "var(--bg-secondary)" : plan === "pro" ? "var(--accent)" : "#8b5cf6";
+    planEl.style.color = plan === "free" ? "var(--text-secondary)" : "white";
+  }
+
+  // Update plan name
+  if (planNameEl) planNameEl.textContent = planNames[plan] || "Free Plan";
+
+  // Update features list
+  if (featuresEl && sub.features) {
+    featuresEl.innerHTML = sub.features.map((f, i) => {
+      const locked = i >= (plan === "free" ? 2 : sub.features.length);
+      return `<div class="settings-plan-feature ${locked ? "locked" : ""}">
+        <span class="settings-plan-feature-icon">${locked ? "✗" : "✓"}</span>
+        <span>${f}</span>
+      </div>`;
+    }).join("");
+  }
+
+  // Show/hide upgrade buttons based on current plan
+  if (upgradeProBtn) {
+    upgradeProBtn.style.display = plan === "free" ? "" : "none";
+  }
+  if (upgradeBizBtn) {
+    upgradeBizBtn.style.display = plan === "pro" ? "" : "none";
+  }
+
+  // Show/hide cancel button
+  if (cancelBtn) {
+    cancelBtn.style.display = plan === "free" ? "none" : "";
+  }
+
+  // Show billing info for paid plans
+  if (billingInfo && plan !== "free") {
+    billingInfo.style.display = "";
+    if (billingDate && sub.currentPeriodEnd) {
+      billingDate.textContent = new Date(sub.currentPeriodEnd).toLocaleDateString("en-IN", {
+        year: "numeric", month: "long", day: "numeric",
+      });
+    }
+    if (billingAmount) {
+      billingAmount.textContent = planPrices[plan] || "—";
+    }
+  } else if (billingInfo) {
+    billingInfo.style.display = "none";
+  }
+}
+
+// Global functions for HTML onclick
+window.openUpgrade = async function(planKey) {
+  try {
+    log(`Starting ${planKey} subscription...`, "info");
+    const data = await serverAPI("/api/subscription/create", {
+      method: "POST",
+      body: JSON.stringify({ plan: planKey }),
+    });
+
+    if (data.error) throw new Error(data.error);
+
+    // Open Razorpay checkout in system browser
+    // The user will complete payment there, and webhooks will update the subscription
+    const options = {
+      subscription_id: data.subscriptionId,
+      key: data.razorpayKeyId,
+      amount: data.amount,
+      currency: data.currency,
+      name: "Remap Studios",
+      description: `${planKey === "pro" ? "Pro" : "Business"} Plan — Monthly Subscription`,
+      handler: function(response) {
+        log("Payment successful! Subscription activated.", "success");
+        loadSubscriptionInfo();
+      },
+      prefill: {
+        email: currentUser?.email || "",
+        name: currentUser?.displayName || "",
+      },
+      theme: {
+        color: "#6366f1",
+      },
+      modal: {
+        ondismiss: function() {
+          log("Payment cancelled", "warning");
+        },
+      },
+    };
+
+    // Try to use Razorpay checkout
+    if (typeof Razorpay !== "undefined") {
+      const rzp = new Razorpay(options);
+      rzp.open();
+    } else {
+      // Fallback: open Razorpay hosted checkout page
+      log("Opening payment page...", "info");
+      // Create a form and submit to Razorpay
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `https://api.razorpay.com/v1/checkout/embedded`;
+      form.target = "_blank";
+
+      const fields = {
+        subscription_id: data.subscriptionId,
+        key_id: data.razorpayKeyId,
+        amount: data.amount,
+        currency: data.currency,
+        name: "Remap Studios",
+        description: `${planKey === "pro" ? "Pro" : "Business"} Plan`,
+        handler: window.location.origin + "/payment-success",
+      };
+
+      for (const [k, v] of Object.entries(fields)) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = k;
+        input.value = v;
+        form.appendChild(input);
+      }
+
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+    }
+  } catch (e) {
+    log(`Subscription error: ${e.message}`, "error");
+  }
+};
+
+window.cancelSubscription = async function() {
+  if (!confirm("Are you sure you want to cancel? Your subscription will remain active until the end of the billing period.")) {
+    return;
+  }
+
+  try {
+    const result = await serverAPI("/api/subscription/cancel", {
+      method: "POST",
+    });
+    log(result.message || "Subscription cancelled", "info");
+    loadSubscriptionInfo();
+  } catch (e) {
+    log(`Cancel error: ${e.message}`, "error");
+  }
+};
+
+function logoutUser() {
+  if (!firebaseAuth) return;
+  const confirmBtn = document.getElementById("settings-logout-btn");
+  if (confirmBtn) {
+    confirmBtn.textContent = "Signing out...";
+    confirmBtn.disabled = true;
+  }
+  firebaseAuth.signOut()
+    .then(() => {
+      console.log("Auth: user signed out");
+      currentUser = null;
+      localStorage.removeItem("remap_user");
+      showAuthScreen();
+      if (confirmBtn) {
+        confirmBtn.textContent = "Sign Out";
+        confirmBtn.disabled = false;
+      }
+    })
+    .catch((e) => {
+      console.error("Sign out error:", e);
+      if (confirmBtn) {
+        confirmBtn.textContent = "Sign Out";
+        confirmBtn.disabled = false;
+      }
+    });
 }
 
 // ══════════════════════════════════════════
@@ -940,17 +1260,34 @@ async function loadModel(filePath, fileName, fileSize) {
 
     state.model = { path: filePath, name: fileName, size: fileSize, metadata: result };
 
-    const layersResult = await API.rpc("model_layers");
-    if (layersResult.error) throw new Error(layersResult.error);
-    state.layers = Array.isArray(layersResult.layers) ? layersResult.layers : [];
+    // Initialize with empty arrays in case any of these fail (e.g. GGUF models)
+    state.layers = [];
+    state.tensors = [];
+    state.modelSummary = {};
 
-    const tensorsResult = await API.rpc("weight_list");
-    if (tensorsResult.error) throw new Error(tensorsResult.error);
-    state.tensors = Array.isArray(tensorsResult.tensors) ? tensorsResult.tensors : [];
+    // Try to get layers — may fail for GGUF where current_model is null
+    try {
+      const layersResult = await API.rpc("model_layers");
+      if (layersResult && !layersResult.error) {
+        state.layers = Array.isArray(layersResult.layers) ? layersResult.layers : [];
+      }
+    } catch (e) { log(`Layers not available: ${e.message}`, "warning"); }
 
-    const summaryResult = await API.rpc("model_summary");
-    if (summaryResult.error) throw new Error(summaryResult.error);
-    state.modelSummary = summaryResult;
+    // Try to get tensors — may fail for GGUF
+    try {
+      const tensorsResult = await API.rpc("weight_list");
+      if (tensorsResult && !tensorsResult.error) {
+        state.tensors = Array.isArray(tensorsResult.tensors) ? tensorsResult.tensors : [];
+      }
+    } catch (e) { log(`Tensors not available: ${e.message}`, "warning"); }
+
+    // Try to get summary — may fail for GGUF
+    try {
+      const summaryResult = await API.rpc("model_summary");
+      if (summaryResult && !summaryResult.error) {
+        state.modelSummary = summaryResult;
+      }
+    } catch (e) { log(`Summary not available: ${e.message}`, "warning"); }
 
     updateBreadcrumb();
     updateStatusBar();
@@ -965,11 +1302,20 @@ async function loadModel(filePath, fileName, fileSize) {
     if (sidebarEmpty) { sidebarEmpty.style.display = "none"; sidebarEmpty.classList.add("hidden"); }
 
     log(`Loaded ${fileName}`, "success");
-    log(`${state.layers.length} layers · ${state.tensors.length} tensors · ${summaryResult.format_params} params`);
+    log(`${state.layers.length} layers · ${state.tensors.length} tensors`);
     log(`Format: ${result.format} | Size: ${formatBytes(result.size_bytes)}`);
+
+    // Show GGUF-specific info
+    if (result.format === "gguf" && result.error) {
+      log(result.error, "warning");
+    }
 
   } catch (e) {
     log(`Error loading model: ${e.message}`, "error");
+    // Still set empty arrays so nothing crashes
+    state.layers = state.layers || [];
+    state.tensors = state.tensors || [];
+    state.modelSummary = state.modelSummary || {};
     const overlayEl = document.getElementById("canvas-overlay");
     if (overlayEl) {
       overlayEl.classList.remove("hidden");

@@ -22,6 +22,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   downloadModel: (url, filename) => ipcRenderer.invoke("model:download", { url, filename }),
   getDownloads: () => ipcRenderer.invoke("model:getDownloads"),
 
+  // Auto-update
+  checkForUpdates: () => ipcRenderer.invoke("app:checkUpdates"),
+  getAppVersion: () => ipcRenderer.invoke("app:version"),
+  openExternal: (url) => ipcRenderer.invoke("app:openExternal", url),
+
   // Event listeners
   onBackendReady: (callback) => {
     ipcRenderer.on("backend:ready", (_event, info) => callback(info));

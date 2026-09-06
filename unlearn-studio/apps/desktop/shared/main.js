@@ -1,9 +1,10 @@
-const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 
 let mainWindow;
+let httpPort = 0;
 let pythonProcess = null;
 let rpcId = 0;
 let rpcCallbacks = new Map();
@@ -27,13 +28,21 @@ function createWindow() {
       // Firebase needs http/https, but Electron loads via file:// by default
       webSecurity: false,
     },
+  });  // Block all window.open from renderer — auth is handled via IPC now
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    require("electron").shell.openExternal(url);
+    return { action: "deny" };
   });
 
   // Serve renderer via local HTTP server so Firebase Auth works
   // (Firebase requires http/https protocol, not file://)
-  const http = require("http");
-  const server = http.createServer((req, res) => {
-    let filePath = path.join(__dirname, "renderer", req.url === "/" ? "index.html" : req.url);
+  const httpModule = require("http");
+  const server = httpModule.createServer(async (req, res) => {
+    const parsedUrl = new URL(req.url, `http://localhost`);
+    const urlPath = parsedUrl.pathname;
+
+    // ── Static file serving ──
+    const filePath = path.join(__dirname, "renderer", urlPath === "/" ? "index.html" : urlPath);
     const ext = path.extname(filePath).toLowerCase();
     const mimeTypes = {
       ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
@@ -41,19 +50,23 @@ function createWindow() {
       ".ico": "image/x-icon", ".woff": "font/woff", ".woff2": "font/woff2",
     };
     fs.readFile(filePath, (err, data) => {
-      if (err) { res.writeHead(404); res.end(); return; }
+      if (err) {
+        const indexPath = path.join(__dirname, "renderer", "index.html");
+        fs.readFile(indexPath, (err2, indexData) => {
+          if (err2) { res.writeHead(404); res.end(); return; }
+          res.writeHead(200, { "Content-Type": "text/html" });
+          res.end(indexData);
+        });
+        return;
+      }
       res.writeHead(200, { "Content-Type": mimeTypes[ext] || "application/octet-stream" });
       res.end(data);
     });
   });
   server.listen(0, "localhost", () => {
-    const port = server.address().port;
-    mainWindow.loadURL(`http://localhost:${port}/`);
+    httpPort = server.address().port;
+    mainWindow.loadURL(`http://localhost:${httpPort}/`);
   });
-
-  if (process.env.NODE_ENV === "development") {
-    mainWindow.webContents.openDevTools({ mode: "detach" });
-  }
 
   // Start Python backend
   startPythonBackend();
@@ -115,11 +128,17 @@ function startPythonBackend() {
     console.log(`Python backend exited with code ${code}`);
     backendReady = false;
     pythonProcess = null;
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("backend:log", `[error] Python backend exited with code ${code}. Check that Python 3 and required packages (torch, safetensors, psutil) are installed.`);
+    }
   });
 
   pythonProcess.on("error", (err) => {
     console.error("Failed to start Python backend:", err.message);
     backendReady = false;
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("backend:log", `[error] Failed to start Python backend: ${err.message}. Install Python 3 and run: pip install torch safetensors psutil h5py pyyaml`);
+    }
   });
 }
 
@@ -193,8 +212,25 @@ function sendToBackend(method, params = {}, id = null) {
 ipcMain.handle("dialog:openFile", async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     title: "Open Model File",
-    // No filters — on macOS the default filter greys out non-matching files.
-    // We accept any file and let the Python backend validate the format.
+    filters: [
+      { name: "All Model Files", extensions: [
+        "safetensors", "pt", "pth", "bin", "ckpt",
+        "gguf", "onnx", "h5", "hdf5", "pb", "tflite",
+        "pkl", "pickle", "joblib", "npy", "npz",
+        "ipynb", "json", "yaml", "yml",
+        "mlmodel", "mlpackage", "weights", "dat",
+        "model", "caffemodel",
+      ]},
+      { name: "Safetensors", extensions: ["safetensors"] },
+      { name: "PyTorch", extensions: ["pt", "pth", "bin", "ckpt"] },
+      { name: "GGUF", extensions: ["gguf"] },
+      { name: "ONNX", extensions: ["onnx"] },
+      { name: "HDF5 / Keras", extensions: ["h5", "hdf5"] },
+      { name: "TensorFlow", extensions: ["pb", "tflite"] },
+      { name: "Pickle / Joblib", extensions: ["pkl", "pickle", "joblib"] },
+      { name: "NumPy", extensions: ["npy", "npz"] },
+      { name: "All Files", extensions: ["*"] },
+    ],
     properties: ["openFile"],
   });
 
@@ -254,6 +290,39 @@ ipcMain.handle("rpc", async (_event, method, params) => {
 ipcMain.handle("app:getPlatform", () => process.platform);
 
 ipcMain.handle("app:isBackendReady", () => backendReady);
+
+// ── App Version ──
+ipcMain.handle("app:version", () => app.getVersion());
+
+// ── Open External URL ──
+ipcMain.handle("app:openExternal", (_event, url) => {
+  shell.openExternal(url);
+});
+
+// ── Auto-Update Check ──
+ipcMain.handle("app:checkUpdates", async () => {
+  const httpModule = require("http");
+  const updateUrl = `http://13.204.245.212:3001/api/update/check?version=${app.getVersion()}&platform=${process.platform}&arch=${process.arch}`;
+
+  return new Promise((resolve) => {
+    const req = httpModule.get(updateUrl, { rejectUnauthorized: false }, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (e) {
+          resolve({ updateAvailable: false });
+        }
+      });
+    });
+    req.on("error", () => resolve({ updateAvailable: false }));
+    req.setTimeout(5000, () => {
+      req.destroy();
+      resolve({ updateAvailable: false });
+    });
+  });
+});
 
 // ── Hardware Info ──
 
@@ -361,7 +430,8 @@ ipcMain.handle("model:download", async (_event, { url, filename }) => {
 ipcMain.handle("model:getDownloads", () => {
   const downloadsDir = path.join(appUtil.getPath("home"), "Downloads", "remap-studio-models");
   if (!fs.existsSync(downloadsDir)) return [];
-  return fs.readdirSync(downloadsDir).filter(f => f.endsWith(".gguf") || f.endsWith(".safetensors") || f.endsWith(".bin") || f.endsWith(".pt") || f.endsWith(".pth")).map(f => {
+  const _modelExts = [".gguf", ".safetensors", ".bin", ".pt", ".pth", ".ckpt", ".onnx", ".h5", ".hdf5", ".pkl", ".npy", ".npz", ".pb", ".tflite"];
+  return fs.readdirSync(downloadsDir).filter(f => _modelExts.some(ext => f.endsWith(ext))).map(f => {
     const stat = fs.statSync(path.join(downloadsDir, f));
     return { name: f, size: stat.size, path: path.join(downloadsDir, f), modified: stat.mtime };
   });
