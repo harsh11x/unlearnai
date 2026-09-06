@@ -35,6 +35,7 @@ nano .env
 | `/api/subscription` | GET | Yes | Current user's subscription |
 | `/api/subscription/create` | POST | Yes | Create Razorpay subscription |
 | `/api/subscription/cancel` | POST | Yes | Cancel subscription |
+| `/api/subscription/sync` | POST | Yes | Sync subscription status from Razorpay (polling fallback) |
 | `/api/payments` | GET | Yes | Payment history |
 | `/api/webhooks/razorpay` | POST | No | Razorpay webhook handler |
 | `/api/user/profile` | GET | Yes | User profile |

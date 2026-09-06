@@ -295,7 +295,7 @@ app.post("/api/subscription/create", authMiddleware, async (req, res) => {
         .limit(1)
         .maybeSingle();
 
-      customerId = existingSub?.razorpay_customer_id;
+      customerId = existingSub && existingSub.razorpay_customer_id;
     }
 
     if (!customerId) {
@@ -378,7 +378,7 @@ app.post("/api/subscription/cancel", authMiddleware, async (req, res) => {
         .limit(1)
         .maybeSingle();
 
-      rpSubId = data?.razorpay_subscription_id;
+      rpSubId = data && data.razorpay_subscription_id;
     }
 
     if (!rpSubId) {
@@ -404,6 +404,72 @@ app.post("/api/subscription/cancel", authMiddleware, async (req, res) => {
   } catch (e) {
     console.error("Cancel subscription error:", e.message);
     res.status(500).json({ error: "Failed to cancel subscription" });
+  }
+});
+
+// Sync subscription status from Razorpay (polling fallback — replaces webhooks when no domain)
+app.post("/api/subscription/sync", authMiddleware, async (req, res) => {
+  const rp = getRazorpay();
+  const db = getSupabase();
+
+  if (!rp || !db) {
+    return res.json({ synced: false, reason: "payment or database not configured" });
+  }
+
+  try {
+    // Get subscription from DB
+    const { data: sub } = await db
+      .from("subscriptions")
+      .select("*")
+      .eq("uid", req.user.uid)
+      .in("status", ["active", "past_due"])
+      .limit(1)
+      .maybeSingle();
+
+    if (!sub || !sub.razorpay_subscription_id) {
+      return res.json({ synced: true, plan: "free" });
+    }
+
+    // Fetch latest status from Razorpay
+    const rpSub = await rp.subscriptions.fetch(sub.razorpay_subscription_id);
+
+    // Map Razorpay status to our status
+    let status = rpSub.status; // active, pending, halted, cancelled, completed, expired
+    if (status === "halted") status = "past_due";
+    if (status === "completed" || status === "expired") status = "cancelled";
+
+    // Update DB
+    await db
+      .from("subscriptions")
+      .update({
+        status,
+        current_period_start: new Date(rpSub.current_start * 1000).toISOString(),
+        current_period_end: new Date(rpSub.current_end * 1000).toISOString(),
+        cancel_at_period_end: rpSub.cancel_at_cycle_end || false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("razorpay_subscription_id", sub.razorpay_subscription_id);
+
+    // If cancelled/expired, downgrade user to free
+    if (status === "cancelled") {
+      await db
+        .from("users")
+        .update({ plan: "free", updated_at: new Date().toISOString() })
+        .eq("uid", req.user.uid);
+    }
+
+    const planDetails = PLANS[sub.plan] || PLANS.free;
+    res.json({
+      synced: true,
+      plan: sub.plan,
+      status,
+      currentPeriodEnd: new Date(rpSub.current_end * 1000).toISOString(),
+      cancelAtPeriodEnd: rpSub.cancel_at_cycle_end || false,
+      ...planDetails,
+    });
+  } catch (e) {
+    console.error("Sync subscription error:", e.message);
+    res.status(500).json({ error: "Failed to sync subscription" });
   }
 });
 
@@ -461,7 +527,9 @@ app.post("/api/webhooks/razorpay", async (req, res) => {
     return res.status(400).json({ error: "Invalid JSON" });
   }
 
-  console.log(`[Webhook] ${event.event} — ${event.payload?.payment?.entity?.id || event.payload?.subscription?.entity?.id || "unknown"}`);
+  const payId = event.payload && event.payload.payment && event.payload.payment.entity && event.payload.payment.entity.id;
+  const subId = event.payload && event.payload.subscription && event.payload.subscription.entity && event.payload.subscription.entity.id;
+  console.log('[Webhook] ' + event.event + ' — ' + (payId || subId || 'unknown'));
 
   // Log event
   if (db) {
@@ -482,7 +550,7 @@ app.post("/api/webhooks/razorpay", async (req, res) => {
     switch (event.event) {
       case "subscription.activated":
       case "subscription.pending":
-        await handleSubscriptionActivated(event.payload.subscription?.entity, db);
+        await handleSubscriptionActivated(event.payload.subscription && event.payload.subscription.entity, db);
         break;
 
       case "subscription.charged":
@@ -491,15 +559,15 @@ app.post("/api/webhooks/razorpay", async (req, res) => {
 
       case "subscription.cancelled":
       case "subscription.completed":
-        await handleSubscriptionCancelled(event.payload.subscription?.entity, db);
+        await handleSubscriptionCancelled(event.payload.subscription && event.payload.subscription.entity, db);
         break;
 
       case "subscription.paused":
-        await handleSubscriptionPaused(event.payload.subscription?.entity, db);
+        await handleSubscriptionPaused(event.payload.subscription && event.payload.subscription.entity, db);
         break;
 
       case "payment.failed":
-        await handlePaymentFailed(event.payload.payment?.entity, db);
+        await handlePaymentFailed(event.payload.payment && event.payload.payment.entity, db);
         break;
     }
 
@@ -521,7 +589,7 @@ app.post("/api/webhooks/razorpay", async (req, res) => {
 async function handleSubscriptionActivated(subscription, db) {
   if (!subscription || !db) return;
 
-  const uid = subscription.notes?.uid;
+  const uid = subscription.notes && subscription.notes.uid;
   if (!uid) return;
 
   await db
@@ -540,10 +608,10 @@ async function handleSubscriptionActivated(subscription, db) {
 async function handleSubscriptionCharged(payload, db) {
   if (!db) return;
 
-  const subscription = payload.subscription?.entity;
-  const payment = payload.payment?.entity;
+  const subscription = payload.subscription && payload.subscription.entity;
+  const payment = payload.payment && payload.payment.entity;
 
-  if (payment && payment.notes?.uid) {
+  if (payment && payment.notes && payment.notes.uid) {
     // Record payment
     await db.from("payments").insert({
       uid: payment.notes.uid,
@@ -570,13 +638,13 @@ async function handleSubscriptionCharged(payload, db) {
       .eq("razorpay_subscription_id", subscription.id);
   }
 
-  console.log(`[Webhook] Subscription charged: ${subscription?.id}`);
+  console.log('[Webhook] Subscription charged: ' + (subscription && subscription.id));
 }
 
 async function handleSubscriptionCancelled(subscription, db) {
   if (!subscription || !db) return;
 
-  const uid = subscription.notes?.uid;
+  const uid = subscription.notes && subscription.notes.uid;
 
   await db
     .from("subscriptions")
@@ -615,7 +683,7 @@ async function handleSubscriptionPaused(subscription, db) {
 async function handlePaymentFailed(payment, db) {
   if (!payment || !db) return;
 
-  const uid = payment.notes?.uid;
+  const uid = payment.notes && payment.notes.uid;
   if (!uid) return;
 
   // Record failed payment

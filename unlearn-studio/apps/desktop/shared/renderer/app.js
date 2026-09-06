@@ -876,6 +876,14 @@ let currentSubscription = null;
 
 async function loadSubscriptionInfo() {
   try {
+    // First, sync subscription status from Razorpay (polling fallback for no-webhook setups)
+    try {
+      await serverAPI("/api/subscription/sync", { method: "POST" });
+    } catch (syncErr) {
+      // Sync endpoint might not exist yet or Razorpay not configured — that's OK
+      console.debug("[Subscription] Sync skipped:", syncErr.message);
+    }
+    // Then load the (now-updated) subscription
     const data = await serverAPI("/api/subscription");
     currentSubscription = data;
     updateSubscriptionUI(data);

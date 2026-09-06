@@ -1,54 +1,138 @@
 /**
  * Build Distribution Routes
- * Serves desktop app builds for download
+ * Serves desktop app builds from osapps/{mac,windows,linux}/
+ * 
+ * Folder structure on disk:
+ *   osapps/mac/      → .dmg files
+ *   osapps/windows/  → .exe, .msi files
+ *   osapps/linux/    → .AppImage, .deb, .rpm files
  */
 const path = require("path");
 const fs = require("fs");
 
-module.exports = function(app, env) {
+module.exports = function (app, env) {
   const SERVER_URL = env.SERVER_URL || "http://localhost:3001";
   const UPLOAD_TOKEN = env.UPLOAD_TOKEN || "remap-builds-secret-2024";
 
-  // Builds directory
-  const BUILDS_DIR = path.join(__dirname, "builds");
-  if (!fs.existsSync(BUILDS_DIR)) fs.mkdirSync(BUILDS_DIR, { recursive: true });
+  const OSAPPS_DIR = path.join(__dirname, "osapps");
 
-  // Serve builds as static files
-  app.use("/builds", require("express").static(BUILDS_DIR, {
+  // Ensure folder structure exists
+  ["mac", "windows", "linux"].forEach((os) => {
+    const dir = path.join(OSAPPS_DIR, os);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  });
+
+  // ══════════════════════════════════════
+  //  STATIC — serve osapps/ files directly
+  // ══════════════════════════════════════
+
+  app.use("/osapps", require("express").static(OSAPPS_DIR, {
     setHeaders: (res, filePath) => {
-      if (filePath.endsWith(".dmg") || filePath.endsWith(".exe") || filePath.endsWith(".zip")) {
+      res.setHeader("Content-Disposition", "attachment");
+      if (filePath.endsWith(".dmg")) {
+        res.setHeader("Content-Type", "application/x-apple-diskimage");
+      } else if (filePath.endsWith(".exe")) {
+        res.setHeader("Content-Type", "application/x-msdownload");
+      } else if (filePath.endsWith(".AppImage") || filePath.endsWith(".deb")) {
         res.setHeader("Content-Type", "application/octet-stream");
       }
     },
   }));
 
-  // List available builds
-  app.get("/api/builds", (req, res) => {
+  // ══════════════════════════════════════
+  //  GET /api/downloads — all platforms (for Vercel website)
+  // ══════════════════════════════════════
+
+  app.get("/api/downloads", (_req, res) => {
     try {
-      const files = fs.readdirSync(BUILDS_DIR).filter(f =>
-        f.endsWith(".dmg") || f.endsWith(".exe") || f.endsWith(".zip") || f.endsWith(".AppImage")
-      );
-      const builds = files.map(f => {
-        const stat = fs.statSync(path.join(BUILDS_DIR, f));
-        const platform = f.endsWith(".dmg") ? "darwin" : f.endsWith(".exe") ? "win32" : "linux";
-        const arch = f.includes("arm64") || f.includes("aarch64") ? "arm64" : "x64";
-        return {
-          filename: f,
-          platform,
-          arch,
-          size: stat.size,
-          sizeFormatted: formatBytes(stat.size),
-          downloadUrl: `${SERVER_URL}/builds/${encodeURIComponent(f)}`,
-          uploadedAt: stat.mtime.toISOString(),
+      const platforms = ["mac", "windows", "linux"];
+      const result = {};
+
+      for (const os of platforms) {
+        const dir = path.join(OSAPPS_DIR, os);
+        if (!fs.existsSync(dir)) {
+          result[os] = { available: false, builds: [] };
+          continue;
+        }
+
+        const files = fs.readdirSync(dir).filter((f) => !f.startsWith(".") && !f.endsWith(".json"));
+        const builds = files
+          .map((f) => {
+            const filePath = path.join(dir, f);
+            const stat = fs.statSync(filePath);
+            const arch = f.includes("arm64") || f.includes("aarch64") ? "arm64" : "x64";
+            return {
+              filename: f,
+              arch,
+              size: stat.size,
+              sizeFormatted: formatBytes(stat.size),
+              downloadUrl: `${SERVER_URL}/osapps/${os}/${encodeURIComponent(f)}`,
+              uploadedAt: stat.mtime.toISOString(),
+            };
+          })
+          .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+
+        result[os] = {
+          available: builds.length > 0,
+          latest: builds[0] || null,
+          builds,
         };
-      });
-      res.json({ builds });
+      }
+
+      res.json(result);
     } catch (e) {
-      res.json({ builds: [] });
+      console.error("Downloads API error:", e.message);
+      res.json({ mac: { available: false }, windows: { available: false }, linux: { available: false } });
     }
   });
 
-  // Upload a build (protected with token)
+  // ══════════════════════════════════════
+  //  GET /api/downloads/:platform — single platform
+  // ══════════════════════════════════════
+
+  app.get("/api/downloads/:platform", (req, res) => {
+    const platform = req.params.platform.toLowerCase();
+    if (!["mac", "windows", "linux"].includes(platform)) {
+      return res.status(400).json({ error: "Invalid platform. Use: mac, windows, linux" });
+    }
+
+    try {
+      const dir = path.join(OSAPPS_DIR, platform);
+      if (!fs.existsSync(dir)) {
+        return res.json({ available: false, builds: [] });
+      }
+
+      const files = fs.readdirSync(dir).filter((f) => !f.startsWith(".") && !f.endsWith(".json"));
+      const builds = files
+        .map((f) => {
+          const filePath = path.join(dir, f);
+          const stat = fs.statSync(filePath);
+          const arch = f.includes("arm64") || f.includes("aarch64") ? "arm64" : "x64";
+          return {
+            filename: f,
+            arch,
+            size: stat.size,
+            sizeFormatted: formatBytes(stat.size),
+            downloadUrl: `${SERVER_URL}/osapps/${platform}/${encodeURIComponent(f)}`,
+            uploadedAt: stat.mtime.toISOString(),
+          };
+        })
+        .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+
+      res.json({
+        available: builds.length > 0,
+        latest: builds[0] || null,
+        builds,
+      });
+    } catch (e) {
+      res.json({ available: false, builds: [] });
+    }
+  });
+
+  // ══════════════════════════════════════
+  //  POST /api/builds/upload — upload a build
+  // ══════════════════════════════════════
+
   app.post("/api/builds/upload", require("express").raw({ type: "*/*", limit: "500mb" }), (req, res) => {
     const token = req.headers["x-upload-token"] || req.query.token;
     if (token !== UPLOAD_TOKEN) {
@@ -60,36 +144,61 @@ module.exports = function(app, env) {
       return res.status(400).json({ error: "Missing X-Filename header" });
     }
 
+    // Auto-detect platform from filename
+    const platform = detectPlatform(filename);
+    if (!platform) {
+      return res.status(400).json({
+        error: "Cannot detect platform from filename. Use: mac/windows/linux in the name or use .dmg/.exe/.AppImage extension",
+      });
+    }
+
     const safeName = path.basename(filename).replace(/[^a-zA-Z0-9._-]/g, "_");
-    const filePath = path.join(BUILDS_DIR, safeName);
+    const dir = path.join(OSAPPS_DIR, platform);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const filePath = path.join(dir, safeName);
 
     fs.writeFileSync(filePath, req.body);
-    console.log(`[Builds] Uploaded: ${safeName} (${formatBytes(req.body.length)})`);
+    console.log(`[Builds] Uploaded: osapps/${platform}/${safeName} (${formatBytes(req.body.length)})`);
 
     res.json({
       filename: safeName,
+      platform,
       size: req.body.length,
-      downloadUrl: `${SERVER_URL}/builds/${encodeURIComponent(safeName)}`,
+      sizeFormatted: formatBytes(req.body.length),
+      downloadUrl: `${SERVER_URL}/osapps/${platform}/${encodeURIComponent(safeName)}`,
     });
   });
 
-  // Delete a build
-  app.delete("/api/builds/:filename", (req, res) => {
+  // ══════════════════════════════════════
+  //  DELETE /api/builds/:platform/:filename
+  // ══════════════════════════════════════
+
+  app.delete("/api/builds/:platform/:filename", (req, res) => {
     const token = req.headers["x-upload-token"] || req.query.token;
     if (token !== UPLOAD_TOKEN) {
       return res.status(401).json({ error: "Invalid upload token" });
     }
+
+    const platform = req.params.platform;
+    if (!["mac", "windows", "linux"].includes(platform)) {
+      return res.status(400).json({ error: "Invalid platform" });
+    }
+
     const safeName = path.basename(req.params.filename);
-    const filePath = path.join(BUILDS_DIR, safeName);
+    const filePath = path.join(OSAPPS_DIR, platform, safeName);
+
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
-      res.json({ deleted: true, filename: safeName });
+      res.json({ deleted: true, filename: safeName, platform });
     } else {
       res.status(404).json({ error: "File not found" });
     }
   });
 
-  // Download page with OS detection
+  // ══════════════════════════════════════
+  //  DOWNLOAD PAGE (redirects to latest)
+  // ══════════════════════════════════════
+
   app.get("/download", (_req, res) => {
     res.setHeader("Content-Type", "text/html");
     res.send(`<!DOCTYPE html>
@@ -101,17 +210,18 @@ module.exports = function(app, env) {
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center}
-    .container{max-width:600px;text-align:center;padding:40px}
+    .container{max-width:700px;text-align:center;padding:40px}
     .logo{font-size:48px;margin-bottom:16px}
     h1{font-size:32px;margin-bottom:8px}
     .subtitle{color:#888;margin-bottom:40px;font-size:16px}
-    .download-btn{display:inline-flex;align-items:center;gap:12px;background:#6366f1;color:white;padding:16px 32px;border-radius:12px;text-decoration:none;font-size:18px;font-weight:600;transition:all 0.2s;margin-bottom:16px}
-    .download-btn:hover{background:#5558e6;transform:translateY(-2px)}
-    .download-btn svg{width:24px;height:24px}
-    .platform-info{color:#666;font-size:14px;margin-bottom:32px}
-    .alt-downloads{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-    .alt-btn{background:#1a1a1a;border:1px solid #333;color:#ccc;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:14px;transition:all 0.2s}
-    .alt-btn:hover{border-color:#6366f1;color:#fff}
+    .platforms{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:32px}
+    .platform-card{background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:24px;min-width:180px;text-decoration:none;color:#fff;transition:all 0.2s}
+    .platform-card:hover{border-color:#6366f1;transform:translateY(-2px)}
+    .platform-card.unavailable{opacity:0.4;cursor:not-allowed}
+    .platform-icon{font-size:32px;margin-bottom:8px}
+    .platform-name{font-size:16px;font-weight:600;margin-bottom:4px}
+    .platform-info{color:#888;font-size:12px}
+    .platform-size{color:#6366f1;font-size:13px;margin-top:8px}
     .version{color:#555;font-size:12px;margin-top:32px}
   </style>
 </head>
@@ -120,27 +230,57 @@ module.exports = function(app, env) {
     <div class="logo">🔬</div>
     <h1>Remap Studios</h1>
     <p class="subtitle">Professional Neural Network IDE for Model Unlearning</p>
-    <div id="download-section"></div>
-    <div class="platform-info" id="platform-info"></div>
-    <div class="alt-downloads" id="alt-downloads"></div>
+    <div class="platforms" id="platforms">
+      <div class="platform-card unavailable">
+        <div class="platform-icon">🍎</div>
+        <div class="platform-name">macOS</div>
+        <div class="platform-info">Loading...</div>
+      </div>
+      <div class="platform-card unavailable">
+        <div class="platform-icon">🪟</div>
+        <div class="platform-name">Windows</div>
+        <div class="platform-info">Loading...</div>
+      </div>
+      <div class="platform-card unavailable">
+        <div class="platform-icon">🐧</div>
+        <div class="platform-name">Linux</div>
+        <div class="platform-info">Loading...</div>
+      </div>
+    </div>
     <p class="version" id="version-info"></p>
   </div>
   <script>
-    async function init(){
-      var ua=navigator.userAgent,isMac=ua.includes("Mac"),isWin=ua.includes("Windows"),isLinux=ua.includes("Linux");
-      var builds=[];
-      try{var r=await fetch("/api/builds");var d=await r.json();builds=d.builds||[]}catch(e){}
-      var sec=document.getElementById("download-section"),pinfo=document.getElementById("platform-info"),alt=document.getElementById("alt-downloads");
-      var pb=null;
-      if(isMac)pb=builds.find(function(b){return b.platform==="darwin"&&b.arch==="arm64"})||builds.find(function(b){return b.platform==="darwin"});
-      else if(isWin)pb=builds.find(function(b){return b.platform==="win32"});
-      else if(isLinux)pb=builds.find(function(b){return b.platform==="linux"});
-      if(pb){
-        sec.innerHTML='<a href="'+pb.downloadUrl+'" class="download-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Download for '+(isMac?"macOS":isWin?"Windows":"Linux")+"</a>";
-        pinfo.textContent=pb.filename+" · "+pb.sizeFormatted;
-      }else{sec.innerHTML='<p style="color:#888;margin-bottom:20px">No builds available yet. Check back soon!</p>';}
-      var other=builds.filter(function(b){return b!==pb});
-      if(other.length>0){alt.innerHTML=other.map(function(b){return '<a href="'+b.downloadUrl+'" class="alt-btn">'+(b.platform==="darwin"?"🍎 macOS":b.platform==="win32"?"🪟 Windows":"🐧 Linux")+" ("+b.sizeFormatted+")</a>"}).join("");}
+    async function init() {
+      var platforms = document.getElementById("platforms");
+      var info = document.getElementById("version-info");
+      try {
+        var r = await fetch("/api/downloads");
+        var data = await r.json();
+        var html = "";
+        var icons = { mac: "🍎", windows: "🪟", linux: "🐧" };
+        var names = { mac: "macOS", windows: "Windows", linux: "Linux" };
+        for (var os of ["mac", "windows", "linux"]) {
+          var p = data[os];
+          if (p && p.available && p.latest) {
+            var b = p.latest;
+            html += '<a href="' + b.downloadUrl + '" class="platform-card">' +
+              '<div class="platform-icon">' + icons[os] + '</div>' +
+              '<div class="platform-name">Download for ' + names[os] + '</div>' +
+              '<div class="platform-info">' + b.filename + ' · ' + (b.arch || "x64") + '</div>' +
+              '<div class="platform-size">' + b.sizeFormatted + '</div></a>';
+          } else {
+            html += '<div class="platform-card unavailable">' +
+              '<div class="platform-icon">' + icons[os] + '</div>' +
+              '<div class="platform-name">' + names[os] + '</div>' +
+              '<div class="platform-info">Coming soon</div></div>';
+          }
+        }
+        platforms.innerHTML = html;
+        var totalBuilds = Object.values(data).reduce(function(s, p) { return s + (p.builds ? p.builds.length : 0); }, 0);
+        info.textContent = totalBuilds + " build" + (totalBuilds !== 1 ? "s" : "") + " available";
+      } catch (e) {
+        platforms.innerHTML = '<p style="color:#888">Failed to load builds</p>';
+      }
     }
     init();
   </script>
@@ -148,12 +288,29 @@ module.exports = function(app, env) {
 </html>`);
   });
 
+  // ══════════════════════════════════════
+  //  HELPERS
+  // ══════════════════════════════════════
+
+  function detectPlatform(filename) {
+    const lower = filename.toLowerCase();
+    if (lower.endsWith(".dmg") || lower.endsWith(".pkg")) return "mac";
+    if (lower.endsWith(".exe") || lower.endsWith(".msi")) return "windows";
+    if (lower.endsWith(".appimage") || lower.endsWith(".deb") || lower.endsWith(".rpm")) return "linux";
+    // Fallback: check if platform name is in the filename
+    if (lower.includes("mac") || lower.includes("darwin") || lower.includes("arm64")) return "mac";
+    if (lower.includes("win")) return "windows";
+    if (lower.includes("linux")) return "linux";
+    return null;
+  }
+
   function formatBytes(bytes) {
     if (bytes === 0) return "0 B";
-    var k = 1024, sizes = ["B", "KB", "MB", "GB"];
-    var i = Math.floor(Math.log(bytes) / Math.log(k));
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
   }
 
-  console.log("✓  Build distribution routes loaded");
+  console.log("✓  Build distribution routes loaded (osapps/)");
 };

@@ -7,10 +7,16 @@ node_modules/
 .env.*.local
 
 # Build files (too large for git — uploaded via upload-build.sh)
+osapps/**/*.dmg
+osapps/**/*.exe
+osapps/**/*.msi
+osapps/**/*.AppImage
+osapps/**/*.deb
+osapps/**/*.rpm
+osapps/**/*.zip
 builds/*.dmg
 builds/*.exe
 builds/*.zip
-builds/*.AppImage
 
 # Logs
 *.log
