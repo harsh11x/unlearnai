@@ -18,6 +18,28 @@ nano .env
 # Then restart: pm2 restart remap-server
 ```
 
+## One-Command Release Deploy (local Mac → AWS)
+
+From your Mac, builds all platforms and ships them to AWS:
+
+```bash
+cd apps/../server/scripts          # unlearn-studio/server/scripts
+./deploy-all.sh                    # build mac+win+linux → stage → scp → verify
+```
+
+Useful flags:
+
+| Flag | Effect |
+|------|--------|
+| `--platforms mac,win` | Build/upload only those platforms (mac\|win\|linux) |
+| `--skip-build` | Reuse builds already in `osapps/`, just upload |
+| `--skip-upload` | Build + stage locally only |
+| `--pull` | Also `git pull` on AWS (updates server code) |
+| `--restart` | `pm2 restart remapstudios` after upload |
+| `--no-clean` | Keep old versioned builds in `osapps/` |
+
+Uploads go via **scp** (not git) because GitHub rejects files > 100 MB.
+
 ## What It Does
 
 - **Razorpay Subscriptions** — Pro (₹999/mo) and Business (₹2,999/mo)
@@ -49,6 +71,8 @@ nano .env
 | `/api/sync/unlearn-history` | GET/POST | Yes | Cross-device history sync |
 
 ## Upload a Build
+
+Manual single-file upload (auto-detects mac/windows/linux from filename):
 
 ```bash
 ./scripts/upload-build.sh "../apps/desktop/dist/mac/Remap Studios-1.0.0-arm64.dmg"

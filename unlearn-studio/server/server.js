@@ -237,21 +237,22 @@ app.get("/api/subscription", authMiddleware, async (req, res) => {
       .eq("uid", req.user.uid)
       .in("status", ["active", "past_due"])
       .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
 
-    if (error || !data) {
+    var sub = data && data.length > 0 ? data[0] : null;
+
+    if (error || !sub) {
       return res.json({ plan: "free", ...PLANS.free, status: "active" });
     }
 
-    const planDetails = PLANS[data.plan] || PLANS.free;
+    const planDetails = PLANS[sub.plan] || PLANS.free;
     res.json({
       ...planDetails,
-      ...data,
-      plan: data.plan,
-      status: data.status,
-      currentPeriodEnd: data.current_period_end,
-      cancelAtPeriodEnd: data.cancel_at_period_end,
+      ...sub,
+      plan: sub.plan,
+      status: sub.status,
+      currentPeriodEnd: sub.current_period_end,
+      cancelAtPeriodEnd: sub.cancel_at_period_end,
     });
   } catch (e) {
     console.error("Subscription error:", e.message);
@@ -292,10 +293,9 @@ app.post("/api/subscription/create", authMiddleware, async (req, res) => {
         .select("razorpay_customer_id")
         .eq("uid", req.user.uid)
         .not("razorpay_customer_id", "is", null)
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
 
-      customerId = existingSub && existingSub.razorpay_customer_id;
+      customerId = existingSub && existingSub.length > 0 && existingSub[0].razorpay_customer_id;
     }
 
     if (!customerId) {
@@ -375,10 +375,9 @@ app.post("/api/subscription/cancel", authMiddleware, async (req, res) => {
         .select("razorpay_subscription_id")
         .eq("uid", req.user.uid)
         .in("status", ["active", "past_due"])
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
 
-      rpSubId = data && data.razorpay_subscription_id;
+      rpSubId = data && data.length > 0 && data[0].razorpay_subscription_id;
     }
 
     if (!rpSubId) {
@@ -418,13 +417,14 @@ app.post("/api/subscription/sync", authMiddleware, async (req, res) => {
 
   try {
     // Get subscription from DB
-    const { data: sub } = await db
+    const { data: subArr } = await db
       .from("subscriptions")
       .select("*")
       .eq("uid", req.user.uid)
       .in("status", ["active", "past_due"])
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
+
+    var sub = subArr && subArr.length > 0 ? subArr[0] : null;
 
     if (!sub || !sub.razorpay_subscription_id) {
       return res.json({ synced: true, plan: "free" });

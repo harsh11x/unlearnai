@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "Remap Studios — IDE for AI Model Unlearning",
   "main": "main.js",
+  "author": "Remap Studios <support@remapstudios.com>",
+  "homepage": "https://remapstudios.com",
   "scripts": {
     "start": "electron .",
     "dev": "NODE_ENV=development electron .",

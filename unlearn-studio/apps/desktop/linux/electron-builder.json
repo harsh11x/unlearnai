@@ -3,11 +3,25 @@
   "productName": "Remap Studios",
   "copyright": "Copyright © 2026 Remap Studios",
   "directories": {
-    "output": "../../dist/linux",
-    "buildResources": "./build"
+    "output": "../dist/linux",
+    "buildResources": "../linux/build"
   },
   "files": [
-    "../shared/**/*"
+    "**/*",
+    "!node_modules/.cache/**",
+    "!build-mac.sh",
+    "!build-win.sh",
+    "!../mac/**",
+    "!../win/**",
+    "!../linux/**",
+    "!../dist/**"
+  ],
+  "extraResources": [
+    {
+      "from": "../backend",
+      "to": "backend",
+      "filter": ["**/*.py", "requirements.txt"]
+    }
   ],
   "linux": {
     "target": [
@@ -18,14 +32,10 @@
       {
         "target": "deb",
         "arch": ["x64"]
-      },
-      {
-        "target": "rpm",
-        "arch": ["x64"]
       }
     ],
     "category": "Development",
-    "icon": "./build/icons",
+    "icon": "../linux/build/icons",
     "synopsis": "AI Model Unlearning IDE",
     "description": "IDE for analyzing, visualizing, and unlearning knowledge from AI models",
     "desktop": {
@@ -51,19 +61,5 @@
       "libsecret-1-0"
     ],
     "packageCategory": "devel"
-  },
-  "rpm": {
-    "depends": [
-      "gtk3",
-      "libnotify",
-      "nss",
-      "libXScrnSaver",
-      "libXtst",
-      "xdg-utils",
-      "atspi2-core",
-      "libuuid",
-      "libsecret"
-    ],
-    "packageCategory": "Development/Tools"
   }
 }

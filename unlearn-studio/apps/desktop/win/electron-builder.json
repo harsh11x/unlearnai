@@ -27,10 +27,6 @@
       {
         "target": "nsis",
         "arch": ["x64"]
-      },
-      {
-        "target": "portable",
-        "arch": ["x64"]
       }
     ],
     "icon": "../win/build/icon.ico",
@@ -46,8 +42,5 @@
     "createStartMenuShortcut": true,
     "shortcutName": "Remap Studios",
     "include": "installer.nsh"
-  },
-  "portable": {
-    "artifactName": "${productName}-${version}-portable.${ext}"
   }
 }
