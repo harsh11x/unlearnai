@@ -10,6 +10,16 @@ node_modules/
 *.log
 npm-debug.log*
 
+# Build artifacts — never committed. Builds happen on AWS / via scp upload
+# (deploy-all.sh stages files here locally, which is fine since they're ignored).
+osapps/**/*.dmg
+osapps/**/*.exe
+osapps/**/*.AppImage
+osapps/**/*.blockmap
+osapps/**/*.zip
+osapps/**/*.deb
+osapps/**/*.rpm
+
 # OS
 .DS_Store
 Thumbs.db
