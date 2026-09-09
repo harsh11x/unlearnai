@@ -88,13 +88,38 @@ function startPythonBackend() {
     backendPath = path.join(__dirname, "..", "backend", "server.py");
   }
 
-  // Try to find python3 first, then python
-  const pythonCmd = process.platform === "win32" ? "python" : "python3";
+  // Finder-launched apps get a minimal PATH (/usr/bin:/bin:...) that usually
+  // misses python3 installed via Homebrew (/opt/homebrew/bin, /usr/local/bin)
+  // or pyenv. Probe candidates and use the first one that exists.
+  const candidates = process.platform === "win32"
+    ? ["python"]
+    : [
+        process.env.PYTHON_PATH || "python3",
+        "/opt/homebrew/bin/python3",
+        "/usr/local/bin/python3",
+        "/usr/bin/python3",
+        "/opt/local/bin/python3",
+      ];
+  const fs = require("fs");
+  let pythonCmd = candidates[0];
+  for (const c of candidates) {
+    if (c.includes("/")) {
+      try { if (fs.existsSync(c)) { pythonCmd = c; break; } } catch (e) { /* ignore */ }
+    }
+  }
+  console.log("[Backend] Using python:", pythonCmd);
 
   pythonProcess = spawn(pythonCmd, [backendPath], {
     stdio: ["pipe", "pipe", "pipe"],
     env: {
       ...process.env,
+      PATH: [
+        "/opt/homebrew/bin",
+        "/usr/local/bin",
+        "/usr/bin",
+        "/bin",
+        process.env.PATH || "",
+      ].join(":"),
       PYTHONUNBUFFERED: "1",
     },
   });
@@ -212,7 +237,10 @@ function sendToBackend(method, params = {}, id = null) {
 ipcMain.handle("dialog:openFile", async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     title: "Open Model File",
+    // "All Files" first = default filter. Users can open ANY file (universal
+    // ML/DL/NLP/LLM support); specific filters are still available in the dropdown.
     filters: [
+      { name: "All Files", extensions: ["*"] },
       { name: "All Model Files", extensions: [
         "safetensors", "pt", "pth", "bin", "ckpt",
         "gguf", "onnx", "h5", "hdf5", "pb", "tflite",
@@ -229,7 +257,6 @@ ipcMain.handle("dialog:openFile", async () => {
       { name: "TensorFlow", extensions: ["pb", "tflite"] },
       { name: "Pickle / Joblib", extensions: ["pkl", "pickle", "joblib"] },
       { name: "NumPy", extensions: ["npy", "npz"] },
-      { name: "All Files", extensions: ["*"] },
     ],
     properties: ["openFile"],
   });

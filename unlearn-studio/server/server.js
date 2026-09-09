@@ -752,14 +752,18 @@ app.get("/api/update/check", async (req, res) => {
   }
 });
 
-// Publish a new version (admin only — protect in production)
+// Publish a new version (protected by upload token)
 app.post("/api/update/publish", async (req, res) => {
+  const token = req.headers["x-upload-token"] || req.query.token;
+  if (token !== (process.env.UPLOAD_TOKEN || "remap-builds-secret-2024")) {
+    return res.status(401).json({ error: "Invalid upload token" });
+  }
+
   const db = getSupabase();
   if (!db) {
     return res.status(503).json({ error: "Database not configured" });
   }
 
-  // TODO: Add admin auth check
   const { version, platform, architecture, downloadUrl, releaseNotes, fileSize, sha256 } = req.body;
 
   if (!version || !platform || !downloadUrl) {

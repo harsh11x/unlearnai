@@ -1,10 +1,24 @@
-const { contextBridge, ipcRenderer } = require("electron");
+const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
 contextBridge.exposeInMainWorld("electronAPI", {
   // Dialogs
   openFile: () => ipcRenderer.invoke("dialog:openFile"),
   openFolder: () => ipcRenderer.invoke("dialog:openFolder"),
   saveFile: () => ipcRenderer.invoke("dialog:saveFile"),
+
+  // Drag-and-drop: Electron 32+ removed File.path, so resolve real paths here
+  // via webUtils.getPathForFile (exposed as a function, not a value copy).
+  fileFromDrop: (file) => {
+    try {
+      return {
+        path: webUtils.getPathForFile(file),
+        name: file.name,
+        size: file.size,
+      };
+    } catch (e) {
+      return { path: null, name: file.name, size: file.size };
+    }
+  },
 
   // RPC to Python backend
   rpc: (method, params = {}) => ipcRenderer.invoke("rpc", method, params),

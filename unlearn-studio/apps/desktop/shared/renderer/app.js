@@ -5,14 +5,29 @@
 const API = window.electronAPI;
 
 // ── Server API ──
-const SERVER_URL = "https://13.204.245.212:3001";
+// HTTP on purpose: the AWS server has no TLS cert yet (raw IP). If you add a
+// domain + SSL later, switch this back to https.
+const SERVER_URL = "http://13.204.245.212:3001";
+
+function isGuest() {
+  return !!(currentUser && currentUser.isGuest);
+}
 
 async function serverAPI(endpoint, options = {}) {
-  const user = firebaseAuth?.currentUser;
+  if (isGuest()) {
+    // Guests have no Firebase token — skip server calls silently instead of
+    // throwing and spamming the console with CORS/auth errors.
+    throw new Error("Guests cannot use cloud features. Sign in with Google to sync.");
+  }
+  const user = firebaseAuth ? firebaseAuth.currentUser : null;
   const headers = { "Content-Type": "application/json", ...options.headers };
   if (user) {
-    const token = await user.getIdToken();
-    headers["Authorization"] = `Bearer ${token}`;
+    try {
+      const token = await user.getIdToken();
+      headers["Authorization"] = `Bearer ${token}`;
+    } catch (e) {
+      console.warn("[ServerAPI] Could not get token:", e.message);
+    }
   }
   try {
     const res = await fetch(`${SERVER_URL}${endpoint}`, { ...options, headers });
@@ -40,6 +55,23 @@ const FIREBASE_CONFIG = {
 let firebaseApp = null;
 let firebaseAuth = null;
 let currentUser = null;
+
+// ── Guest sign-in ──
+// No network required: creates a local-only user so people can explore the
+// app (load/visualise models on their machine) without a Firebase account.
+function signInAsGuest() {
+  currentUser = {
+    uid: "guest-" + Math.random().toString(36).slice(2, 10),
+    email: "guest@localhost",
+    displayName: "Guest User",
+    photoURL: null,
+    isGuest: true,
+  };
+  localStorage.setItem("remap_user", JSON.stringify(currentUser));
+  showApp();
+  updateSettingsUserInfo();
+  log("Signed in as guest — cloud sync & subscriptions disabled.", "info");
+}
 
 function showAuthScreen() {
   document.getElementById("auth-screen")?.classList.remove("hidden");
@@ -107,6 +139,7 @@ function registerAuthListener() {
         email: user.email,
         displayName: user.displayName,
         photoURL: user.photoURL,
+        isGuest: false,
       };
       localStorage.setItem("remap_user", JSON.stringify(currentUser));
       console.log("[Auth] Signed in:", user.email);
@@ -115,6 +148,10 @@ function registerAuthListener() {
       if (user.email === "harshdevsingh2004@gmail.com") {
         assignBusinessPlan(user.uid);
       }
+    } else if (currentUser && currentUser.isGuest) {
+      // Guest session active — Firebase has no user but that's expected.
+      console.log("[Auth] Guest session active, staying in app");
+      return;
     } else {
       currentUser = null;
       localStorage.removeItem("remap_user");
@@ -152,6 +189,16 @@ function assignBusinessPlan(uid) {
 function initAuthHandlers() {
   // Logout
   document.getElementById("settings-logout-btn")?.addEventListener("click", logoutUser);
+
+  // Guest sign-in — local-only session, no account needed
+  document.getElementById("auth-guest-btn")?.addEventListener("click", () => {
+    try {
+      signInAsGuest();
+    } catch (e) {
+      console.error("[Auth] Guest sign-in error:", e);
+      showAuthErr("auth-error", "Guest sign-in failed: " + e.message);
+    }
+  });
 
   // Google sign-in via Firebase redirect (works in Electron)
   document.getElementById("auth-google-btn")?.addEventListener("click", async () => {
@@ -253,6 +300,16 @@ const state = {
 // ══════════════════════════════════════════
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Restore session before Firebase init so a stored guest/last user doesn't
+  // flash the login screen (Firebase's auth listener settles later).
+  try {
+    const saved = JSON.parse(localStorage.getItem("remap_user") || "null");
+    if (saved && saved.isGuest) {
+      currentUser = saved;
+      showApp();
+    }
+  } catch (e) { /* corrupt cache — ignore */ }
+
   initFirebase();
   initAuthHandlers();
 
@@ -305,6 +362,29 @@ function initBackendListeners() {
   API.isBackendReady().then((ready) => {
     if (!ready) log("Waiting for Python backend...", "info");
   });
+
+  // Safety net for the ready-event race: if the backend signalled "ready"
+  // before this listener was attached, the event is gone and backendReady
+  // would stay false forever ("Python backend not ready" on every load).
+  // Poll until main reports ready, with a hard cap.
+  let polls = 0;
+  const pollTimer = setInterval(async () => {
+    polls++;
+    try {
+      const ready = await API.isBackendReady();
+      if (ready && !state.backendReady) {
+        state.backendReady = true;
+        log("Python backend connected", "success");
+        clearInterval(pollTimer);
+      }
+    } catch (e) { /* main not up yet */ }
+    if (polls >= 120) {
+      clearInterval(pollTimer);
+      if (!state.backendReady) {
+        log("Backend not ready after 2 min. Is Python 3 installed with torch, safetensors, psutil?", "error");
+      }
+    }
+  }, 1000);
 }
 
 // ══════════════════════════════════════════
@@ -859,8 +939,11 @@ function updateSettingsUserInfo() {
         avatarEl.innerHTML = `<span style="font-size:20px;font-weight:700;color:var(--bg)">${initials}</span>`;
       }
     }
-    // Fetch subscription info from server
-    loadSubscriptionInfo();
+    if (planEl) planEl.textContent = currentUser.isGuest ? "Guest" : planEl.textContent;
+    // Guests have no server account — skip subscription fetch entirely.
+    if (!currentUser.isGuest) {
+      loadSubscriptionInfo();
+    }
   } else {
     if (nameEl) nameEl.textContent = "Not signed in";
     if (emailEl) emailEl.textContent = "";
@@ -1052,8 +1135,24 @@ window.cancelSubscription = async function() {
 };
 
 function logoutUser() {
-  if (!firebaseAuth) return;
   const confirmBtn = document.getElementById("settings-logout-btn");
+  const resetBtn = () => {
+    if (confirmBtn) {
+      confirmBtn.textContent = "Sign Out";
+      confirmBtn.disabled = false;
+    }
+  };
+
+  // Guest sessions are local-only — just clear and return to login.
+  if (currentUser && currentUser.isGuest) {
+    currentUser = null;
+    localStorage.removeItem("remap_user");
+    showAuthScreen();
+    resetBtn();
+    return;
+  }
+
+  if (!firebaseAuth) { resetBtn(); return; }
   if (confirmBtn) {
     confirmBtn.textContent = "Signing out...";
     confirmBtn.disabled = true;
@@ -1064,17 +1163,11 @@ function logoutUser() {
       currentUser = null;
       localStorage.removeItem("remap_user");
       showAuthScreen();
-      if (confirmBtn) {
-        confirmBtn.textContent = "Sign Out";
-        confirmBtn.disabled = false;
-      }
+      resetBtn();
     })
     .catch((e) => {
       console.error("Sign out error:", e);
-      if (confirmBtn) {
-        confirmBtn.textContent = "Sign Out";
-        confirmBtn.disabled = false;
-      }
+      resetBtn();
     });
 }
 
@@ -1206,7 +1299,9 @@ function initDragDrop() {
     e.preventDefault(); body.classList.remove("drag-active");
     if (e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
-      loadModel(file.path || file.name, file.name, file.size);
+      // Electron 32+ removed File.path. Resolve the real path via webUtils in preload.
+      const resolved = API.fileFromDrop ? API.fileFromDrop(file) : { path: file.path, name: file.name, size: file.size };
+      loadModel(resolved.path || resolved.name, resolved.name, resolved.size);
     }
   });
 }
