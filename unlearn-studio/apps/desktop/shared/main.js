@@ -36,6 +36,8 @@ function createWindow() {
 
   // Serve renderer via local HTTP server so Firebase Auth works
   // (Firebase requires http/https protocol, not file://)
+  // PERF: cache static assets (logo, css, js) so relaunches and navigations
+  // don't re-read them from disk every time.
   const httpModule = require("http");
   const server = httpModule.createServer(async (req, res) => {
     const parsedUrl = new URL(req.url, `http://localhost`);
@@ -49,6 +51,9 @@ function createWindow() {
       ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml",
       ".ico": "image/x-icon", ".woff": "font/woff", ".woff2": "font/woff2",
     };
+    const isStatic = filePath !== path.join(__dirname, "renderer", "index.html");
+    const headers = { "Content-Type": mimeTypes[ext] || "application/octet-stream" };
+    if (isStatic) headers["Cache-Control"] = "private, max-age=300";
     fs.readFile(filePath, (err, data) => {
       if (err) {
         const indexPath = path.join(__dirname, "renderer", "index.html");
@@ -59,7 +64,7 @@ function createWindow() {
         });
         return;
       }
-      res.writeHead(200, { "Content-Type": mimeTypes[ext] || "application/octet-stream" });
+      res.writeHead(200, headers);
       res.end(data);
     });
   });

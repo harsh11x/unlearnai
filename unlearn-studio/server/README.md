@@ -23,17 +23,31 @@ nano .env
 From your Mac, builds all platforms and ships them to AWS:
 
 ```bash
-cd apps/../server/scripts          # unlearn-studio/server/scripts
-./deploy-all.sh                    # build mac+win+linux → stage → scp → verify
+cd server
+npm run deploy:apps              # build mac+win+linux → stage → scp → verify
+# or directly:
+./scripts/deploy-all.sh
 ```
 
-Useful flags:
+Just build + stage into `server/osapps/` (no upload)? One command:
+
+```bash
+cd server
+npm run build:apps               # or: bash ../apps/desktop/scripts/build-apps.sh
+```
+
+`build-apps.sh` builds the mac/windows/linux apps, **deletes every older
+installer in `server/osapps/{mac,windows,linux}/`**, and copies only the latest
+builds in — so those folders always contain exactly the current artifacts.
+
+Useful flags (both scripts):
 
 | Flag | Effect |
 |------|--------|
-| `--platforms mac,win` | Build/upload only those platforms (mac\|win\|linux) |
-| `--skip-build` | Reuse builds already in `osapps/`, just upload |
-| `--skip-upload` | Build + stage locally only |
+| `--platforms mac,win` | Build/stage/upload only those platforms (mac\|win\|linux) |
+| `--skip-build` | Reuse builds already in `osapps/`, just stage/upload |
+| `--skip-stage` | Build into `apps/dist/` only, don't touch `osapps/` |
+| `--skip-upload` | Build + stage locally only (deploy-all.sh) |
 | `--pull` | Also `git pull` on AWS (updates server code) |
 | `--restart` | `pm2 restart remapstudios` after upload |
 | `--no-clean` | Keep old versioned builds in `osapps/` |

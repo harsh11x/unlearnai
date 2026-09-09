@@ -33,7 +33,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SERVER_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd "$SERVER_DIR/.." && pwd)"
 DESKTOP_SHARED="$REPO_ROOT/apps/desktop/shared"
-DIST="$REPO_ROOT/apps/desktop/dist"
+DIST="$REPO_ROOT/apps/dist"
 OSAPPS="$SERVER_DIR/osapps"
 
 SSH="$AWS_USER@$AWS_HOST"
@@ -129,7 +129,9 @@ for p in $PLATFORMS; do
   PDIR="$(os_dir $p)"
   mkdir -p "$OSAPPS/$PDIR"
   if [ "$CLEAN" = "1" ]; then
-    rm -f "$OSAPPS/$PDIR"/*.dmg "$OSAPPS/$PDIR"/*.exe "$OSAPPS/$PDIR"/*.AppImage 2>/dev/null || true
+    rm -f "$OSAPPS/$PDIR"/*.dmg "$OSAPPS/$PDIR"/*.exe "$OSAPPS/$PDIR"/*.msi \
+          "$OSAPPS/$PDIR"/*.AppImage "$OSAPPS/$PDIR"/*.deb "$OSAPPS/$PDIR"/*.rpm \
+          "$OSAPPS/$PDIR"/*.blockmap "$OSAPPS/$PDIR"/*.zip 2>/dev/null || true
   fi
   COUNT=0
   for f in "$DD"/$PAT; do

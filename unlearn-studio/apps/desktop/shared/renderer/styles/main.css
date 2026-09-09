@@ -48,8 +48,7 @@
   --shadow-xl: 0 16px 48px rgba(0,0,0,0.7);
 
   --transition-fast: 0.1s ease;
-  --transition-normal: 0.15s ease;
-  --transition-slow: 0.25s ease;
+  --transition-normal: 0.15s ease;  --transition-slow: 0.25s ease;
 }
 
 /* PERF: during app startup cut animations/transitions to near-zero. app.js
@@ -69,7 +68,7 @@ body.resizing, body.resizing * {
   cursor: inherit !important;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+ * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
   width: 100%; height: 100%; overflow: hidden;

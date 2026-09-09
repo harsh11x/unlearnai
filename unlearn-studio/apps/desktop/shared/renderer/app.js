@@ -5,9 +5,11 @@
 const API = window.electronAPI;
 
 // ── Lazy script loader ──
-// PERF: Firebase + Razorpay used to be <script> tags in <head>, which blocked
-// first paint on slow networks and made the whole app feel laggy. They are now
-// fetched on demand, so the UI paints and the dashboard appears immediately.
+// PERF: Firebase + Razorpay used to be <script> tags loaded up-front, which
+// blocked first paint AND app.js on slow networks — the whole app felt dead:
+// even "Continue as Guest" did nothing because its click handler wasn't
+// attached yet. They are now fetched on demand, so the login screen paints
+// instantly and the dashboard is one click away.
 const _scriptCache = new Map();
 function loadScript(src) {
   if (_scriptCache.has(src)) return _scriptCache.get(src);
@@ -92,28 +94,6 @@ let currentUser = null;
 // No network required: creates a local-only user so people can explore the
 // app (load/visualise models on their machine) without a Firebase account.
 // PERF: fully synchronous — one click, instant dashboard, zero network calls.
-function signInAsGuest() {
-  const saved = getSavedUser();
-  currentUser = (saved && saved.isGuest)
-    ? saved // keep the same guest identity across app restarts
-    : {
-        uid: "guest-" + Math.random().toString(36).slice(2, 10),
-        email: "guest@localhost",
-        displayName: "Guest User",
-        photoURL: null,
-        isGuest: true,
-        signedInAt: Date.now(),
-      };
-  localStorage.setItem("remap_user", JSON.stringify(currentUser));
-  showApp();
-  updateSettingsUserInfo();
-  toast("Welcome, guest! Explore everything locally — cloud sync is disabled.", "info", 4000);
-  log("Signed in as guest — cloud sync & subscriptions disabled.", "info");
-  // Firebase isn't needed for guests; load it in the background anyway so
-  // "Continue with Google" works later without a reload.
-  scheduleLazySdkLoads();
-}
-
 function getSavedUser() {
   try {
     return JSON.parse(localStorage.getItem("remap_user") || "null");
@@ -133,6 +113,30 @@ function restoreSavedSession() {
     return true;
   }
   return false;
+}
+
+function signInAsGuest() {
+  // Reuse the same guest identity across restarts so "Continue as Guest"
+  // always feels like returning to your own dashboard.
+  const saved = getSavedUser();
+  currentUser = (saved && saved.isGuest)
+    ? saved
+    : {
+        uid: "guest-" + Math.random().toString(36).slice(2, 10),
+        email: "guest@localhost",
+        displayName: "Guest User",
+        photoURL: null,
+        isGuest: true,
+        signedInAt: Date.now(),
+      };
+  localStorage.setItem("remap_user", JSON.stringify(currentUser));
+  showApp();
+  updateSettingsUserInfo();
+  toast("Welcome, guest! Explore everything locally — cloud sync is disabled.", "info", 4000);
+  log("Signed in as guest — cloud sync & subscriptions disabled.", "info");
+  // Firebase isn't needed for guests; load it in the background anyway so
+  // "Continue with Google" works later without a reload.
+  scheduleLazySdkLoads();
 }
 
 function showAuthScreen() {
@@ -222,9 +226,7 @@ function registerAuthListener() {
     }
   });
 
-  // Safety: show app after 10s if auth never resolves. (Was 5s — but with
-  // lazily-loaded Firebase on a slow network this could fire before the SDK
-  // even finished loading and yank the user out of the login screen.)
+  // Safety: show app after 5s if auth never resolves
   setTimeout(() => {
     if (!currentUser) {
       console.warn("[Auth] Timed out, showing app anyway");
@@ -397,6 +399,8 @@ document.addEventListener("DOMContentLoaded", () => {
   restoreSavedSession();
 
   initAuthHandlers();
+  // PERF: Firebase (and Razorpay, on demand) load in the background instead
+  // of blocking page load — see loadScript/scheduleLazySdkLoads above.
   scheduleLazySdkLoads();
 
   initTabs();
@@ -541,28 +545,27 @@ function initResizeHandles() {
         startPos = options.axis === "x" ? e.clientX : e.clientY;
         startSize = options.getSize();
         handle.classList.add("active");
+        document.body.classList.add("resizing");
         document.body.style.cursor = options.axis === "x" ? "col-resize" : "row-resize";
         document.body.style.userSelect = "none";
 
-    const onMove = (e) => {
-      const currentPos = options.axis === "x" ? e.clientX : e.clientY;
-      const diff = currentPos - startPos;
-      const newSize = options.invert ? startSize - diff : startSize + diff;
-      options.setSize(Math.max(options.min, Math.min(options.max, newSize)));
-    };
-    const onUp = () => {
-      handle.classList.remove("active");
-      document.body.classList.remove("resizing");
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-      if (options.onDone) options.onDone();
-    };
-    // PERF: kill all hover transitions while dragging a divider.
-    document.body.classList.add("resizing");
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+        const onMove = (e) => {
+          const currentPos = options.axis === "x" ? e.clientX : e.clientY;
+          const diff = currentPos - startPos;
+          const newSize = options.invert ? startSize - diff : startSize + diff;
+          options.setSize(Math.max(options.min, Math.min(options.max, newSize)));
+        };
+        const onUp = () => {
+          handle.classList.remove("active");
+          document.body.classList.remove("resizing");
+          document.body.style.cursor = "";
+          document.body.style.userSelect = "";
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+          if (options.onDone) options.onDone();
+        };
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
       });
     });
   };
@@ -882,7 +885,7 @@ function toggleSidebar() {
   state.sidebarVisible = !state.sidebarVisible;
   sidebar.style.display = state.sidebarVisible ? "flex" : "none";
   handle.style.display = state.sidebarVisible ? "" : "none";
-  renderModelCanvas();
+  requestModelCanvasRender();
 }
 
 function toggleProps() {
@@ -908,14 +911,9 @@ function toggleTerminal() {
 
 function zoomIn() { state.zoom = Math.min(3, state.zoom * 1.1); updateZoom(); }
 function zoomOut() { state.zoom = Math.max(0.3, state.zoom * 0.9); updateZoom(); }
-let _zoomRafPending = false;
 function updateZoom() {
   document.getElementById("status-zoom").textContent = `${Math.round(state.zoom * 100)}%`;
-  if (!state.model) return;
-  // PERF: wheel events fire ~60/s; coalesce re-renders to one per frame.
-  if (_zoomRafPending) return;
-  _zoomRafPending = true;
-  requestAnimationFrame(() => { _zoomRafPending = false; renderModelCanvas(); });
+  if (state.model) requestModelCanvasRender();
 }
 
 function toggleFullscreen() {
@@ -1144,12 +1142,6 @@ window.openUpgrade = async function(planKey) {
     });
 
     if (data.error) throw new Error(data.error);
-
-    // PERF: Razorpay's SDK is no longer loaded upfront for every launch —
-    // fetch it only when a payment actually starts.
-    if (typeof Razorpay === "undefined") {
-      await loadScript("https://checkout.razorpay.com/v1/checkout.js");
-    }
 
     // Open Razorpay checkout in system browser
     // The user will complete payment there, and webhooks will update the subscription
@@ -1468,29 +1460,29 @@ async function loadModel(filePath, fileName, fileSize) {
     state.tensors = [];
     state.modelSummary = {};
 
-    // PERF: layers/tensors/summary used to be awaited one-by-one; now they run
-    // in parallel. Each resolves independently, so one failing (GGUF models
-    // where current_model is null) doesn't block the others.
-    const [layersRes, tensorsRes, summaryRes] = await Promise.allSettled([
-      API.rpc("model_layers"),
-      API.rpc("weight_list"),
-      API.rpc("model_summary"),
-    ]);
-    if (layersRes.status === "fulfilled" && layersRes.value && !layersRes.value.error) {
-      state.layers = Array.isArray(layersRes.value.layers) ? layersRes.value.layers : [];
-    } else if (layersRes.status === "rejected") {
-      log(`Layers not available: ${layersRes.reason?.message || layersRes.reason}`, "warning");
-    }
-    if (tensorsRes.status === "fulfilled" && tensorsRes.value && !tensorsRes.value.error) {
-      state.tensors = Array.isArray(tensorsRes.value.tensors) ? tensorsRes.value.tensors : [];
-    } else if (tensorsRes.status === "rejected") {
-      log(`Tensors not available: ${tensorsRes.reason?.message || tensorsRes.reason}`, "warning");
-    }
-    if (summaryRes.status === "fulfilled" && summaryRes.value && !summaryRes.value.error) {
-      state.modelSummary = summaryRes.value;
-    } else if (summaryRes.status === "rejected") {
-      log(`Summary not available: ${summaryRes.reason?.message || summaryRes.reason}`, "warning");
-    }
+    // Try to get layers — may fail for GGUF where current_model is null
+    try {
+      const layersResult = await API.rpc("model_layers");
+      if (layersResult && !layersResult.error) {
+        state.layers = Array.isArray(layersResult.layers) ? layersResult.layers : [];
+      }
+    } catch (e) { log(`Layers not available: ${e.message}`, "warning"); }
+
+    // Try to get tensors — may fail for GGUF
+    try {
+      const tensorsResult = await API.rpc("weight_list");
+      if (tensorsResult && !tensorsResult.error) {
+        state.tensors = Array.isArray(tensorsResult.tensors) ? tensorsResult.tensors : [];
+      }
+    } catch (e) { log(`Tensors not available: ${e.message}`, "warning"); }
+
+    // Try to get summary — may fail for GGUF
+    try {
+      const summaryResult = await API.rpc("model_summary");
+      if (summaryResult && !summaryResult.error) {
+        state.modelSummary = summaryResult;
+      }
+    } catch (e) { log(`Summary not available: ${e.message}`, "warning"); }
 
     updateBreadcrumb();
     updateStatusBar();
@@ -1537,6 +1529,27 @@ async function loadModel(filePath, fileName, fileSize) {
 // CANVAS RENDERING
 // ══════════════════════════════════════════
 
+// PERF: renderModelCanvas used to run synchronously on EVERY mousemove,
+// reallocating the canvas backing store each time — the #1 cause of lag once
+// a model was loaded. Now: resizing the backing store is throttled (only when
+// the container actually changes size) and redraws are coalesced to one per
+// animation frame. Same visual result, a fraction of the work.
+let _canvasLastW = 0, _canvasLastH = 0;
+let _modelCanvasRaf = 0;
+let _modelCanvasPending = false;
+
+function requestModelCanvasRender() {
+  _modelCanvasPending = true;
+  if (_modelCanvasRaf) return;
+  _modelCanvasRaf = requestAnimationFrame(() => {
+    _modelCanvasRaf = 0;
+    if (_modelCanvasPending) {
+      _modelCanvasPending = false;
+      renderModelCanvas();
+    }
+  });
+}
+
 function renderModelCanvas() {
   const canvas = document.getElementById("model-canvas");
   if (!canvas) return;
@@ -1544,18 +1557,23 @@ function renderModelCanvas() {
   const rect = container.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
 
-  // PERF: reallocating the canvas bitmap on EVERY frame (old behaviour) forced
-  // the browser to clear + reallocate GPU buffers constantly = constant lag.
-  // Only resize the backing store when the size actually changed.
-  const bw = Math.round(rect.width * dpr), bh = Math.round(rect.height * dpr);
-  if (canvas.width !== bw || canvas.height !== bh) {
-    canvas.width = bw;
-    canvas.height = bh;
+  // Only touch canvas.width/height (which CLEARS the canvas and reallocates
+  // memory) when the size actually changed, not on every redraw.
+  const targetW = Math.round(rect.width * dpr);
+  const targetH = Math.round(rect.height * dpr);
+  if (canvas.width !== targetW || canvas.height !== targetH) {
+    canvas.width = targetW;
+    canvas.height = targetH;
     canvas.style.width = `${rect.width}px`;
     canvas.style.height = `${rect.height}px`;
+    _canvasLastW = rect.width;
+    _canvasLastH = rect.height;
   }
 
   const ctx = canvas.getContext("2d");
+  // setTransform (not scale): since we no longer resize the canvas every
+  // frame, the transform persists between redraws — scale() would compound
+  // (2×, 4×, 8×…). setTransform is absolute, so it's safe either way.
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, rect.width, rect.height);
 
@@ -1721,25 +1739,17 @@ async function renderWeightList(layerName) {
     return;
   }
 
-  // PERF: one RPC per tensor, run in parallel instead of a serial await chain.
-  const statResults = await Promise.allSettled(
-    layerTensors.map((t) => API.rpc("weight_stats", { tensor_name: t.name }))
-  );
-
-  let html = "";
-  layerTensors.forEach((tensor, i) => {
-    const r = statResults[i];
-    if (!r || r.status !== "fulfilled" || r.value?.error) return;
-    html += `
+  // PERF: the stats were fetched but never even displayed in this list — a
+  // blocking await per tensor meant a 20-tensor layer serialized 20 round-trips
+  // to the Python backend before anything appeared. Render instantly.
+  container.innerHTML = layerTensors.map((tensor) => `
       <div class="weight-item" data-tensor="${tensor.name}" onclick="selectTensor('${tensor.name}')">
         <span class="weight-name">${tensor.name.split(".").pop()}</span>
         <span class="weight-shape">[${tensor.shape.join("×")}]</span>
         <span class="weight-dtype">${tensor.dtype}</span>
         <span class="weight-size">${formatBytes(tensor.byte_count)}</span>
       </div>
-    `;
-  });
-  container.innerHTML = html;
+    `).join("");
 }
 
 async function selectTensor(name) {
@@ -1889,14 +1899,10 @@ function renderUnlearnCanvas(progressData) {
   const container = canvas.parentElement;
   const rect = container.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  // PERF: same reallocation fix as renderModelCanvas.
-  const uw = Math.round(rect.width * dpr), uh = Math.round(rect.height * dpr);
-  if (canvas.width !== uw || canvas.height !== uh) {
-    canvas.width = uw; canvas.height = uh;
-    canvas.style.width = `${rect.width}px`; canvas.style.height = `${rect.height}px`;
-  }
+  canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+  canvas.style.width = `${rect.width}px`; canvas.style.height = `${rect.height}px`;
   const ctx = canvas.getContext("2d");
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.scale(dpr, dpr);
   const W = rect.width, H = rect.height;
 
   if (!progressData) {
@@ -1979,72 +1985,15 @@ function renderUnlearnCanvas(progressData) {
 // CANVAS INTERACTIONS
 // ══════════════════════════════════════════
 
-let _hwInfoPromise = null;
-function refreshHardwareInfo() {
-  // PERF: hardware info is static except free RAM — cache the IPC result and
-  // only refresh freeRAM cheaply in the resource monitor.
-  if (!_hwInfoPromise) {
-    _hwInfoPromise = API.getHardwareInfo()
-      .then((hw) => { state.hardware = hw; return hw; })
-      .catch(() => null);
-  }
-  return _hwInfoPromise;
-}
-
 function initCanvasInteractions() {
   const canvas = document.getElementById("model-canvas");
-
-  // PERF: mousemove fired a FULL canvas re-render per mouse pixel — the single
-  // biggest source of lag in the app. Now: mouse position is tracked on every
-  // event (cheap), but the redraw runs at most once per animation frame, and
-  // only while the cursor is actually over a node (hover highlight).
-  let hoverFramePending = false;
-  let hoveringNode = false;
   canvas.addEventListener("mousemove", (e) => {
     const rect = canvas.getBoundingClientRect();
     state.lastMouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    if (!state.model || hoverFramePending) return;
-    const overNode = nodeAtPoint(state.lastMouse.x, state.lastMouse.y);
-    if (overNode === hoveringNode) return; // nothing visual changed — skip redraw
-    hoveringNode = overNode;
-    hoverFramePending = true;
-    requestAnimationFrame(() => { hoverFramePending = false; renderModelCanvas(); });
+    if (state.model) requestModelCanvasRender();
   });
-  canvas.addEventListener("mouseleave", () => {
-    state.lastMouse = { x: -1000, y: -1000 };
-    if (state.model && hoveringNode) { hoveringNode = false; renderModelCanvas(); }
-  });
-  canvas.addEventListener("wheel", (e) => { e.preventDefault(); state.zoom = Math.max(0.3, Math.min(3, state.zoom * (e.deltaY > 0 ? 0.95 : 1.05))); updateZoom(); });
-}
-
-// Hit-test against the same layout math renderModelCanvas uses, so we can skip
-// redraws entirely when the cursor isn't near a node.
-function nodeAtPoint(mx, my) {
-  if (state.layers.length === 0) return false;
-  const canvas = document.getElementById("model-canvas");
-  if (!canvas) return false;
-  const rect = canvas.parentElement.getBoundingClientRect();
-  const W = rect.width, H = rect.height;
-  const pad = { top: 60, bottom: 60, left: 80, right: 80 };
-  const maxCols = Math.min(12, state.layers.length);
-  const groupSize = Math.max(1, Math.ceil(state.layers.length / maxCols));
-  const groups = [];
-  for (let i = 0; i < state.layers.length; i += groupSize) groups.push(state.layers.slice(i, i + groupSize));
-  const colSpacing = (W - pad.left - pad.right) / Math.max(1, groups.length - 1);
-  // reduce (not Math.max(...spread)) so huge layer counts can't blow the stack
-  const maxParams = state.layers.reduce((m, l) => Math.max(m, l.total_params), 0);
-  for (let gi = 0; gi < groups.length; gi++) {
-    const x = pad.left + gi * colSpacing;
-    const group = groups[gi];
-    for (let li = 0; li < group.length; li++) {
-      const y = pad.top + ((H - pad.top - pad.bottom) / (group.length + 1)) * (li + 1);
-      const paramRatio = maxParams > 0 ? group[li].total_params / maxParams : 0.5;
-      const radius = 4 + paramRatio * 8;
-      const dx = mx - x, dy = my - y;
-      if (dx * dx + dy * dy <= (radius + 4) * (radius + 4)) return true;
-    }
-  }
-  return false;
+  canvas.addEventListener("mouseleave", () => { state.lastMouse = { x: -1000, y: -1000 }; if (state.model) requestModelCanvasRender(); });
+  canvas.addEventListener("wheel", (e) => { e.preventDefault(); state.zoom = Math.max(0.3, Math.min(3, state.zoom * (e.deltaY > 0 ? 0.95 : 1.05))); updateZoom(); }, { passive: false });
 }
 
 // ══════════════════════════════════════════
@@ -2233,13 +2182,8 @@ async function processChatMessage(text) {
 
 function initResourceMonitor() {
   let lastIdle = 0, lastTotal = 0;
-  // PERF: 3s IPC polling was constant background churn the user never sees;
-  // 8s is plenty for a status widget, and we pause when the window is hidden.
-  const RESOURCE_POLL_MS = 8000;
   setInterval(async () => {
-    if (document.hidden) return;
     try {
-      // Fresh fetch (not the cache): freeRAM must be current for the RAM bar.
       const hw = await API.getHardwareInfo();
       if (!hw) return;
       state.hardware = hw;
@@ -2261,19 +2205,22 @@ function initResourceMonitor() {
       if (ramBar) { ramBar.style.width = `${ramPct}%`; ramBar.className = `resource-bar-fill${ramPct > 80 ? " high" : ""}`; }
       if (ramVal) ramVal.textContent = `${ramUsed}/${hw.totalRAM}GB`;
     } catch (e) {}
-  }, RESOURCE_POLL_MS);
+  }, 3000);
 }
 
 // ── Window resize ──
-// PERF: resize used to fire a full canvas re-render per pixel dragged. Debounce
-// to one render after resizing stops.
-let _resizeTimer = null;
+// PERF: debounced (150ms) instead of firing full canvas rebuilds continuously
+// while the window is being dragged.
+let _resizeTimer = 0;
 window.addEventListener("resize", () => {
   clearTimeout(_resizeTimer);
   _resizeTimer = setTimeout(() => {
-    if (state.model) { renderModelCanvas(); if (document.getElementById("panel-heatmap")?.classList.contains("active")) renderHeatmap(); }
+    if (state.model) {
+      requestModelCanvasRender();
+      if (document.getElementById("panel-heatmap")?.classList.contains("active")) renderHeatmap();
+    }
     renderUnlearnCanvas();
-  }, 120);
+  }, 150);
 });
 
 // ══════════════════════════════════════════
@@ -2302,9 +2249,7 @@ const MODEL_CATALOG = [
 ];
 
 function initModelCatalog() {
-  // PERF: reuse the hardware snapshot fetched once at startup instead of a
-  // fresh IPC call on every catalog render.
-  refreshHardwareInfo().then(() => renderModelCatalog());
+  API.getHardwareInfo().then(hw => { state.hardware = hw; renderModelCatalog(); });
 
   document.querySelectorAll(".models-filter").forEach(btn => {
     btn.addEventListener("click", () => {

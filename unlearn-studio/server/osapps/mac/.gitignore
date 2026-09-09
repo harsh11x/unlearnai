@@ -1,0 +1,5 @@
+# Build artifacts are never committed — the folder stays in git via these
+# README.md placeholders while every actual installer is ignored.
+*
+!.gitignore
+!README.md

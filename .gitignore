@@ -39,5 +39,15 @@ npm-debug.log*
 .tmp/
 temp/
 
-# Desktop build artifacts (distributed via AWS deploy scripts, never in git)
-unlearn-studio/server/osapps/
+# Desktop build artifacts (distributed via AWS deploy scripts, never in git).
+# The osapps/<os>/ folders themselves ARE tracked — each contains a .gitignore
+# that ignores every artifact but keeps the folder + its README in git.
+unlearn-studio/server/osapps/**/*.dmg
+unlearn-studio/server/osapps/**/*.exe
+unlearn-studio/server/osapps/**/*.msi
+unlearn-studio/server/osapps/**/*.AppImage
+unlearn-studio/server/osapps/**/*.deb
+unlearn-studio/server/osapps/**/*.rpm
+unlearn-studio/server/osapps/**/*.blockmap
+unlearn-studio/server/osapps/**/*.zip
+unlearn-studio/apps/desktop/dist/
