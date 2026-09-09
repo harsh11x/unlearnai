@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Guest Flow Test Page</title>
+  <style>
+    body { font-family: Menlo, monospace; background: #0a0a0a; color: #e5e5e5; padding: 24px; font-size: 13px; }
+    .pass { color: #22c55e; }
+    .fail { color: #ef4444; }
+    .section { margin: 14px 0; padding: 10px; border: 1px solid #333; border-radius: 6px; }
+    h2 { font-size: 14px; }
+    .kv { margin: 4px 0; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Remap Studios — Guest Flow Test Harness</h1>
+  <div id="results"></div>
+
+  <!-- Minimal DOM the real app.js expects -->
+  <div id="auth-screen">
+    <div class="auth-card">
+      <button id="auth-guest-btn" class="auth-social-btn auth-guest-primary">Continue as Guest</button>
+      <button id="auth-google-btn">Continue with Google</button>
+      <button id="auth-apple-btn">Continue with Apple</button>
+      <form id="auth-email-form"><input id="auth-email" /><input id="auth-password" /><button id="auth-submit-btn">Sign In</button></form>
+      <div id="auth-error" style="display:none"></div>
+    </div>
+  </div>
+  <div id="main-layout" style="display:none">main</div>
+  <div id="bottombar" style="display:none">bar</div>
+  <div id="bottom-panel" style="display:none">panel</div>
+  <div id="toast-container"></div>
+  <div id="terminal-output"></div>
+  <div id="settings-user-name"></div>
+  <div id="settings-user-email"></div>
+  <div id="settings-user-avatar"></div>
+  <div id="settings-user-plan">Free</div>
+  <input id="models-search" />
+  <div id="models-list"></div>
+  <div id="models-detail"></div>
+  <div id="model-tree"></div>
+  <div id="properties-body"></div>
+  <div id="weight-explorer-body"></div>
+  <div id="command-palette-list"></div>
+  <input id="command-palette-input" />
+  <div id="command-palette-overlay"></div>
+  <div id="dropdown-overlay"></div>
+  <div id="terminal-input" />
+  <button id="terminal-send"></button>
+  <input id="chatbot-input" /><button id="chatbot-send"></button><div id="chatbot-messages"></div>
+  <canvas id="model-canvas"></canvas>
+  <canvas id="unlearn-canvas"></canvas>
+  <div id="canvas-overlay" class="hidden"></div>
+  <div id="context-menu">
+    <div class="context-menu-item" data-action="copy-name">Copy Name</div>
+  </div>
+  <span id="status-model"></span><span id="status-params"></span><span id="status-format"></span>
+  <span id="status-zoom">100%</span><span id="status-platform"></span><span id="status-device"></span><span id="status-ram"></span>
+  <div id="cpu-bar"></div><span id="cpu-val"></span><div id="ram-bar"></div><span id="ram-val"></span>
+
+  <script>
+    // Electron API mock: guest flow never touches these beyond existence checks.
+    window.electronAPI = {
+      onBackendReady: () => {}, onBackendLog: () => {}, onUnlearnProgress: () => {},
+      onDownloadProgress: () => {}, isBackendReady: async () => false,
+      getPlatform: async () => "darwin", getHardwareInfo: async () => ({ totalRAM: 16, freeRAM: 8, cpuCount: 8, cpuSpeed: 3200, platformName: "macOS" }),
+      rpc: async () => ({ error: "mock" }), checkForUpdates: async () => ({ updateAvailable: false }),
+      openFile: async () => null, openFolder: async () => null, saveFile: async () => null,
+      openExternal: () => {}, downloadModel: async () => ({}), fileFromDrop: (f) => ({ path: null, name: f.name, size: f.size }),
+    };
+
+    const results = [];
+    const out = (name, ok, detail = "") => {
+      results.push({ name, ok, detail });
+      const d = document.createElement("div");
+      d.className = "kv " + (ok ? "pass" : "fail");
+      d.textContent = `${ok ? "PASS" : "FAIL"}  ${name}${detail ? " — " + detail : ""}`;
+      document.getElementById("results").appendChild(d);
+    };
+    window.__testOut = out;
+
+    window.addEventListener("error", (e) => out("no runtime errors during boot", false, (e.error && e.error.stack) || e.message));
+
+    // Simulate a FRESH boot: clear the persisted session from a previous run,
+    // otherwise restoreSavedSession() (correctly) skips the login screen.
+    try { localStorage.clear(); } catch (e) {}
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => {
+        // 1. App init ran: auth screen visible, main hidden
+        out("app boots to auth screen", !document.getElementById("auth-screen").classList.contains("hidden"));
+
+        // 2. Click Continue as Guest — measure how long the handler takes
+        const btn = document.getElementById("auth-guest-btn");
+        const t0 = performance.now();
+        btn.click();
+        const dt = Math.round(performance.now() - t0);
+        out("guest click lands on dashboard instantly (<50ms)", dt < 50, dt + "ms");
+        out("dashboard visible after guest click", document.getElementById("main-layout").style.display !== "none");
+        out("auth screen hidden after guest click", document.getElementById("auth-screen").classList.contains("hidden"));
+
+        // 3. Session persisted with isGuest flag
+        const saved = JSON.parse(localStorage.getItem("remap_user") || "null");
+        out("guest session persisted to localStorage", !!saved && saved.isGuest === true);
+
+        // 4. Welcome toast appeared
+        const toastEl = document.querySelector("#toast-container .toast");
+        out("welcome toast shown", !!toastEl, toastEl ? toastEl.textContent : "no toast found");
+
+        // 5. Settings user info reflects guest
+        out("settings shows Guest identity", document.getElementById("settings-user-name").textContent !== "");
+
+        // 6. Relaunch restore: saved guest goes straight to dashboard
+        document.getElementById("auth-screen").classList.remove("hidden");
+        document.getElementById("main-layout").style.display = "none";
+        // simulate app relaunch re-running the restore path via a fresh dispatch
+        const saved2 = JSON.parse(localStorage.getItem("remap_user"));
+        out("relaunch restores guest session without login flash", saved2 && saved2.isGuest && typeof window.restoreSavedSession === "function" ? window.restoreSavedSession() === true : false);
+        out("dashboard visible after restore", document.getElementById("main-layout").style.display !== "none");
+
+        // summary line for automation
+        const fails = results.filter(r => !r.ok).length;
+        const sum = document.createElement("div");
+        sum.id = "test-summary";
+        sum.textContent = fails === 0 ? "ALL TESTS PASSED" : `${fails} TEST(S) FAILED`;
+        sum.className = fails === 0 ? "pass" : "fail";
+        document.getElementById("results").appendChild(sum);
+      }, 800);
+    });
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>

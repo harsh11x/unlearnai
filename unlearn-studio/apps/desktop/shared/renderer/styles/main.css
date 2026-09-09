@@ -52,6 +52,23 @@
   --transition-slow: 0.25s ease;
 }
 
+/* PERF: during app startup cut animations/transitions to near-zero. app.js
+   removes this class once init settles — eliminates janky first seconds.
+   iteration-count 1 keeps infinite animations from churning at max speed. */
+html.booting *,
+html.booting *::before,
+html.booting *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* PERF: stop hover transitions mid-drag/resize so panels don't stutter */
+body.resizing, body.resizing * {
+  transition: none !important;
+  cursor: inherit !important;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
@@ -1461,6 +1478,50 @@ html, body {
   display: flex; align-items: center; justify-content: center;
 }
 #auth-screen.hidden { display: none; }
+
+/* Guest button: make the no-friction path visually first */
+.auth-guest-primary {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.auth-guest-primary:hover { background: var(--accent); opacity: 0.9; }
+
+/* ── Toast notifications ── */
+#toast-container {
+  position: fixed;
+  top: 46px;
+  right: 14px;
+  z-index: 20000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  min-width: 240px;
+  max-width: 340px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font-body);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  animation: toastIn 0.18s ease;
+}
+
+.toast.out { opacity: 0; transform: translateX(8px); transition: opacity 0.2s, transform 0.2s; }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
 
 .auth-card {
   width: 380px; max-width: 90vw;
