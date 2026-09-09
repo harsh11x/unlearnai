@@ -38,3 +38,6 @@ npm-debug.log*
 # Temp
 .tmp/
 temp/
+
+# Desktop build artifacts (distributed via AWS deploy scripts, never in git)
+unlearn-studio/server/osapps/
