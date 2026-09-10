@@ -71,12 +71,30 @@ done
 PLATFORMS="$VALID_P"
 ok "Platforms:$PLATFORMS"
 
+# ── Detect current OS ──
+UNAME_S="$(uname -s)"
+case "$UNAME_S" in
+  Darwin)  HOST_OS="mac" ;;
+  MINGW*|MSYS*|CYGWIN*) HOST_OS="win" ;;
+  Linux)   HOST_OS="linux" ;;
+  *)       HOST_OS="unknown" ;;
+esac
+
 # ── Platform helpers ──
 build_target() { case "$1" in mac) echo "mac";; win) echo "win";; linux) echo "linux";; esac; }
 dist_dir()     { case "$1" in mac) echo "$REPO_ROOT/apps/dist/mac";; win) echo "$REPO_ROOT/apps/dist/win";; linux) echo "$REPO_ROOT/apps/dist/linux";; esac; }
 pattern()      { case "$1" in mac) echo "*.dmg";; win) echo "*.exe";; linux) echo "*.AppImage";; esac; }
 extra_pat()    { case "$1" in linux) echo "*.deb";; *) echo "";; esac; }
 os_dir()       { case "$1" in mac) echo mac;; win) echo windows;; linux) echo linux;; esac; }
+
+# ── Skip platforms we can't build on this OS ──
+can_build() {
+  case "$1" in
+    mac)   [ "$HOST_OS" = "mac" ] ;;
+    win)   [ "$HOST_OS" = "win" ] ;;
+    linux) true ;;
+  esac
+}
 
 # ══════════════════════════════════════════
 #  1. BUILD
@@ -89,6 +107,10 @@ if [ "$DO_BUILD" = "1" ]; then
     (cd "$SHARED_DIR" && npm install) || die "npm install failed"
   fi
   for p in $PLATFORMS; do
+    if ! can_build "$p"; then
+      warn "Skipping $p — cannot build $p on $HOST_OS"
+      continue
+    fi
     echo "  Building $p..."
     if (cd "$SHARED_DIR" && npm run "build:$(build_target $p)") > /tmp/build-apps-$p.log 2>&1; then
       ok "$p built"
