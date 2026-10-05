@@ -23,8 +23,32 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // RPC to Python backend
   rpc: (method, params = {}) => ipcRenderer.invoke("rpc", method, params),
 
+  // System terminal — a real shell in the main process, streamed over IPC.
+  // App-level commands (help/status/…) are handled in the renderer; everything
+  // else is written into the shell exactly as if typed in a system terminal.
+  terminalStart: (opts) => ipcRenderer.invoke("terminal:start", opts || {}),
+  terminalRestart: (opts) => ipcRenderer.invoke("terminal:restart", opts || {}),
+  terminalSend: (data) => ipcRenderer.send("terminal:input", data),
+  terminalInterrupt: () => ipcRenderer.invoke("terminal:interrupt"),
+  onTerminalData: (callback) => {
+    ipcRenderer.on("terminal:data", (_event, payload) => callback(payload));
+  },
+  onTerminalReady: (callback) => {
+    ipcRenderer.on("terminal:ready", (_event, info) => callback(info));
+  },
+  onTerminalExit: (callback) => {
+    ipcRenderer.on("terminal:exit", (_event, info) => callback(info));
+  },
+
   // Backend status
   isBackendReady: () => ipcRenderer.invoke("app:isBackendReady"),
+  getBackendStatus: () => ipcRenderer.invoke("app:backendStatus"),
+  restartBackend: () => ipcRenderer.invoke("app:restartBackend"),
+
+  // Backend lifecycle events
+  onBackendStatus: (callback) => {
+    ipcRenderer.on("backend:status", (_event, status) => callback(status));
+  },
 
   // Platform
   getPlatform: () => ipcRenderer.invoke("app:getPlatform"),

@@ -229,6 +229,7 @@
                 <option value="viridis">Viridis</option>
                 <option value="magma">Magma</option>
                 <option value="inferno">Inferno</option>
+                <option value="coolwarm">Coolwarm (signed)</option>
               </select>
             </div>
           </div>
@@ -255,6 +256,10 @@
         <div class="settings-section-page" id="settings-section-backend">
           <div class="settings-section-page-title">Backend</div>
           <div class="settings-section">
+            <div class="settings-group-title">STATUS</div>
+            <div id="backend-status-card" class="settings-row" style="display:block;font-size:11px;line-height:1.7;color:var(--text-subtle)">Checking…</div>
+          </div>
+          <div class="settings-section">
             <div class="settings-group-title">PYTHON</div>
             <div class="settings-row">
               <div class="settings-label">Python path</div>
@@ -263,6 +268,9 @@
             <div class="settings-row">
               <div class="settings-label">Backend port</div>
               <input type="number" class="settings-input" id="setting-port" value="8420" style="width:80px" />
+            </div>
+            <div class="settings-row">
+              <button class="btn-primary" id="btn-backend-restart" style="margin-top:8px">Restart Backend</button>
             </div>
           </div>
         </div>
@@ -421,9 +429,6 @@
       <div class="panel-header">
         <span class="panel-title">MODEL EXPLORER</span>
         <div class="panel-header-actions">
-          <button class="panel-action" id="btn-new-file" title="New File">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-          </button>
           <button class="panel-action" id="btn-refresh-tree" title="Refresh">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10.5 6A4.5 4.5 0 002 3.5M1.5 6a4.5 4.5 0 008.5 2.5" stroke="currentColor" stroke-width="1.2"/><path d="M10.5 1.5v3h-3M1.5 10.5v-3h3" stroke="currentColor" stroke-width="1.2"/></svg>
           </button>
@@ -493,6 +498,58 @@
         <!-- Visualization Tab -->
         <div class="tab-panel active" id="panel-visualization">
           <canvas id="model-canvas"></canvas>
+          <canvas id="model-canvas-3d" class="hidden"></canvas>
+
+          <!-- ── Viewport HUD: mode switch + 3D controls ── -->
+          <div id="viewport-hud" class="hidden">
+            <div class="hud-group" role="group" aria-label="Render mode">
+              <button class="hud-btn active" id="btn-view-2d" title="2D architecture graph (G)">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1.5" y="4" width="2.5" height="4" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="5" y="2" width="2.5" height="8" rx="0.5" stroke="currentColor" stroke-width="1"/><rect x="8.5" y="4" width="2.5" height="4" rx="0.5" stroke="currentColor" stroke-width="1"/></svg>
+                <span>2D</span>
+              </button>
+              <button class="hud-btn" id="btn-view-3d" title="3D neural network (G)">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1"/><ellipse cx="6" cy="6" rx="4.5" ry="1.8" stroke="currentColor" stroke-width="0.9"/><ellipse cx="6" cy="6" rx="1.8" ry="4.5" stroke="currentColor" stroke-width="0.9"/></svg>
+                <span>3D</span>
+              </button>
+            </div>
+
+            <div class="hud-group hidden" id="hud-3d-controls">
+              <button class="hud-btn" id="btn-3d-layout" title="Cycle layout (L)">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 9.5L6 2l4 7.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="2" cy="9.5" r="1.2" fill="currentColor"/><circle cx="6" cy="2" r="1.2" fill="currentColor"/><circle cx="10" cy="9.5" r="1.2" fill="currentColor"/></svg>
+                <span id="hud-3d-layout-label">Layers</span>
+              </button>
+              <button class="hud-btn active" id="btn-3d-spin" title="Auto-orbit (Space)">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 6a4 4 0 1 1-1.4-3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M10 1.5V3.4h-1.9" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Orbit</span>
+              </button>
+              <button class="hud-btn" id="btn-3d-color" title="Cycle colour mode (C)">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="4.2" cy="4.2" r="2.4" stroke="currentColor" stroke-width="1"/><circle cx="7.8" cy="7.8" r="2.4" stroke="currentColor" stroke-width="1"/></svg>
+                <span id="hud-3d-color-label">Depth</span>
+              </button>
+              <button class="hud-btn" id="btn-3d-reset" title="Reset camera (R)">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1"/><path d="M6 3.4V6l1.8 1.2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+                <span>Reset</span>
+              </button>
+            </div>
+
+            <div class="hud-group hud-stats hidden" id="hud-3d-stats">
+              <span id="hud-3d-fps">— fps</span>
+              <span class="hud-sep">·</span>
+              <span id="hud-3d-count">0 nodes</span>
+            </div>
+          </div>
+
+          <!-- ── 3D legend ── -->
+          <div id="viewport-legend" class="hidden">
+            <div class="legend-ramp"><span class="legend-label">INPUT</span><div class="legend-gradient"></div><span class="legend-label">OUTPUT</span></div>
+          </div>
+
+          <!-- ── Floating stage labels (projected from the 3D scene) ── -->
+          <div id="stage-labels" aria-hidden="true"></div>
+
+          <!-- ── Node inspector (3D hover/select) ── -->
+          <div id="node-hud-card" class="hidden"></div>
+
           <div class="canvas-overlay" id="canvas-overlay">
             <div class="welcome-screen">
               <div class="welcome-icon">
@@ -532,14 +589,28 @@
           <div class="panel-header">
             <span class="panel-title">WEIGHT EXPLORER</span>
             <div class="panel-actions">
+              <button class="panel-action" id="btn-weight-stats" title="Load per-tensor statistics">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 10V6M5 10V2M8 10V4M11 10V7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </button>
               <button class="panel-action" id="btn-filter-weights" title="Filter">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 2h10L7 6v4l-2 1V6L1 2z" stroke="currentColor" stroke-width="1.2"/></svg>
               </button>
+              <input type="text" id="weight-filter-input" class="panel-select weight-filter-input" placeholder="Filter tensors…" hidden />
               <select id="weight-layer-select" class="panel-select">
                 <option value="">Select a layer...</option>
               </select>
             </div>
           </div>
+          <div class="we-toolbar">
+            <input type="text" id="weight-search" class="we-search" placeholder="Search all tensors…" spellcheck="false" />
+            <select id="weight-sort" class="panel-select we-sort" title="Sort order">
+              <option value="order">Model order</option>
+              <option value="name">Name</option>
+              <option value="params">Params</option>
+              <option value="size">Size</option>
+            </select>
+          </div>
+          <div class="we-summary" id="weight-summary"></div>
           <div class="weight-explorer-body" id="weight-explorer-body">
             <div class="empty-state">
               <p class="empty-title">Load a model first</p>
@@ -565,7 +636,19 @@
             </div>
           </div>
           <div class="heatmap-body" id="heatmap-body">
-            <canvas id="heatmap-canvas"></canvas>
+            <div class="heatmap-head" id="heatmap-head"></div>
+            <div class="heatmap-stage">
+              <canvas id="heatmap-canvas"></canvas>
+              <div class="heatmap-legend" id="heatmap-legend" hidden>
+                <span class="heatmap-legend-caption">w</span>
+                <canvas id="heatmap-legend-canvas" width="14" height="150"></canvas>
+                <div class="heatmap-legend-ticks" id="heatmap-legend-ticks"></div>
+              </div>
+            </div>
+            <div class="heatmap-meta">
+              <span class="heatmap-label" id="heatmap-label"></span>
+              <span class="heatmap-readout" id="heatmap-readout"></span>
+            </div>
           </div>
         </div>
 
@@ -641,6 +724,7 @@
                     </select>
                   </div>
                 </div>
+                <div class="config-note hidden" id="unlearn-quant-note"></div>
                 <div class="config-section">
                   <div class="config-section-title">Hyperparameters</div>
                   <div class="config-group">
@@ -717,7 +801,10 @@
           </div>
         </div>
       </div>
-      <div class="resize-handle" data-resize="props-chat"></div>
+
+      <!-- AI assistant: fixed under Properties. No close / hide control — it
+           stays put while terminal and output come and go in the bottom dock. -->
+      <div class="resize-handle" data-resize="props-chat" title="Drag to resize the AI assistant"></div>
       <div id="props-chat">
         <div class="panel-header">
           <div class="chatbot-title">
@@ -755,8 +842,12 @@
       <span class="status-item" id="status-params">—</span>
       <span class="status-separator">|</span>
       <span class="status-item" id="status-format">—</span>
+      <span class="status-separator">|</span>
+      <span class="status-item status-quant hidden" id="status-quant">—</span>
     </div>
     <div class="bottombar-right">
+      <button class="status-view" id="status-view" title="Toggle 2D / 3D view (G)">2D</button>
+      <span class="status-separator">|</span>
       <span class="status-item" id="status-device">—</span>
       <span class="status-separator">|</span>
       <span class="status-item" id="status-zoom">100%</span>
@@ -767,8 +858,10 @@
     </div>
   </div>
 
-  <!-- ── BOTTOM PANEL (Terminal / Log) ── -->
-  <div id="bottom-panel" class="collapsed">
+  <!-- ── BOTTOM PANEL: output | terminal — minimisable, independently closable.
+       The AI assistant is NOT here: it is permanently docked under Properties. ── -->
+  <div id="bottom-panel">
+    <div class="resize-handle bp-height-handle" data-resize="bottom-panel" title="Drag to resize the panel"></div>
     <div class="bottom-panel-header" id="bottom-panel-toggle">
       <div class="bottom-panel-tabs">
         <button class="bottom-panel-tab active" data-bptab="output">OUTPUT</button>
@@ -776,22 +869,57 @@
         <button class="bottom-panel-tab" data-bptab="log">LOG</button>
       </div>
       <div class="bottom-panel-actions">
+        <button class="bp-pane-toggle" id="btn-pane-logs" data-pane-toggle="logs" title="Show / hide the output pane">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M2 6h8M2 9h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </button>
+        <button class="bp-pane-toggle" id="btn-pane-terminal" data-pane-toggle="terminal" title="Show / hide the terminal pane">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 9h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </button>
         <button class="panel-action" id="btn-clear-terminal" title="Clear">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
         </button>
-        <svg class="bottom-panel-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.2"/></svg>
+        <button class="bp-pane-toggle" id="btn-minimize-dock" title="Minimize panel">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5l3 3 3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
     </div>
-    <div class="bottom-panel-body" id="terminal-output">
-      <div class="terminal-line"><span class="terminal-prompt">❯</span> <span class="terminal-text">Remap Studios v1.0.0</span></div>
-      <div class="terminal-line"><span class="terminal-prompt">❯</span> <span class="terminal-text muted">Ready. Open a model to begin. Type 'help' for commands.</span></div>
-    </div>
-    <div class="terminal-input-bar">
-      <span class="terminal-prompt">❯</span>
-      <input type="text" id="terminal-input" placeholder="Type a command..." autocomplete="off" spellcheck="false" />
-      <button id="terminal-send" class="terminal-send-btn" title="Send">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+    <div class="bottom-panel-columns">
+      <!-- left: application output / problems / log -->
+      <div class="bp-pane bp-logs" data-pane="logs">
+        <div class="bp-pane-header">
+          <span>OUTPUT</span>
+          <button class="bp-pane-close" data-pane-close="logs" title="Close the output pane">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="bottom-panel-body" id="terminal-output">
+          <div class="terminal-line"><span class="terminal-prompt">❯</span> <span class="terminal-text">Remap Studios v1.0.0</span></div>
+          <div class="terminal-line"><span class="terminal-prompt">❯</span> <span class="terminal-text muted">Ready. Open a model to begin. Type 'help' for commands.</span></div>
+        </div>
+      </div>
+      <div class="resize-handle bp-vhandle" data-resize="logs" title="Drag to resize the output pane"></div>
+      <!-- right: terminal — absorbs the leftover width -->
+      <div class="bp-pane bp-terminal" data-pane="terminal">
+        <div class="bp-pane-header">
+          <span>TERMINAL</span>
+          <div class="bp-pane-header-right">
+            <span class="bp-pane-meta" id="terminal-cwd" title="Working directory"></span>
+            <button class="bp-pane-close" data-pane-close="terminal" title="Close the terminal pane">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="bp-terminal-log" id="terminal-log">
+          <div class="terminal-line"><span class="terminal-text muted">System shell — commands run on your machine. Type 'help' for app commands.</span></div>
+        </div>
+        <div class="terminal-input-bar">
+          <span class="terminal-prompt">❯</span>
+          <input type="text" id="terminal-input" placeholder="Type a command — runs in your system shell" autocomplete="off" spellcheck="false" />
+          <button id="terminal-send" class="terminal-send-btn" title="Send">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M7 2l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -865,6 +993,7 @@
   <div id="toast-container"></div>
 
   <!-- Scripts -->
+  <script src="nn3d.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
