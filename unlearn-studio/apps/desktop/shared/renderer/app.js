@@ -328,20 +328,541 @@ function showAuthErr(id, msg) {
 }
 
 // ── Toast notifications ──
-function toast(message, type = "info", duration = 3500) {
+// Stacked, deduplicated, optionally action-bearing notifications. Repeated
+// identical messages collapse into a counter instead of flooding the stack
+// (a failing poll loop used to push one toast per tick), and errors stay put
+// until dismissed so they are never missed while the window is unfocused.
+const TOAST_ICONS = { info: "i", success: "\u2713", warning: "!", error: "\u2715" };
+const TOAST_MAX = 5;
+const _toastRecent = new Map();
+
+function toast(message, type = "info", duration = 3500, opts = {}) {
   const container = document.getElementById("toast-container");
-  if (!container) return;
+  if (!container) return null;
+
+  // Dedupe: an identical message within 4s bumps a counter on the live toast.
+  const dedupeKey = `${type}\u0000${message}`;
+  const prev = _toastRecent.get(dedupeKey);
+  if (prev && prev.el.isConnected && Date.now() - prev.at < 4000) {
+    prev.count += 1;
+    prev.at = Date.now();
+    const badge = prev.el.querySelector(".toast-count");
+    if (badge) badge.textContent = `\u00d7${prev.count}`;
+    prev.el.classList.remove("toast-pulse");
+    void prev.el.offsetWidth; // restart the animation
+    prev.el.classList.add("toast-pulse");
+    if (prev.timer) clearTimeout(prev.timer);
+    if (type !== "error" && duration > 0) {
+      prev.timer = setTimeout(() => dismissToast(prev.el), duration);
+    }
+    return prev.el;
+  }
+
+  // Cap the stack — drop the oldest dismissible toast first so a burst never
+  // covers the UI.
+  const live = [...container.querySelectorAll(".toast:not(.out)")];
+  if (live.length >= TOAST_MAX) {
+    const victim = live.find((t) => t.dataset.sticky !== "1") || live[0];
+    dismissToast(victim);
+  }
+
   const el = document.createElement("div");
-  el.className = "toast";
-  el.textContent = message;
-  if (type === "error") el.style.borderLeftColor = "var(--danger)";
-  if (type === "success") el.style.borderLeftColor = "#22c55e"; // no --success var in theme
-  if (type === "warning") el.style.borderLeftColor = "var(--warning)";
+  el.className = `toast toast-${type}`;
+  el.setAttribute("role", type === "error" ? "alert" : "status");
+
+  const icon = document.createElement("span");
+  icon.className = "toast-icon";
+  icon.textContent = TOAST_ICONS[type] || "i";
+  el.appendChild(icon);
+
+  const body = document.createElement("span");
+  body.className = "toast-body";
+  body.textContent = message;
+  el.appendChild(body);
+
+  const count = document.createElement("span");
+  count.className = "toast-count";
+  el.appendChild(count);
+
+  if (opts.action && typeof opts.onAction === "function") {
+    const btn = document.createElement("button");
+    btn.className = "toast-action";
+    btn.textContent = opts.action;
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      try { opts.onAction(); } finally { dismissToast(el); }
+    });
+    el.appendChild(btn);
+  }
+
+  const close = document.createElement("button");
+  close.className = "toast-close";
+  close.setAttribute("aria-label", "Dismiss notification");
+  close.textContent = "\u00d7";
+  close.addEventListener("click", (e) => { e.stopPropagation(); dismissToast(el); });
+  el.appendChild(close);
+
+  // Errors and warnings never auto-vanish: they usually mean the user has to
+  // act, and silently deleting the evidence is worse than a sticky card.
+  const sticky = opts.sticky === true || (type === "error" && opts.sticky !== false);
+  if (sticky) el.dataset.sticky = "1";
+
   container.appendChild(el);
+
+  const rec = { el, count: 1, at: Date.now(), timer: null };
+  _toastRecent.set(dedupeKey, rec);
+  if (duration > 0 && !sticky) rec.timer = setTimeout(() => dismissToast(el), duration);
+  return el;
+}
+
+function dismissToast(el) {
+  if (!el || !el.isConnected || el.classList.contains("out")) return;
+  el.classList.add("out");
   setTimeout(() => {
-    el.classList.add("out");
-    setTimeout(() => el.remove(), 250);
-  }, duration);
+    el.remove();
+    // Drop the dedupe entry once its toast is gone so the same message can
+    // reappear later without being counted against a dead element.
+    for (const [k, v] of _toastRecent) if (v.el === el) _toastRecent.delete(k);
+  }, 200);
+}
+
+function clearToasts() {
+  document.querySelectorAll("#toast-container .toast").forEach(dismissToast);
+}
+
+// ══════════════════════════════════════════
+// SETTINGS STORE
+// ══════════════════════════════════════════
+// One spec drives the UI wiring, persistence and the live effect of every
+// preference, so adding a setting means adding one entry here plus its markup.
+// The durable copy lives in the main process (userData/settings.json) — the
+// renderer keeps a localStorage mirror purely so the first paint uses the
+// right values instead of flashing defaults.
+const SETTINGS_SPEC = {
+  autoload:   { type: "bool",   def: true,           label: "Auto-load last model" },
+  welcome:    { type: "bool",   def: true,           label: "Show welcome screen" },
+  gpu:        { type: "bool",   def: true,           label: "GPU acceleration" },
+  animSpeed:  { type: "enum",   def: "normal",       label: "Node animation speed" },
+  connections:{ type: "bool",   def: true,           label: "Show connection lines" },
+  defaultMethod: { type: "enum", def: "retain_aware", label: "Default unlearn method" },
+  sizes:      { type: "map",    def: {},             label: "Panel sizes" },
+  autosave:   { type: "bool",   def: true,           label: "Auto-save checkpoints" },
+  pythonPath: { type: "string", def: "",             label: "Preferred interpreter" },
+  device:     { type: "enum",   def: "auto",         label: "Compute device" },
+  heatmapColor: { type: "enum", def: "grayscale",    label: "Heatmap colour scheme" },
+  lastModelPath: { type: "string", def: "",          label: "Last model" },
+  recentModels:  { type: "list",  def: [],            label: "Recent models" },
+};
+
+const SETTINGS_LS_KEY = "remap_settings";
+const ANIM_SPEED_SCALE = { slow: 0.35, normal: 1, fast: 2.4, off: 0 };
+
+function defaultSettings() {
+  const out = {};
+  for (const [k, spec] of Object.entries(SETTINGS_SPEC)) {
+    out[k] = Array.isArray(spec.def) ? [] : (spec.type === "map" ? {} : spec.def);
+  }
+  return out;
+}
+
+function loadSettingsFromCache() {
+  const settings = defaultSettings();
+  try {
+    const raw = JSON.parse(localStorage.getItem(SETTINGS_LS_KEY) || "null");
+    if (raw && typeof raw === "object") {
+      for (const k of Object.keys(SETTINGS_SPEC)) {
+        if (Object.prototype.hasOwnProperty.call(raw, k)) settings[k] = raw[k];
+      }
+    }
+  } catch (e) { /* corrupted cache — defaults are fine */ }
+  return settings;
+}
+
+function cacheSettings() {
+  try { localStorage.setItem(SETTINGS_LS_KEY, JSON.stringify(state.settings)); } catch (e) { /* quota */ }
+}
+
+// Coerce whatever came out of the settings file into the shape the spec wants,
+// so a hand-edited JSON file cannot inject a bad enum or a non-array list.
+function coerceSetting(key, value) {
+  const spec = SETTINGS_SPEC[key];
+  if (!spec) return undefined;
+  if (spec.type === "bool") return value !== false && value !== "false" && value !== 0;
+  if (spec.type === "enum") {
+    const allowed = { animSpeed: ["slow", "normal", "fast", "off"], defaultMethod: ["retain_aware", "gradient_forget"], device: ["auto", "cpu", "mps", "cuda"], heatmapColor: ["grayscale", "viridis", "magma", "inferno", "coolwarm"] }[key];
+    if (allowed && !allowed.includes(value)) return spec.def;
+    return value;
+  }
+  if (spec.type === "list") return Array.isArray(value) ? value : [];
+  if (spec.type === "map") return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  if (spec.type === "string") return typeof value === "string" ? value : (value == null ? "" : String(value));
+  return value;
+}
+
+// Pull the durable copy from the main process once, at boot.
+async function initSettingsStore() {
+  state.settings = loadSettingsFromCache();
+  // Legacy keys from earlier builds: the fake "Backend port" field and the
+  // one-off heatmap migration flag. Dropped so they never get re-saved.
+  delete state.settings.port;
+  delete state.settings.heatmapColorMigrated;
+  try {
+    const stored = await API.getSettings();
+    if (stored && typeof stored === "object") {
+      for (const k of Object.keys(SETTINGS_SPEC)) {
+        if (stored[k] !== undefined) state.settings[k] = coerceSetting(k, stored[k]);
+      }
+      state.settingsPath = stored._path || null;
+      cacheSettings();
+    }
+  } catch (e) {
+    log(`Could not read stored settings (${e.message}) — using defaults`, "warning");
+  }
+  applyAllSettings({ initial: true });
+  return state.settings;
+}
+
+async function setSetting(key, value, opts = {}) {
+  if (!SETTINGS_SPEC[key]) return false;
+  const coerced = coerceSetting(key, value);
+  const before = state.settings[key];
+  state.settings[key] = coerced;
+  cacheSettings();
+  applySetting(key, coerced, opts);
+  try {
+    const res = await API.setSetting(key, coerced);
+    if (res && res.ok === false && !opts.quiet) {
+      toast(`Could not save “${SETTINGS_SPEC[key].label}”: ${res.error}`, "warning", 6000);
+      return false;
+    }
+  } catch (e) {
+    if (!opts.quiet) toast(`Could not save settings: ${e.message}`, "warning", 6000);
+    return false;
+  }
+  // Keep the panel in step with the value. Without this the interpreter hint
+  // still read "auto-detect" straight after pinning an interpreter, which makes
+  // the control look like it did nothing.
+  syncSettingsControls();
+  if (!opts.quiet && opts.announce !== false) {
+    toast(`${SETTINGS_SPEC[key].label}${describeSettingValue(key, coerced)}`, "success", 2200);
+  }
+  return true;
+}
+
+function describeSettingValue(key, value) {
+  if (typeof value === "boolean") return value ? " enabled" : " disabled";
+  if (value === "") return " cleared — auto-detect";
+  if (SETTINGS_SPEC[key].type === "enum") {
+    const pretty = String(value).replace(/_/g, " ").replace(/\b(mps|cuda|cpu)\b/i, (m) => m.toUpperCase());
+    return `: ${pretty}`;
+  }
+  return " updated";
+}
+
+// Every preference's live effect lands here. `initial` suppresses the work that
+// only makes sense on a user-driven change (reloading a model, respawning).
+function applySetting(key, value, opts = {}) {
+  switch (key) {
+    case "animSpeed":
+      applyAnimationSpeed(value);
+      break;
+    case "connections":
+      state.showConnections = value !== false;
+      if (state.nn3d) state.nn3d.setConnections?.(state.showConnections);
+      break;
+    case "gpu":
+      if (!value) {
+        log("GPU acceleration disabled — falling back to CPU compute", "warning");
+        if (!opts.initial) applyDevicePreference("cpu");
+      } else if (!opts.initial && state.settings.device === "auto") {
+        applyDevicePreference("auto");
+      }
+      break;
+    case "heatmapColor":
+      if (state.heatmapData) renderHeatmap(state.heatmapData);
+      break;
+    case "defaultMethod":
+      syncUnlearnMethodDefault(value);
+      break;
+    case "device":
+      applyDevicePreference(value);
+      break;
+    case "welcome":
+      if (!value) hideWelcomeScreen();
+      break;
+    default:
+      break;
+  }
+}
+
+function applyAllSettings(opts = {}) {
+  for (const key of Object.keys(SETTINGS_SPEC)) applySetting(key, state.settings[key], { ...opts, initial: true });
+  syncSettingsControls();
+}
+
+// Push state → controls (used at boot and after a reset).
+function syncSettingsControls() {
+  const s = state.settings;
+  const bind = (id, value, prop = "checked") => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (prop === "checked") el.checked = value !== false;
+    else el.value = value == null ? "" : value;
+  };
+  bind("setting-autoload", s.autoload);
+  bind("setting-welcome", s.welcome);
+  bind("setting-gpu", s.gpu);
+  bind("setting-anim-speed", s.animSpeed, "value");
+  bind("setting-connections", s.connections);
+  bind("setting-default-method", s.defaultMethod, "value");
+  bind("setting-autosave", s.autosave);
+  bind("setting-heatmap-color", s.heatmapColor, "value");
+  bind("setting-python", s.pythonPath, "value");
+  bind("setting-device", s.device, "value");
+
+  const hint = document.getElementById("setting-python-hint");
+  if (hint) {
+    hint.textContent = s.pythonPath
+      ? "pinned — used for the dependency check and backend"
+      : "auto-detect (app environment first)";
+  }
+  const storePath = document.getElementById("setting-store-path");
+  if (storePath) storePath.textContent = state.settingsPath || "userData/settings.json";
+  const pyInput = document.getElementById("setting-python");
+  if (pyInput && pyInput.value !== (s.pythonPath || "")) pyInput.value = s.pythonPath || "";
+}
+
+function applyAnimationSpeed(value) {
+  const scale = ANIM_SPEED_SCALE[value] ?? 1;
+  if (state.nn3d && state.nn3d.cam) {
+    // nn3d owns its own rotate speed; scale around its natural value so the
+    // default ("normal") is bit-identical to the pre-settings behaviour.
+    const base = state.nn3d.baseAutoRotateSpeed || 0.055;
+    state.nn3d.cam.autoRotateSpeed = base * scale;
+  }
+  document.documentElement.style.setProperty("--anim-scale", String(scale));
+  // "Off" is a real motion-off switch, not just a slower spin: it neutralises
+  // CSS transitions too, which is what users who picked it actually want.
+  if (value === "off") document.documentElement.setAttribute("data-anim", "off");
+  else document.documentElement.removeAttribute("data-anim");
+}
+
+// The compute device applies to the Python backend, not this process: ask it to
+// re-pin, then report what it actually landed on.
+async function applyDevicePreference(device) {
+  if (!state.backendReady) return;
+  try {
+    const info = await API.rpc("device_preference", { device: device || "auto" });
+    if (info && info.error) { toast(`Device change failed: ${info.error}`, "error", 7000); return; }
+    const landed = info && info.device ? String(info.device) : "?";
+    const wanted = device || "auto";
+    log(`Compute device set to ${landed}${wanted !== "auto" && !landed.startsWith(wanted) ? ` (${wanted} unavailable — fell back)` : ""}`, "info");
+    if (landed.includes("cpu") && wanted !== "cpu" && wanted !== "auto") {
+      toast(`${wanted.toUpperCase()} is not available on this machine — running on CPU`, "warning", 7000);
+    }
+    updateStatusDeviceChip(landed);
+  } catch (e) {
+    toast(`Could not set compute device: ${e.message}`, "warning", 6000);
+  }
+}
+
+function syncUnlearnMethodDefault(method) {
+  const sel = document.querySelector("#unlearn-method, .unlearn-method-select, [data-unlearn-method]");
+  if (sel && "value" in sel && !sel.disabled) {
+    sel.value = method;
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  state.unlearnMethod = method;
+}
+
+// ── Recent models (backing the File ▸ Recent Models menu) ──
+function rememberRecentModel(path, name, size) {
+  if (!path) return;
+  const list = Array.isArray(state.settings.recentModels) ? state.settings.recentModels.slice() : [];
+  const entry = { path, name: name || path.split(/[\\/]/).pop(), size: size || 0, at: Date.now() };
+  const without = list.filter((m) => m && m.path !== path);
+  without.unshift(entry);
+  const trimmed = without.slice(0, 10);
+  state.settings.recentModels = trimmed;
+  cacheSettings();
+  API.setSetting("recentModels", trimmed).catch(() => {});
+  setSetting("lastModelPath", path, { quiet: true, announce: false });
+}
+
+function recentModels() {
+  return Array.isArray(state.settings.recentModels) ? state.settings.recentModels.filter((m) => m && m.path) : [];
+}
+
+// Drop every trace of the loaded model from the UI. Used when the backend is
+// replaced underneath us: leaving the old tree, tensors and canvas up would be
+// a lie, and any action taken on that ghost model fails confusingly.
+function clearModelState(opts = {}) {
+  state.model = null;
+  state.layers = [];
+  state.tensors = [];
+  state.modelSummary = null;
+  state.selectedTensor = null;
+  state.heatmapData = null;
+  state.tensorCapabilities = null;
+  state.multiSelectedTensors = [];
+  state.localModelsDirty = true;
+  state.expandedTreeGroups?.clear?.();
+  state.collapsedTreeGroups?.clear?.();
+  // Cancel any in-flight stats hydration so its results cannot land on the new
+  // (empty) list.
+  state.weightHydrateToken = (state.weightHydrateToken || 0) + 1;
+
+  // 3D: clear the graph so the next model builds a fresh one rather than
+  // drawing the previous model's nodes next to the new model's stats.
+  if (state.nn3d) {
+    try { state.nn3d.setModel({ layers: [], tensors: [], summary: {} }); } catch (e) { /* engine may be gone */ }
+  }
+
+  const tree = document.getElementById("model-tree");
+  if (tree && !opts.keepAgainstReload) {
+    tree.innerHTML = `
+      <div class="empty-state">
+        <p class="empty-title">No model loaded</p>
+        <p class="empty-desc">Open a model file or directory to begin exploring</p>
+        <div class="empty-actions">
+          <button class="btn-primary-sm" id="btn-open-model-empty">Open File</button>
+          <button class="btn-outline-sm" id="btn-open-folder-empty">Open Folder</button>
+        </div>
+      </div>`;
+    document.getElementById("btn-open-model-empty")?.addEventListener("click", openFile);
+    document.getElementById("btn-open-folder-empty")?.addEventListener("click", openFolder);
+  }
+
+  const body = document.getElementById("weight-explorer-body");
+  if (body) {
+    body.innerHTML = '<div class="empty-state"><p class="empty-title">No model loaded</p><p class="empty-desc">Open a model to list its weights</p></div>';
+  }
+  const sel = document.getElementById("weight-layer-select");
+  if (sel) sel.innerHTML = '<option value="">Select a layer...</option>';
+  const summary = document.getElementById("weight-summary");
+  if (summary) summary.textContent = "";
+
+  ["status-model", "status-params", "status-format"].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = i === 0 ? "No model" : "—"; el.style.color = ""; el.style.cursor = ""; el.onclick = null; }
+  });
+  document.getElementById("status-quant")?.classList.add("hidden");
+  renderModelCanvas();
+}
+
+
+// ── Confirm dialog ──
+// Destructive actions used to fire immediately with no way to back out. This
+// is a promise-based confirm that inherits the app's modal styling, traps
+// focus, and resolves false on Escape / backdrop click — so `await` is the
+// only thing a caller has to get right.
+function confirmDialog({ title, body, confirm = "Confirm", cancel = "Cancel", danger = false, extra = null } = {}) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay confirm-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.innerHTML = `
+      <div class="modal confirm-modal">
+        <div class="modal-header">
+          <h3>${escapeHtml(title || "Are you sure?")}</h3>
+        </div>
+        <div class="modal-body">
+          <p class="confirm-body">${escapeHtml(body || "")}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" data-confirm-cancel>${escapeHtml(cancel)}</button>
+          <button class="btn-primary${danger ? " btn-danger" : ""}" data-confirm-ok>${escapeHtml(confirm)}</button>
+        </div>
+      </div>`;
+
+    const finish = (value) => {
+      overlay.remove();
+      document.removeEventListener("keydown", onKey, true);
+      if (previousFocus && previousFocus.isConnected) previousFocus.focus();
+      resolve(value);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); finish(false); }
+      if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); finish(true); }
+      if (e.key === "Tab") {
+        // Two buttons — cycle between them instead of escaping to the page.
+        const focusables = [...overlay.querySelectorAll("button")];
+        const idx = focusables.indexOf(document.activeElement);
+        const next = e.shiftKey ? (idx <= 0 ? focusables.length - 1 : idx - 1) : (idx + 1) % focusables.length;
+        e.preventDefault();
+        focusables[next]?.focus();
+      }
+    };
+
+    const previousFocus = document.activeElement;
+    overlay.querySelector("[data-confirm-cancel]").addEventListener("click", () => finish(false));
+    overlay.querySelector("[data-confirm-ok]").addEventListener("click", () => finish(true));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) finish(false); });
+    document.addEventListener("keydown", onKey, true);
+
+    document.body.appendChild(overlay);
+    overlay.querySelector("[data-confirm-ok]").focus();
+  });
+}
+
+// ── Welcome screen ──
+// "Show welcome screen on startup" has to be honoured in both directions: the
+// overlay is painted after a model load, a failed load and on a fresh launch,
+// so each of those paths checks the preference instead of assuming it is on.
+function hideWelcomeScreen() {
+  state.welcomeDismissed = true;
+  const overlay = document.getElementById("canvas-overlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+
+function welcomeAllowed() {
+  return state.settings.welcome !== false && !state.welcomeDismissed;
+}
+
+// The status bar device chip turns "auto" into what the backend actually
+// landed on, so a silent CPU fallback is visible at a glance.
+function updateStatusDeviceChip(device) {
+  const el = document.getElementById("status-platform");
+  if (!el) return;
+  const pretty = String(device || "").replace("cuda:0", "CUDA").replace(/^mps$/, "Apple GPU (MPS)").replace(/^cpu$/, "CPU");
+  el.textContent = pretty || "—";
+  el.classList.toggle("status-cpu", /cpu/i.test(String(device || "")));
+  el.title = `Compute device: ${device || "unknown"} · Settings → Backend`;
+  el.dataset.device = String(device || "");
+}
+
+function escapeHtml(text) {
+  return String(text == null ? "" : text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function copyToClipboard(text, label) {
+  const value = String(text == null ? "" : text);
+  if (!value) { toast(`Nothing to copy for ${label || "that item"}`, "warning", 3000); return Promise.resolve(false); }
+  const done = () => toast(`${label || "Copied"}: ${value.length > 60 ? value.slice(0, 57) + "…" : value}`, "success", 2500);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(value).then(() => { done(); return true; })
+      .catch(() => { fallbackCopy(value); done(); return true; });
+  }
+  fallbackCopy(value);
+  done();
+  return Promise.resolve(true);
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand("copy"); } catch (e) { /* clipboard blocked */ }
+  ta.remove();
 }
 
 // ── State ──
@@ -366,24 +887,48 @@ const state = {
   hardware: null,
   catalogFilter: "all",
   selectedModel: null,
+  localModels: [],
+  selectedLocalPath: null,
   activeDropdown: null,
   commandPaletteOpen: false,
   selectedCommandIdx: 0,
   sidebarVisible: true,
   propsVisible: true,
   terminalExpanded: false,
+  // Preferences. Shaped exactly like SETTINGS_SPEC — the spec is the source of
+  // truth for defaults, this is just the live copy the UI reads.
   settings: {
     autoload: true,
     welcome: true,
     gpu: true,
     animSpeed: "normal",
     connections: true,
-    heatmapColor: "grayscale",
     defaultMethod: "retain_aware",
     autosave: true,
-    pythonPath: "python3",
-    port: 8420,
+    pythonPath: "",
+    device: "auto",
+    heatmapColor: "grayscale",
+    lastModelPath: "",
+    recentModels: [],
+    sizes: {},
   },
+  settingsPath: null,
+  unlearnMethod: "retain_aware",
+  // Edit history for the Weight Explorer / surgery edits (Edit ▸ Undo/Redo).
+  undoStack: [],
+  redoStack: [],
+  lastClosedPane: null,
+  // When true the welcome overlay is suppressed for this session only.
+  welcomeDismissed: false,
+  appVersion: null,
+  platform: null,
+  platformName: null,
+  backendSession: 0,
+  modelSize: 0,
+  modelIsDirectory: false,
+  multiSelectedTensors: [],
+  clipboardEdit: null,
+  docsModalOpen: false,
   exportFormat: "safetensors",
   expandedTreeGroups: new Set(),
   collapsedTreeGroups: new Set(),
@@ -409,7 +954,7 @@ const COLORMODE_LABELS_3D = { depth: "Depth", dtype: "Dtype", params: "Energy" }
 // INITIALIZATION
 // ══════════════════════════════════════════
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // PERF: skip animations during boot for a snappier first paint.
   document.documentElement.classList.add("booting");
   setTimeout(() => document.documentElement.classList.remove("booting"), 600);
@@ -423,6 +968,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // PERF: Firebase (and Razorpay, on demand) load in the background instead
   // of blocking page load — see loadScript/scheduleLazySdkLoads above.
   scheduleLazySdkLoads();
+
+  // Preferences first: everything below reads them (welcome visibility, 3D
+  // connection lines, animation speed, the interpreter the gate probes with),
+  // so applying them late would visibly re-configure the UI after first paint.
+  await initSettingsStore();
 
   initTabs();
   initResizeHandles();
@@ -447,9 +997,55 @@ document.addEventListener("DOMContentLoaded", () => {
   initKeyboardShortcuts();
   initExportDialog();
   initSettingsPanel();
+  initDependencyGate();
   initContextMenu();
   initBottomPanelTabs();
+  initSearchPanel();
+  restorePanelSizes();
+  initStatusBarActions();
+  initDocsModal();
+  initWeightMultiSelect();
+
+  // Welcome-screen preference applies to the static overlay in index.html too:
+  // with it off the viewport should show the grid, not a call to action.
+  if (!welcomeAllowed()) {
+    document.getElementById("canvas-overlay")?.classList.add("hidden");
+    log("'Show welcome screen' is off — press ⌘O to open a model", "info");
+  }
+
+  // Auto-load the last model, once the backend is actually up (it is spawned
+  // asynchronously and a load before "ready" fails with a Python error).
+  if (state.settings.autoload && state.settings.lastModelPath) {
+    autorestoreLastModel(state.settings.lastModelPath);
+  }
+
+  // The dependency gate may need re-running now that a preferred interpreter
+  // from settings is known to the main process.
+  if (state.settings.pythonPath) log(`Preferred Python interpreter: ${state.settings.pythonPath}`);
 });
+
+// Load the previously-open model in the background: wait for the backend, then
+// retry a missing file gracefully (moved/unmounted drive) instead of throwing
+// an error dialog at launch.
+async function autorestoreLastModel(pathToModel) {
+  const name = String(pathToModel).split(/[\\/]/).pop();
+  const waitForBackend = async () => {
+    for (let i = 0; i < 120; i++) {
+      if (state.backendReady) return true;
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    return false;
+  };
+  const ready = await waitForBackend();
+  if (!ready) { log(`Skipped auto-loading ${name}: backend never became ready`, "warning"); return; }
+  // Restoring is best-effort: if the path is gone we say so once and clear it,
+  // so the next launch does not repeat the same failure forever.
+  const probe = await API.rpc("system_info", {}).catch(() => null);
+  if (probe && probe.error) return;
+  log(`Auto-loading last model: ${name}`, "info");
+  await loadModel(pathToModel, name, 0, false, { auto: true });
+}
+
 
 // ══════════════════════════════════════════
 // BACKEND LISTENERS
@@ -457,8 +1053,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function initBackendListeners() {
   API.onBackendReady((info) => {
+    const previousSession = state.backendSession || 0;
+    state.backendSession = previousSession + 1;
     state.backendReady = true;
     state.backendInfo = info;
+
+    // A backend can start more than once per app session: changing the
+    // interpreter, pressing Restart Backend, or recovering from a crash all
+    // respawn Python. The new process has NO model in memory while the window
+    // still shows the old one — every tensor RPC then fails with "No model
+    // loaded" against a UI that insists a model is open. Recover explicitly.
+    if (previousSession > 0) {
+      const name = state.model && state.model.name;
+      if (name) {
+        const path = state.model.path;
+        log(`Backend restarted — reloading ${name}`, "warning");
+        toast(`Backend restarted — reloading ${name}`, "info", 5000);
+        clearModelState({ keepAgainstReload: true });
+        if (path) {
+          loadModel(path, name, state.modelSize || 0, state.modelIsDirectory === true, { silent: true })
+            .catch(() => log(`Could not reload ${name} — open it again with ⌘O`, "error"));
+        }
+      } else {
+        clearModelState();
+      }
+    }
+
     log("Python backend connected", "success");
     log(`Device: ${info.device} | PyTorch ${info.torch} | Python ${(info.python || "?").split(" ")[0]}`);
     if (info.cuda_available) log(`CUDA ${info.cuda_version} available`, "info");
@@ -526,6 +1146,218 @@ function initBackendListeners() {
 }
 
 // ══════════════════════════════════════════
+// PYTHON DEPENDENCY SETUP GATE
+// ══════════════════════════════════════════
+// The main process re-checks every requirement in backend/requirements.txt on
+// launch (version + real import, so conflicting libraries are caught too). When
+// something is missing the backend cannot start, and this modal offers the fix:
+// Allow → the app builds its own Python environment and pip-installs everything,
+// streaming progress here; Close → quit. There is no dismiss button: without
+// the packages the app has no working backend.
+
+let depsInstalling = false;
+let depsLastSeq = 0; // ignore status snapshots older than the newest one applied
+
+function initDependencyGate() {
+  if (!API.onDepsStatus) return;
+  API.onDepsStatus((status) => renderDependencyGate(status));
+  API.onDepsProgress((evt) => renderDepsProgress(evt));
+
+  document.getElementById("deps-install")?.addEventListener("click", startDependencyInstall);
+  document.getElementById("deps-recheck")?.addEventListener("click", async () => {
+    const btn = document.getElementById("deps-recheck");
+    if (btn) { btn.disabled = true; btn.textContent = "Checking…"; }
+    try { await API.checkDeps(); } catch (e) { log(`Dependency check failed: ${e.message}`, "error"); }
+    finally { if (btn) { btn.disabled = false; btn.textContent = "Check Again"; } }
+  });
+  document.getElementById("deps-continue")?.addEventListener("click", async () => {
+    hideDependencyGate();
+    try { await API.continueWithoutDeps(); } catch (e) { /* older build */ }
+    log("Continuing without the missing Python packages — some features will not work.", "warning");
+  });
+  document.getElementById("deps-quit")?.addEventListener("click", () => { API.quitApp?.(); });
+  // Only meaningful when no interpreter exists at all: macOS installs the
+  // command line tools (which ship python3) through Apple's own dialog, other
+  // platforms get sent to python.org. The user then presses Check Again.
+  document.getElementById("deps-getpython")?.addEventListener("click", async () => {
+    const btn = document.getElementById("deps-getpython");
+    if (btn) { btn.disabled = true; btn.textContent = "Opening installer…"; }
+    try {
+      const res = await API.getPython();
+      if (res && res.already) toast("Python 3 already ships with the installed Xcode tools — press Check Again", "info", 8000);
+      else if (res && res.opened) toast("Finish the Python install, then press Check Again", "info", 8000);
+      else toast("A system dialog should be asking to install the developer tools", "info", 9000);
+      log(`Python install helper: ${JSON.stringify(res).slice(0, 200)}`, "info");
+    } catch (e) {
+      toast(`Could not start the Python installer: ${e.message}`, "error", 8000);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "Get Python 3"; }
+    }
+  });
+
+  // The launch check can finish before this listener attaches; ask for the
+  // current state once, so the modal is never missed.
+  API.getDepsStatus?.().then((s) => {
+    if (s && s.status && s.status !== "unknown") renderDependencyGate(s);
+  }).catch(() => { /* main not up yet */ });
+}
+
+function showDependencyGate() { document.getElementById("deps-overlay")?.classList.add("visible"); }
+function hideDependencyGate() { document.getElementById("deps-overlay")?.classList.remove("visible"); }
+
+async function startDependencyInstall() {
+  if (depsInstalling) return;
+  depsInstalling = true;
+  const installBtn = document.getElementById("deps-install");
+  if (installBtn) { installBtn.disabled = true; installBtn.textContent = "Installing…"; }
+  const logEl = document.getElementById("deps-log");
+  if (logEl) { logEl.style.display = "block"; logEl.textContent = ""; }
+  document.getElementById("deps-progress")?.style.setProperty("display", "block");
+  log("Installing Python packages — this can take several minutes", "info");
+  try {
+    const res = await API.installDeps();
+    if (res && res.ok) {
+      log(`Python packages installed (${res.envKind || "app-env"}: ${res.envPath || res.python})`, "success");
+      toast("Python packages installed — backend starting", "success", 6000);
+    } else {
+      toast(res && res.error ? `Install failed: ${res.error}` : "Install failed", "error", 9000);
+    }
+  } catch (e) {
+    toast(`Install failed: ${e.message}`, "error", 9000);
+  } finally {
+    depsInstalling = false;
+    if (installBtn) { installBtn.disabled = false; installBtn.textContent = "Allow & Install Everything"; }
+    // Apply the final state *after* clearing the local flag: the "ok" status
+    // was broadcast while depsInstalling was still true, so it rendered as
+    // in-progress and the dialog would otherwise stay on screen forever.
+    try { renderDependencyGate(await API.getDepsStatus()); } catch (e) { hideDependencyGate(); }
+  }
+}
+
+function renderDependencyGate(status) {
+  if (!status) return;
+  // A "getDepsStatus" round-trip and a push event race each other; both carry
+  // the main process's counter, so anything older than what is already on
+  // screen is dropped instead of reverting the dialog to a stale state.
+  if (typeof status.seq === "number") {
+    if (status.seq < depsLastSeq) return;
+    depsLastSeq = status.seq;
+  }
+  const overlay = document.getElementById("deps-overlay");
+  if (!overlay) return;
+
+  const title = document.getElementById("deps-title");
+  const intro = document.getElementById("deps-intro");
+  const meta = document.getElementById("deps-meta");
+  const list = document.getElementById("deps-list");
+  const progress = document.getElementById("deps-progress");
+  const logEl = document.getElementById("deps-log");
+  const installBtn = document.getElementById("deps-install");
+  const recheckBtn = document.getElementById("deps-recheck");
+  const continueBtn = document.getElementById("deps-continue");
+  const quitBtn = document.getElementById("deps-quit");
+  const missing = Array.isArray(status.missing) ? status.missing : [];
+
+  const envLines = [];
+  if (status.python) {
+    envLines.push(`Interpreter: <b>${status.python}</b>${status.pythonVersion ? ` (Python ${status.pythonVersion})` : ""}`);
+  } else if (status.basePython) {
+    envLines.push(`Python found: <b>${status.basePython}</b>${status.basePythonVersion ? ` (Python ${status.basePythonVersion})` : ""}`);
+  }
+  if (status.envKind) {
+    const kind = status.envKind === "app-env" ? "app-managed environment"
+      : status.envKind === "target-dir" ? "app-managed package directory" : "system Python";
+    envLines.push(`Environment: <b>${kind}</b>${status.envPath ? ` — ${status.envPath}` : ""}`);
+  } else if (status.plannedEnvPath) {
+    envLines.push(`Environment: <b>will be created</b> — ${status.plannedEnvPath}`);
+  }
+
+  // ── Working / installing ──
+  if (status.status === "installing" || depsInstalling) {
+    if (title) title.textContent = "INSTALLING PYTHON PACKAGES";
+    if (intro) intro.textContent = "Downloading and installing everything the backend needs. Keep this window open — torch is a large download and the whole install usually takes a few minutes.";
+    if (meta) meta.innerHTML = envLines.join("<br>");
+    if (list) list.innerHTML = "";
+    if (progress) progress.style.display = "block";
+    if (logEl) logEl.style.display = "block";
+    if (installBtn) installBtn.style.display = "none";
+    if (recheckBtn) recheckBtn.style.display = "none";
+    if (continueBtn) continueBtn.style.display = "none";
+    const getPythonBtn = document.getElementById("deps-getpython");
+    if (getPythonBtn) getPythonBtn.style.display = "none";
+    if (quitBtn) { quitBtn.disabled = true; quitBtn.textContent = "Installing…"; }
+    showDependencyGate();
+    return;
+  }
+
+  // ── Something is missing (or a previous install failed) ──
+  if (status.status === "missing" || status.status === "failed") {
+    const failed = status.status === "failed";
+    const noPython = missing.length === 1 && missing[0].name === "python";
+    if (title) title.textContent = failed ? "PYTHON PACKAGES INSTALL FAILED" : "PYTHON SETUP REQUIRED";
+    if (intro) {
+      intro.textContent = failed
+        ? "The automatic install did not finish cleanly. Check your internet connection and try again — or continue without the missing features."
+        : noPython
+          ? "Remap Studios runs its machine-learning backend on Python 3, and no usable Python interpreter was found on this computer. Install Python 3.9 or newer, then press Check Again — the app will install the rest automatically into its own environment."
+          : "Remap Studios runs its machine-learning backend on Python, and some packages it needs are missing, out of date or broken on this machine — usually a conflict between library versions. Allow the app to install everything automatically? Nothing outside the app's own Python environment is touched.";
+    }
+    if (meta) meta.innerHTML = envLines.join("<br>") + (status.detail ? `<br><span style="color:var(--danger)">${status.detail}</span>` : "");
+    if (list) {
+      list.innerHTML = missing.length
+        ? missing.map((m) => `
+            <div class="deps-item">
+              <span class="deps-item-name">${m.name}</span>
+              <span class="deps-item-need">${m.need ? `needs ${m.need}` : ""}</span>
+              <span class="deps-item-reason">${m.reason || "unavailable"}</span>
+            </div>`).join("")
+        : `<div class="deps-item"><span class="deps-item-name">python</span><span class="deps-item-reason">No usable Python 3 interpreter was found. Install Python 3.9 or newer, then press Check Again.</span></div>`;
+    }
+    if (progress) progress.style.display = "none";
+    if (logEl) {
+      const stored = Array.isArray(status.log) ? status.log.join("\n") : "";
+      if (!logEl.textContent && stored) logEl.textContent = stored;
+      logEl.style.display = logEl.textContent ? "block" : "none";
+    }
+    // Without an interpreter there is nothing to install into — the user has
+    // to install Python first, then press Check Again.
+    if (installBtn) { installBtn.style.display = ""; installBtn.disabled = Boolean(noPython); installBtn.textContent = "Allow & Install Everything"; }
+    const getPythonBtn = document.getElementById("deps-getpython");
+    if (getPythonBtn) getPythonBtn.style.display = noPython ? "" : "none";
+    if (recheckBtn) recheckBtn.style.display = "";
+    if (continueBtn) continueBtn.style.display = "";
+    if (quitBtn) { quitBtn.disabled = false; quitBtn.textContent = "Close Application"; }
+    showDependencyGate();
+    return;
+  }
+
+  // ── Healthy, or still checking ──
+  // Only a definite "everything is fine" (or an explicit skip) may close the
+  // dialog: hiding on "checking" let an in-flight status fetch arriving after
+  // the "missing" verdict wipe the setup dialog off the screen.
+  if (status.status === "ok" || status.status === "skipped") hideDependencyGate();
+}
+
+function renderDepsProgress(evt) {
+  if (!evt) return;
+  const logEl = document.getElementById("deps-log");
+  if (evt.line != null) {
+    if (logEl) {
+      logEl.style.display = "block";
+      logEl.textContent += (logEl.textContent ? "\n" : "") + evt.line;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    return;
+  }
+  const progress = document.getElementById("deps-progress");
+  const bar = document.getElementById("deps-progress-bar");
+  const label = document.getElementById("deps-progress-label");
+  if (progress) progress.style.display = "block";
+  if (bar) bar.style.width = `${Math.max(0, Math.min(100, evt.percent || 0))}%`;
+  if (label) label.textContent = evt.label || (evt.total ? `${evt.done || 0} / ${evt.total} packages` : "Working…");
+}
+
+// ══════════════════════════════════════════
 // AUTO-UPDATE
 // ══════════════════════════════════════════
 
@@ -584,10 +1416,76 @@ function switchTab(name) {
 // RESIZE HANDLES
 // ══════════════════════════════════════════
 
+// Panel geometry is remembered across launches, and every handle is also
+// drivable from the keyboard (focus it and use ←/→) — dragging was the only
+// way to change a panel size before, which left keyboard users stuck.
+const PANEL_SIZE_KEY = "panelSizes";
+
+function savedPanelSizes() {
+  const raw = state.settings.sizes;
+  return raw && typeof raw === "object" ? raw : {};
+}
+
+function rememberPanelSize(name, size) {
+  const sizes = { ...savedPanelSizes(), [name]: Math.round(size) };
+  state.settings.sizes = sizes;
+  cacheSettings();
+  API.setSetting("sizes", sizes).catch(() => {});
+}
+
+function restorePanelSizes() {
+  const sizes = savedPanelSizes();
+  const apply = (name, setter) => {
+    const v = Number(sizes[name]);
+    if (Number.isFinite(v) && v > 0) setter(v);
+  };
+  apply("sidebar", (w) => { const el = document.getElementById("sidebar"); if (el) el.style.width = `${w}px`; });
+  apply("props", (w) => { const el = document.getElementById("properties"); if (el) el.style.width = `${w}px`; });
+  if (Object.keys(sizes).length) log(`Restored panel layout (${Object.keys(sizes).length} panels)`);
+}
+
+function resetPanelSize(name) {
+  const sizes = { ...savedPanelSizes() };
+  delete sizes[name];
+  state.settings.sizes = sizes;
+  cacheSettings();
+  API.setSetting("sizes", sizes).catch(() => {});
+}
+
 function initResizeHandles() {
   const setupResize = (selector, options) => {
     document.querySelectorAll(`.resize-handle[data-resize='${selector}']`).forEach((handle) => {
       let startPos, startSize;
+
+      // Double-click a handle to put that panel back to its natural size.
+      handle.addEventListener("dblclick", (e) => {
+        e.preventDefault(); e.stopPropagation();
+        resetPanelSize(selector);
+        const el = document.getElementById(selector === "props" ? "properties" : selector);
+        if (el) el.style.width = "";
+        options.onDone?.();
+        toast(`${selector === "props" ? "Properties" : selector} panel reset`, "info", 1800);
+      });
+
+      handle.setAttribute("tabindex", "0");
+      handle.setAttribute("role", "separator");
+      handle.setAttribute("aria-orientation", options.axis === "x" ? "vertical" : "horizontal");
+      handle.title = "Drag to resize · double-click to reset · arrow keys work too";
+      handle.addEventListener("keydown", (e) => {
+        const step = e.shiftKey ? 40 : 12;
+        const back = options.axis === "x" ? "ArrowLeft" : "ArrowUp";
+        const fwd = options.axis === "x" ? "ArrowRight" : "ArrowDown";
+        if (e.key !== back && e.key !== fwd) return;
+        e.preventDefault();
+        const dir = e.key === fwd ? 1 : -1;
+        const delta = options.invert ? -dir * step : dir * step;
+        const max = typeof options.max === "function" ? options.max() : options.max;
+        const next = Math.max(options.min, Math.min(max, options.getSize() + delta));
+        options.setSize(next);
+        rememberPanelSize(selector, next);
+        options.onDone?.();
+      });
+
       handle.addEventListener("mousedown", (e) => {
         e.preventDefault(); e.stopPropagation();
         startPos = options.axis === "x" ? e.clientX : e.clientY;
@@ -597,12 +1495,14 @@ function initResizeHandles() {
         document.body.style.cursor = options.axis === "x" ? "col-resize" : "row-resize";
         document.body.style.userSelect = "none";
 
+        let latest = startSize;
         const onMove = (e) => {
           const currentPos = options.axis === "x" ? e.clientX : e.clientY;
           const diff = currentPos - startPos;
           const newSize = options.invert ? startSize - diff : startSize + diff;
           const max = typeof options.max === "function" ? options.max() : options.max;
-          options.setSize(Math.max(options.min, Math.min(max, newSize)));
+          latest = Math.max(options.min, Math.min(max, newSize));
+          options.setSize(latest);
         };
         const onUp = () => {
           handle.classList.remove("active");
@@ -611,6 +1511,8 @@ function initResizeHandles() {
           document.body.style.userSelect = "";
           document.removeEventListener("mousemove", onMove);
           document.removeEventListener("mouseup", onUp);
+          // Persist once on release, not on every mousemove.
+          if (Math.abs(latest - startSize) > 1) rememberPanelSize(selector, latest);
           if (options.onDone) options.onDone();
         };
         document.addEventListener("mousemove", onMove);
@@ -691,6 +1593,8 @@ const COMMANDS = [
   { label: "Cycle 3D Colour Mode", category: "View", shortcut: "C", action: () => cycleColorMode3D() },
   { label: "Toggle 3D Auto-Orbit", category: "View", shortcut: "Space", action: () => toggleAutoRotate3D() },
   { label: "Reset 3D Camera", category: "View", shortcut: "R", action: () => resetView3D() },
+  { label: "Slant 3D View Left", category: "View", shortcut: "Q", action: () => slantView3D(false) },
+  { label: "Slant 3D View Right", category: "View", shortcut: "E", action: () => slantView3D(true) },
   { label: "Toggle Sidebar", category: "View", shortcut: "⌘B", action: () => toggleSidebar() },
   { label: "Toggle Properties", category: "View", shortcut: "⌘⇧P", action: () => toggleProps() },
   { label: "Toggle Terminal", category: "View", shortcut: "⌘`", action: () => toggleTerminal() },
@@ -827,9 +1731,17 @@ function initDropdownMenus() {
     item.addEventListener("click", () => {
       const action = item.dataset.action;
       closeAllDropdowns();
+      if (item.classList.contains("disabled")) {
+        toast(item.title || "That action is not available right now", "info", 2500);
+        return;
+      }
       handleMenuAction(action);
     });
   });
+
+  updateEditMenuState();
+  const paste = document.querySelector('.dropdown-item[data-action="paste"]');
+  if (paste) paste.classList.add("disabled");
 }
 
 function closeAllDropdowns() {
@@ -839,12 +1751,27 @@ function closeAllDropdowns() {
   state.activeDropdown = null;
 }
 
+// Docs + issue tracker live outside the app; the repo is the canonical home of
+// both, and openExternal hands them to the OS browser so they work identically
+// in dev and in the packaged build (where there is no address bar).
+const PROJECT_URL = "https://github.com/harsh11x/unlearnai";
+const DOCS_URL = `${PROJECT_URL}#readme`;
+const ISSUES_URL = `${PROJECT_URL}/issues/new`;
+const SITE_URL = "https://remapstudios.com";
+
 function handleMenuAction(action) {
   switch (action) {
     case "open-file": openFile(); break;
     case "open-folder": openFolder(); break;
+    case "recent": openRecentModels(); break;
     case "export": toggleModal("export-overlay"); break;
     case "export-json": exportConfig(); break;
+    case "quit": quitApp(); break;
+    case "undo": undoLastEdit(); break;
+    case "redo": redoLastEdit(); break;
+    case "copy": copySelection(); break;
+    case "paste": pasteIntoSelection(); break;
+    case "select-all": selectAllTensors(); break;
     case "settings": toggleModal("settings-overlay"); break;
     case "shortcuts": toggleModal("shortcuts-overlay"); break;
     case "about": toggleModal("about-overlay"); break;
@@ -864,12 +1791,385 @@ function handleMenuAction(action) {
     case "fullscreen": toggleFullscreen(); break;
     case "start-unlearn": startUnlearn(); break;
     case "stop-unlearn": stopUnlearn(); break;
-    case "run-analysis": if (state.model) log("Running analysis...", "info"); break;
-    case "benchmark": if (state.model) log("Starting benchmark...", "info"); else log("Load a model first", "error"); break;
-    case "docs": log("Opening documentation...", "info"); break;
-    case "report-issue": log("Opening issue tracker...", "info"); break;
+    case "run-analysis": runModelAnalysis(); break;
+    case "benchmark": runModelBenchmark(); break;
+    case "docs": openDocumentation(); break;
+    case "report-issue": reportIssue(); break;
+    default:
+      log(`Unhandled menu action: ${action}`, "warning");
+      break;
   }
 }
+
+// ── File ▸ Recent Models ──
+// A real list, newest first, with the entries that no longer exist struck
+// through — clicking one of those explains why instead of failing obscurely.
+function openRecentModels() {
+  const list = recentModels();
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay confirm-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+
+  const rows = list.length
+    ? list.map((m, i) => `
+      <button class="recent-row" data-recent-idx="${i}">
+        <span class="recent-name">${escapeHtml(m.name || "model")}</span>
+        <span class="recent-meta">${m.size ? formatBytes(m.size) : "size unknown"} · ${timeAgo(m.at)}</span>
+        <span class="recent-path" title="${escapeHtml(m.path)}">${escapeHtml(m.path)}</span>
+      </button>`).join("")
+    : '<div class="empty-state"><p class="empty-title">No recent models</p><p class="empty-desc">Models you open are remembered here for one-click access.</p></div>';
+
+  overlay.innerHTML = `
+    <div class="modal confirm-modal recent-modal">
+      <div class="modal-header"><h3>Recent Models</h3></div>
+      <div class="modal-body recent-body">${rows}</div>
+      <div class="modal-footer">
+        <button class="btn-secondary" data-recent-clear ${list.length ? "" : "disabled"}>Clear list</button>
+        <button class="btn-primary" data-recent-open>Open Model…</button>
+        <button class="btn-secondary" data-recent-close>Close</button>
+      </div>
+    </div>`;
+
+  const close = () => overlay.remove();
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector("[data-recent-close]").addEventListener("click", close);
+  overlay.querySelector("[data-recent-open]").addEventListener("click", () => { close(); openFile(); });
+  overlay.querySelector("[data-recent-clear]").addEventListener("click", () => {
+    state.settings.recentModels = [];
+    cacheSettings();
+    API.setSetting("recentModels", []).catch(() => {});
+    close();
+    toast("Recent models cleared", "success", 2500);
+  });
+  overlay.querySelectorAll("[data-recent-idx]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const entry = list[Number(btn.dataset.recentIdx)];
+      close();
+      if (!entry) return;
+      const name = entry.name || String(entry.path).split(/[\\/]/).pop();
+      loadModel(entry.path, name, entry.size || 0, false);
+    });
+  });
+  document.addEventListener("keydown", function onKey(e) {
+    if (e.key === "Escape") { close(); document.removeEventListener("keydown", onKey); }
+  });
+  document.body.appendChild(overlay);
+}
+
+function timeAgo(ts) {
+  if (!ts) return "earlier";
+  const secs = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if (secs < 60) return "just now";
+  const mins = Math.round(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  return days === 1 ? "yesterday" : `${days}d ago`;
+}
+
+// ── File ▸ Quit ──
+// The in-process app:quit handler shuts the backend and the terminal down
+// cleanly; window.close() alone leaves detached Python processes behind.
+async function quitApp() {
+  const { edited, deleted } = pendingEditsIndex();
+  const dirty = Object.keys(edited).length + deleted.size;
+  const busy = state.currentJobId || dirty > 0;
+  if (busy) {
+    const ok = await confirmDialog({
+      title: "Quit Remap Studios?",
+      body: state.currentJobId
+        ? "An unlearning job is still running. Quitting stops it and any unsaved progress is lost."
+        : `You have ${dirty} unsaved tensor edit${dirty === 1 ? "" : "s"}. Quitting discards them.`,
+      confirm: "Quit anyway",
+      danger: true,
+    });
+    if (!ok) return;
+  }
+  try { await API.quitApp(); } catch (e) { window.close(); }
+}
+
+// ── Edit ▸ Undo / Redo ──
+// History covers tensor surgery: the only edits in the app that are both
+// destructive and laborious to redo by hand (a single slider drag can rewrite
+// every element of a 40M-parameter tensor).
+const EDIT_HISTORY_LIMIT = 50;
+
+function pushEditHistory(entry) {
+  if (!entry) return;
+  state.undoStack.push({ ...entry, at: Date.now() });
+  if (state.undoStack.length > EDIT_HISTORY_LIMIT) state.undoStack.shift();
+  state.redoStack.length = 0;
+  updateEditMenuState();
+}
+
+function updateEditMenuState() {
+  const set = (action, enabled, why) => {
+    const item = document.querySelector(`.dropdown-item[data-action="${action}"]`);
+    if (!item) return;
+    item.classList.toggle("disabled", !enabled);
+    item.title = enabled ? "" : (why || "Nothing to do");
+  };
+  set("undo", state.undoStack.length > 0, "No edits to undo yet");
+  set("redo", state.redoStack.length > 0, "Nothing to redo");
+}
+
+async function undoLastEdit() {
+  const entry = state.undoStack.pop();
+  if (!entry) { toast("Nothing to undo", "info", 2000); return; }
+  try {
+    if (entry.apply) await entry.apply();
+    state.redoStack.push(entry);
+    updateEditMenuState();
+    toast(`Undone: ${entry.label || "edit"}`, "success", 2500);
+  } catch (e) {
+    toast(`Undo failed: ${e.message}`, "error", 6000);
+    state.undoStack.push(entry); // put it back — it did not happen
+  }
+}
+
+async function redoLastEdit() {
+  const entry = state.redoStack.pop();
+  if (!entry) { toast("Nothing to redo", "info", 2000); return; }
+  try {
+    if (entry.redo) await entry.redo();
+    state.undoStack.push(entry);
+    updateEditMenuState();
+    toast(`Redone: ${entry.label || "edit"}`, "success", 2500);
+  } catch (e) {
+    toast(`Redo failed: ${e.message}`, "error", 6000);
+    state.redoStack.push(entry);
+  }
+}
+
+// ── Edit ▸ Copy / Paste / Select All ──
+function copySelection() {
+  const sel = selectedTensors();
+  if (!sel.length) {
+    const name = state.selectedTensor;
+    if (!name) { toast("Select a weight first", "warning", 2500); return; }
+    return copyToClipboard(name, "Copied tensor name");
+  }
+  return copyToClipboard(sel.join("\n"), `Copied ${sel.length} tensor name(s)`);
+}
+
+// Paste re-applies the last copied edit to the current selection: the common
+// real workflow is "edit one tensor, apply the same change to its siblings".
+async function pasteIntoSelection() {
+  const clip = state.clipboardEdit;
+  if (!clip) { toast("Nothing to paste — copy an edit first", "warning", 3000); return; }
+  const sel = selectedTensors();
+  if (!sel.length) { toast("Select one or more weights to paste into", "warning", 3000); return; }
+  const results = await Promise.all(sel.map((name) =>
+    API.rpc("tensor_edit", { name, ...clip }).then((r) => ({ name, ok: !(r && r.error), error: r && r.error })).catch((e) => ({ name, ok: false, error: e.message }))));
+  const applied = results.filter((r) => r.ok).length;
+  toast(`Pasted ${clip.type || "edit"} into ${applied}/${sel.length} tensor(s)`, applied ? "success" : "error", 4000);
+  for (const r of results.filter((x) => !x.ok).slice(0, 3)) log(`Paste failed for ${r.name}: ${r.error}`, "error");
+  if (applied && state.model) {
+    state.tensorCapabilities = null;
+    await refreshTensorCapabilities();
+    renderWeightList(currentWeightLayer());
+  }
+}
+
+function selectedTensors() {
+  if (Array.isArray(state.multiSelectedTensors) && state.multiSelectedTensors.length) return [...state.multiSelectedTensors];
+  return [];
+}
+
+function selectAllTensors() {
+  const rows = [...document.querySelectorAll("#weight-explorer-body .weight-item")];
+  if (!rows.length) { toast("No weights to select — open a model first", "warning", 3000); return; }
+  state.multiSelectedTensors = rows.map((r) => r.dataset.tensor).filter(Boolean);
+  rows.forEach((r) => r.classList.add("multi-selected"));
+  const label = document.getElementById("we-selection-count");
+  if (label) label.textContent = `${state.multiSelectedTensors.length} selected`;
+  toast(`Selected ${state.multiSelectedTensors.length} weights`, "info", 2000);
+}
+
+function setClipboardEdit(edit) {
+  state.clipboardEdit = edit;
+  const item = document.querySelector('.dropdown-item[data-action="paste"]');
+  if (item) item.classList.remove("disabled");
+  toast("Edit copied — use Edit ▸ Paste on another weight", "info", 3000);
+}
+
+// ── Run ▸ Analysis / Benchmark ──
+// Both were log-only stubs. They now do real work against the loaded model and
+// report into the activity log, so "Run Analysis" is not a lie.
+async function runModelAnalysis() {
+  if (!state.model) { toast("Load a model first", "warning", 3000); return; }
+  const tensors = state.tensors || [];
+  if (!tensors.length) { toast("No tensors to analyse", "warning", 3000); return; }
+
+  log("── Model analysis ─────────────────────", "info");
+  const groups = new Map();
+  let totalParams = 0;
+  for (const t of tensors) {
+    const params = t.param_count || 0;
+    totalParams += params;
+    // Group by the part of the name before the first dot: the standard
+    // convention that separates embedding / attention / mlp / norm blocks.
+    const key = String(t.name).includes(".") ? String(t.name).split(".")[0] : "(root)";
+    const g = groups.get(key) || { count: 0, params: 0, dtypes: new Set() };
+    g.count++; g.params += params; g.dtypes.add(t.dtype || "?");
+    groups.set(key, g);
+  }
+  log(`Tensors: ${tensors.length} · parameters: ${totalParams.toLocaleString()}`);
+  const ranked = [...groups.entries()].sort((a, b) => b[1].params - a[1].params);
+  for (const [name, g] of ranked.slice(0, 12)) {
+    const pct = totalParams ? ((g.params / totalParams) * 100).toFixed(1) : "0.0";
+    log(`  ${name.padEnd(16)} ${String(g.count).padStart(4)} tensors  ${formatBytes(g.params * 2)}  ${pct}%`);
+  }
+  if (ranked.length > 12) log(`  …and ${ranked.length - 12} more groups`);
+
+  // Density outliers: a tensor whose values are nearly all zero is the usual
+  // unlearning target, so surface the sparsest ones when stats are available.
+  const withStats = tensors.filter((t) => typeof t.sparsity === "number");
+  if (withStats.length) {
+    const sparsest = [...withStats].sort((a, b) => b.sparsity - a.sparsity).slice(0, 5);
+    log("Sparsest tensors (most near-zero weights):");
+    for (const t of sparsest) log(`  ${(t.sparsity * 100).toFixed(1)}% zeros · ${t.name}`);
+  } else {
+    log("Per-tensor sparsity not available — open Weight Explorer to compute stats on demand.", "info");
+  }
+  log("── Analysis complete ──────────────────", "success");
+  toast("Analysis written to the activity log", "success", 3000);
+}
+
+async function runModelBenchmark() {
+  if (!state.model) { toast("Load a model first", "error", 3000); return; }
+  log("── Benchmark ──────────────────────────", "info");
+
+  // Round-trip latency for the RPC methods the UI depends on. This measures
+  // the real plumbing (IPC + JSON + Python), which is what makes the app feel
+  // slow — far more useful than a synthetic FLOP count.
+  const methods = [
+    ["system_info", {}],
+    ["device_info", {}],
+    ["model_summary", {}],
+    ["model_layers", {}],
+    ["weight_list", {}],
+  ];
+  const results = [];
+  for (const [method, params] of methods) {
+    const t0 = performance.now();
+    try {
+      const res = await API.rpc(method, params);
+      const ms = performance.now() - t0;
+      results.push({ method, ms, ok: !(res && res.error), note: res && res.error ? String(res.error).slice(0, 60) : "" });
+    } catch (e) {
+      results.push({ method, ms: performance.now() - t0, ok: false, note: e.message });
+    }
+  }
+  for (const r of results) {
+    log(`  ${r.method.padEnd(16)} ${r.ms.toFixed(1).padStart(8)} ms  ${r.ok ? "ok" : "fail"}${r.note ? " — " + r.note : ""}`);
+  }
+
+  // Canvas rendering throughput, which is the other half of perceived speed.
+  if (state.viewMode === "3d" && state.nn3d?.readFps) {
+    const fps = state.nn3d.readFps();
+    log(`  3D viewport        ${fps ? fps.toFixed(1).padStart(8) + " fps" : "        n/a"}`);
+  } else if (state.nn3d?.readScenePixels) {
+    const t0 = performance.now();
+    const px = state.nn3d.readScenePixels();
+    log(`  2D→3D probe        ${(performance.now() - t0).toFixed(1).padStart(8)} ms  (${px ? px.pixels : 0} px)`);
+  }
+
+  const slowest = results.reduce((a, b) => (b.ms > a.ms ? b : a), results[0]);
+  log(`── Benchmark complete — slowest: ${slowest.method} at ${slowest.ms.toFixed(1)} ms ──`, "success");
+  toast(`Benchmark complete — slowest RPC ${slowest.method} (${slowest.ms.toFixed(0)} ms)`, "success", 4000);
+}
+
+// ── Help ▸ Documentation / Report Issue ──
+function openDocumentation() {
+  if (state.docsModalOpen) { closeDocsModal(); return; }
+  const overlay = document.getElementById("docs-overlay");
+  if (overlay) { overlay.classList.add("visible"); state.docsModalOpen = true; return; }
+  // Packaged builds keep working offline: fall back to the OS browser only if
+  // the in-app doc modal is missing for some reason.
+  API.openExternal(DOCS_URL).catch(() => toast("Could not open the documentation", "warning", 4000));
+}
+
+// The auth screen's Terms / Privacy links were `href="#"` — they did nothing at
+// all. The site has no /terms or /privacy route, so instead of shipping a link
+// to a 404 this states the facts the user is actually agreeing to, taken from
+// what the code does: everything local, with cloud calls only for auth,
+// subscription and update checks.
+function openLegalModal(kind) {
+  const existing = document.getElementById("legal-overlay");
+  if (existing) existing.remove();
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay confirm-overlay";
+  overlay.id = "legal-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.innerHTML = `
+    <div class="modal confirm-modal legal-modal">
+      <div class="modal-header"><h3>${kind === "privacy" ? "Privacy" : "Terms"}</h3></div>
+      <div class="modal-body">
+        <p class="legal-lead">Short version: your models and your edits never leave this computer.</p>
+        <h4>What stays local</h4>
+        <ul class="legal-list">
+          <li>Model files, tensor statistics, heatmaps, weight edits and exports.</li>
+          <li>Unlearning runs — all computation happens in the local Python backend.</li>
+          <li>The activity log, terminal and command history.</li>
+          <li>Settings, which live in a JSON file in this app's data directory.</li>
+        </ul>
+        <h4>What leaves the machine</h4>
+        <ul class="legal-list">
+          <li><b>Sign-in</b> — if you sign in (rather than continuing as a guest), credentials are handled by the app's authentication provider.</li>
+          <li><b>Subscription</b> — pressing an upgrade button opens the payment provider in your browser. Card details are never entered in this app.</li>
+          <li><b>Update check</b> — on launch the app asks a public endpoint for the latest version number.</li>
+          <li><b>Model downloads</b> — only when you press Download in the Model Catalog, and only from that model's host.</li>
+        </ul>
+        <p class="legal-note">Continue as Guest to use every local feature with no account at all.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" data-legal-site>Open remapstudios.com</button>
+        <button class="btn-primary" data-legal-close>Close</button>
+      </div>
+    </div>`;
+
+  const close = () => overlay.remove();
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector("[data-legal-close]").addEventListener("click", close);
+  overlay.querySelector("[data-legal-site]").addEventListener("click", () => {
+    API.openExternal(kind === "privacy" ? `${SITE_URL}/privacy` : SITE_URL).catch(() => {});
+  });
+  document.addEventListener("keydown", function onKey(e) {
+    if (e.key === "Escape") { close(); document.removeEventListener("keydown", onKey); }
+  });
+  document.body.appendChild(overlay);
+  overlay.querySelector("[data-legal-close]").focus();
+}
+
+function closeDocsModal() {
+  document.getElementById("docs-overlay")?.classList.remove("visible");
+  state.docsModalOpen = false;
+}
+
+function reportIssue() {
+  // Prefill what makes a bug report actionable, so users do not have to go
+  // hunting for versions.
+  const params = new URLSearchParams();
+  const body = [
+    "### What happened", "", "",
+    "### Steps to reproduce", "1. ", "",
+    "### Environment",
+    `- App: Remap Studios ${state.appVersion || "?"}`,
+    `- Platform: ${state.platformName || navigator.platform}`,
+    `- Backend: ${state.backendReady ? "ready" : "not running"}${state.backendInfo ? ` (${state.backendInfo.device}, torch ${state.backendInfo.torch})` : ""}`,
+    `- Model: ${state.model ? (state.model.model_type || state.model.name || "loaded") : "none"}`,
+    `- View: ${state.viewMode}${state.viewMode === "3d" ? ` / ${state.layout3d}` : ""}`,
+  ].join("\n");
+  params.set("body", body);
+  API.openExternal(`${ISSUES_URL}?${params.toString()}`)
+    .then(() => log("Opened the issue tracker in your browser", "info"))
+    .catch(() => toast("Could not open the issue tracker", "warning", 4000));
+}
+
 
 // ══════════════════════════════════════════
 // ACTIVITY BAR
@@ -879,28 +2179,31 @@ function initActivityBar() {
   document.querySelectorAll(".activity-btn[data-panel]").forEach(btn => {
     btn.addEventListener("click", () => {
       const panel = btn.dataset.panel;
-      // Toggle active state
+      // Clicking the already-active panel collapses the sidebar — the same
+      // toggle everyone expects from an activity bar.
+      const wasActive = btn.classList.contains("active");
       document.querySelectorAll(".activity-btn[data-panel]").forEach(b => b.classList.remove("active"));
+
+      if (wasActive && state.sidebarVisible) {
+        toggleSidebar();
+        return;
+      }
       btn.classList.add("active");
+      state.sidebarVisible = true;
+      document.getElementById("sidebar").style.display = "flex";
+      showSidebarView(panel);
 
       switch (panel) {
         case "explorer":
-          document.getElementById("sidebar").style.display = "flex";
-          state.sidebarVisible = true;
           break;
         case "search":
-          // TODO: Search panel
-          document.getElementById("sidebar").style.display = "flex";
-          state.sidebarVisible = true;
+          renderSearchResults(document.getElementById("tensor-search")?.value || "");
+          document.getElementById("tensor-search")?.focus();
           break;
         case "models":
-          document.getElementById("sidebar").style.display = "flex";
-          state.sidebarVisible = true;
           switchTab("models");
           break;
         case "unlearn":
-          document.getElementById("sidebar").style.display = "flex";
-          state.sidebarVisible = true;
           switchTab("unlearn");
           break;
       }
@@ -908,6 +2211,41 @@ function initActivityBar() {
   });
 
   document.getElementById("btn-activity-settings")?.addEventListener("click", () => toggleModal("settings-overlay"));
+  document.querySelectorAll("[data-legal]").forEach((btn) => {
+    btn.addEventListener("click", () => openLegalModal(btn.dataset.legal));
+  });
+  state.sidebarView = "explorer";
+  bindSidebarViewShortcut();
+}
+
+// The sidebar hosts two mutually exclusive views: the model tree and the tensor
+// search results. Only one is ever in the DOM flow at a time.
+function showSidebarView(panel) {
+  state.sidebarView = panel === "search" ? "search" : "explorer";
+  const tree = document.getElementById("model-tree");
+  const search = document.getElementById("sidebar-search");
+  if (!tree || !search) return;
+  const searching = state.sidebarView === "search";
+  tree.classList.toggle("hidden", searching);
+  search.classList.toggle("hidden", !searching);
+  const header = document.querySelector("#sidebar .panel-title");
+  if (header) header.textContent = searching ? "TENSOR SEARCH" : "MODEL EXPLORER";
+  // The tree's refresh/collapse actions are meaningless for search results.
+  document.querySelectorAll("#sidebar .panel-header-actions .panel-action").forEach((b) => {
+    b.classList.toggle("hidden", searching);
+  });
+}
+
+// ⌘⇧F jumps straight to the search view from anywhere in the app.
+function bindSidebarViewShortcut() {
+  document.addEventListener("keydown", (e) => {
+    const mod = e.metaKey || e.ctrlKey;
+    if (!mod || !e.shiftKey) return;
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (key !== "f") return;
+    e.preventDefault();
+    document.querySelector('.activity-btn[data-panel="search"]')?.click();
+  });
 }
 
 // ══════════════════════════════════════════
@@ -1097,7 +2435,14 @@ function toggleFullscreen() {
 
 function toggleModal(id) {
   const modal = document.getElementById(id);
-  if (modal) modal.classList.toggle("visible");
+  if (!modal) return;
+  modal.classList.toggle("visible");
+  // Some modals show live model state and must be re-read every time they open
+  // — the export dialog's summary said nothing at all until a format was
+  // clicked, which made it look like the dialog was ignoring the model.
+  if (modal.classList.contains("visible") && typeof state.modalRefresh === "object" && state.modalRefresh[id]) {
+    try { state.modalRefresh[id](); } catch (e) { /* a refresh failure must not block the modal */ }
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1112,16 +2457,30 @@ function initExportDialog() {
 
   document.querySelectorAll(".export-option").forEach(opt => {
     opt.addEventListener("click", () => {
+      // Unavailable formats explain themselves instead of silently becoming
+      // the selected format and failing at write time.
+      if (opt.classList.contains("disabled")) {
+        toast(opt.dataset.unavailable || "That format is not supported in this build", "warning", 6000);
+        return;
+      }
       document.querySelectorAll(".export-option").forEach(o => o.classList.remove("selected"));
       opt.classList.add("selected");
       state.exportFormat = opt.dataset.format;
+      updateExportSummary();
     });
   });
+  // Refresh the summary whenever the dialog is opened.
+  state.modalRefresh = Object.assign(state.modalRefresh || {}, { "export-overlay": updateExportSummary });
+  document.getElementById("export-precision")?.addEventListener("change", updateExportSummary);
+  document.getElementById("export-verify")?.addEventListener("change", updateExportSummary);
 
   document.getElementById("btn-do-export")?.addEventListener("click", async () => {
     if (!state.model) { log("No model loaded to export", "error"); return; }
     const path = await API.saveFile();
     if (!path) return;
+
+    const precision = document.getElementById("export-precision")?.value || "float16";
+    const verify = document.getElementById("export-verify")?.checked !== false;
 
     // Weight-surgery edits live in the editor's edit log, not in the file, so
     // a plain model_export would silently drop them. Route through the tensor
@@ -1136,21 +2495,56 @@ function initExportDialog() {
       if (edits > 0) {
         log(`Including ${pending.edit_count || 0} edit(s) and ${pending.delete_count || 0} deletion(s) in the export.`, "info");
       }
-      await exportModelWithEdits(path, { allowEmpty: isGguf });
+      if (isGguf && precision === "float32") log("Converting quantized tensors at float32 precision", "info");
+      await exportModelWithEdits(path, { allowEmpty: isGguf, dtype: precision, verify });
       toggleModal("export-overlay");
       return;
     }
 
     log(`Exporting model as ${state.exportFormat} to ${path}...`, "info");
     try {
-      const result = await API.rpc("model_export", { path, format: state.exportFormat });
+      const result = await API.rpc("model_export", { path, format: state.exportFormat, verify });
       if (result.error) throw new Error(result.error);
+      const v = result.verification;
+      if (v && v.ok && !v.skipped) log(`Verified: ${v.tensor_count} tensors readable (${formatBytes(v.size_bytes)})`, "success");
+      else if (v && v.skipped) log(`Written (${formatBytes(v.size_bytes)}); header verification is safetensors-only`, "info");
       log(`Export complete: ${path}`, "success");
+      toast(`Exported to ${path.split(/[\\/]/).pop()}`, "success", 3500, {
+        action: "Copy path",
+        onAction: () => copyToClipboard(path, "Copied export path"),
+      });
       toggleModal("export-overlay");
     } catch (e) {
       log(`Export failed: ${e.message}`, "error");
+      toast(`Export failed: ${e.message}`, "error", 8000);
     }
   });
+}
+
+// Show what the current selection will actually produce, including the things
+// that are easy to get wrong: where pending edits go, and the file size at the
+// chosen precision.
+function updateExportSummary() {
+  const host = document.getElementById("export-summary");
+  if (!host) return;
+  if (!state.model) {
+    host.innerHTML = '<div class="export-summary-empty">Open a model to export it</div>';
+    return;
+  }
+  const precision = document.getElementById("export-precision")?.value || "float16";
+  const fmt = state.exportFormat === "pt" ? "pytorch" : state.exportFormat;
+  const isGguf = String(state.model?.metadata?.format || "").toLowerCase() === "gguf";
+  const roundTrip = isGguf || fmt !== String(state.model?.metadata?.format || "").toLowerCase();
+  const size = state.model?.size || 0;
+  // float16 is half the bytes of float32 for the converted path.
+  const estimate = roundTrip && size ? (precision === "float32" ? size : size * 0.5) : size;
+  host.innerHTML = `
+    <div class="export-summary-row"><span>Format</span><b>${escapeHtml(state.exportFormat)}</b></div>
+    ${roundTrip ? `<div class="export-summary-row"><span>Converted to</span><b>Safetensors (${escapeHtml(precision)})</b></div>` : ""}
+    ${estimate ? `<div class="export-summary-row"><span>Estimated size</span><b>~${formatBytes(estimate)}</b></div>` : ""}
+    <div class="export-summary-note">${roundTrip
+      ? "Quantized tensors are dequantized and re-written, so every element is converted. This can take a while for large models."
+      : "Written in the model's own precision."}</div>`;
 }
 
 function exportConfig() {
@@ -1211,8 +2605,174 @@ function initSettingsPanel() {
     setTimeout(refreshBackendStatusCard, 1500);
   });
 
+  // Install / repair Python packages (same flow the launch dialog offers).
+  const repair = async () => {
+    const card = document.getElementById("backend-env-card");
+    if (card) card.textContent = "Checking Python packages…";
+    try { const s = await API.checkDeps(); renderDependencyGate(s); } catch (e) { if (card) card.textContent = `Check failed: ${e.message}`; }
+    setTimeout(refreshBackendStatusCard, 500);
+  };
+  document.getElementById("btn-backend-deps")?.addEventListener("click", repair);
+  document.getElementById("btn-backend-check")?.addEventListener("click", repair);
+
+  wireSettingsControls();
+
   // Initialize settings user info
   updateSettingsUserInfo();
+}
+
+// ── Settings controls ────────────────────────────────────────────────────────
+// Every preference in SETTINGS_SPEC gets a live control here. These used to be
+// markup-only: the toggles flipped in the DOM and nothing anywhere read them,
+// so the app behaved identically whichever way they were set.
+function wireSettingsControls() {
+  const toggle = (id, key) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.checked = state.settings[key] !== false;
+    el.addEventListener("change", () => {
+      setSetting(key, el.checked);
+      // GPU acceleration is a special case: it routes through the device pin.
+      if (key === "gpu" && el.checked) {
+        const deviceSel = document.getElementById("setting-device");
+        if (deviceSel && deviceSel.value === "cpu") {
+          deviceSel.value = "auto";
+          setSetting("device", "auto", { announce: false });
+        }
+      }
+    });
+  };
+  const select = (id, key) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = state.settings[key];
+    el.addEventListener("change", () => {
+      setSetting(key, el.value);
+      if (key === "device" && el.value !== "auto") {
+        const gpu = document.getElementById("setting-gpu");
+        if (gpu && el.value === "cpu" && gpu.checked) {
+          gpu.checked = false;
+          setSetting("gpu", false, { quiet: true, announce: false });
+        } else if (gpu && el.value !== "cpu" && !gpu.checked) {
+          gpu.checked = true;
+          setSetting("gpu", true, { quiet: true, announce: false });
+        }
+      }
+    });
+  };
+
+  toggle("setting-autoload", "autoload");
+  toggle("setting-welcome", "welcome");
+  toggle("setting-gpu", "gpu");
+  toggle("setting-connections", "connections");
+  toggle("setting-autosave", "autosave");
+  select("setting-anim-speed", "animSpeed");
+  select("setting-default-method", "defaultMethod");
+  select("setting-device", "device");
+
+  // ── Preferred interpreter ──
+  const pyInput = document.getElementById("setting-python");
+  if (pyInput) {
+    pyInput.value = state.settings.pythonPath || "";
+    // Commit on blur/Enter rather than per keystroke: changing the interpreter
+    // re-runs the dependency probe, which is far too heavy to trigger on every
+    // character typed.
+    const commit = () => {
+      const next = pyInput.value.trim();
+      if (next === (state.settings.pythonPath || "")) return;
+      setSetting("pythonPath", next, { announce: true });
+    };
+    pyInput.addEventListener("blur", commit);
+    pyInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); pyInput.blur(); }
+      if (e.key === "Escape") { pyInput.value = state.settings.pythonPath || ""; pyInput.blur(); }
+    });
+  }
+  document.getElementById("btn-python-browse")?.addEventListener("click", async () => {
+    try {
+      const res = await API.openFile();
+      const picked = res && (res.path || (Array.isArray(res.filePaths) && res.filePaths[0]));
+      if (!picked) return; // user cancelled
+      if (pyInput) pyInput.value = picked;
+      setSetting("pythonPath", picked);
+    } catch (e) {
+      toast(`Could not choose an interpreter: ${e.message}`, "warning", 6000);
+    }
+  });
+  document.getElementById("btn-python-reset")?.addEventListener("click", () => {
+    if (pyInput) pyInput.value = "";
+    setSetting("pythonPath", "");
+  });
+
+  // ── Reset everything ──
+  document.getElementById("btn-settings-reset")?.addEventListener("click", async () => {
+    const ok = await confirmDialog({
+      title: "Reset all settings?",
+      body: "Every preference goes back to its default. Models, edits and the Python environment are untouched.",
+      confirm: "Reset settings",
+      danger: true,
+    });
+    if (!ok) return;
+    try { await API.resetSettings(); } catch (e) { /* fall through to local reset */ }
+    state.settings = defaultSettings();
+    cacheSettings();
+    applyAllSettings({ initial: true });
+    syncSettingsControls();
+    toast("Settings reset to defaults", "success");
+  });
+
+  wireSettingsSearch();
+}
+
+// Settings search: filters rows across every page and jumps to the first hit,
+// so the five-page panel is searchable instead of click-through.
+function wireSettingsSearch() {
+  const input = document.getElementById("settings-search");
+  const hint = document.getElementById("settings-search-hint");
+  if (!input) return;
+
+  const rows = () => [...document.querySelectorAll(".settings-section-page .settings-row")];
+
+  const apply = () => {
+    const q = input.value.trim().toLowerCase();
+    let hits = 0;
+    rows().forEach((row) => {
+      const text = (row.textContent || "").toLowerCase();
+      const match = !q || text.includes(q);
+      row.classList.toggle("settings-row-hidden", !match);
+      if (match) hits++;
+    });
+    // Hide group titles whose whole group is filtered out.
+    document.querySelectorAll(".settings-section-page .settings-section").forEach((section) => {
+      const anyVisible = [...section.querySelectorAll(".settings-row")].some((r) => !r.classList.contains("settings-row-hidden"));
+      section.classList.toggle("settings-row-hidden", q && !anyVisible);
+    });
+    document.querySelectorAll(".settings-nav-item").forEach((item) => {
+      const page = document.getElementById(`settings-section-${item.dataset.settingsSection}`);
+      const anyVisible = page && [...page.querySelectorAll(".settings-row")].some((r) => !r.classList.contains("settings-row-hidden"));
+      item.classList.toggle("settings-nav-dim", Boolean(q) && !anyVisible);
+    });
+
+    if (hint) hint.textContent = q ? `${hits} match${hits === 1 ? "" : "es"}` : "";
+
+    // With an active query, reveal the first page that still has hits so the
+    // user is not left staring at a filtered-out page.
+    if (q) {
+      const navItems = [...document.querySelectorAll(".settings-nav-item")];
+      const target = navItems.find((i) => !i.classList.contains("settings-nav-dim"));
+      if (target && !target.classList.contains("active")) target.click();
+    }
+  };
+
+  input.addEventListener("input", apply);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && input.value) {
+      e.stopPropagation();
+      input.value = "";
+      apply();
+    }
+  });
+  state.applySettingsSearch = apply;
 }
 
 async function refreshBackendStatusCard() {
@@ -1229,6 +2789,28 @@ async function refreshBackendStatusCard() {
     }
   } catch (e) {
     card.textContent = `Status unavailable: ${e.message}`;
+  }
+
+  const env = document.getElementById("backend-env-card");
+  if (env && API.getDepsStatus) {
+    try {
+      const d = await API.getDepsStatus();
+      const missing = Array.isArray(d.missing) ? d.missing : [];
+      const kind = d.envKind === "app-env" ? "app-managed environment"
+        : d.envKind === "target-dir" ? "app-managed package directory"
+        : d.envKind === "system" ? "system Python (all packages present)" : "not created yet";
+      env.innerHTML = [
+        `Environment: <b>${kind}</b>`,
+        d.envPath || d.plannedEnvPath ? `Path: ${d.envPath || d.plannedEnvPath}` : null,
+        d.python ? `Interpreter: ${d.python}${d.pythonVersion ? ` (Python ${d.pythonVersion})` : ""}` : null,
+        d.requirementCount ? `Requirements checked: ${d.requirementCount}` : null,
+        missing.length
+          ? `<span style="color:var(--warning)">Missing ${missing.length}: ${missing.map((m) => m.name).join(", ")}</span>`
+          : (d.status === "ok" ? `<span style="color:#22c55e">All packages installed</span>` : null),
+      ].filter(Boolean).join("<br>");
+    } catch (e) {
+      env.textContent = `Package status unavailable: ${e.message}`;
+    }
   }
 }
 
@@ -1487,28 +3069,366 @@ function logoutUser() {
 
 function initContextMenu() {
   const menu = document.getElementById("context-menu");
+  if (!menu) return;
 
+  // Right-click works on tree nodes (layers) and weight rows. Both carry the
+  // name the menu acts on, so every action below has a real target — the
+  // previous version fired "Copied to clipboard" at nothing at all.
   document.addEventListener("contextmenu", (e) => {
-    const treeNode = e.target.closest(".tree-node");
-    if (treeNode) {
-      e.preventDefault();
-      menu.style.top = `${e.clientY}px`;
-      menu.style.left = `${e.clientX}px`;
-      menu.classList.add("visible");
+    const target = e.target.closest(".tree-node, .weight-item");
+    if (!target) return;
+    e.preventDefault();
+
+    const tensorName = target.dataset.tensor || target.dataset.name || target.querySelector("[data-tensor]")?.dataset.tensor || null;
+    // Layer rows are not tensors: "View Heatmap" / "Export Tensor" make no
+    // sense for them, so disable rather than silently doing the wrong thing.
+    state.contextTarget = {
+      name: tensorName,
+      path: state.model && state.model.path ? state.model.path : (state.modelPath || null),
+      isTensor: Boolean(tensorName),
+    };
+
+    menu.querySelectorAll(".context-menu-item").forEach((item) => {
+      const needsTensor = ["view-heatmap", "view-properties", "export-tensor", "copy-name"].includes(item.dataset.action);
+      const disabled = needsTensor && !tensorName;
+      item.classList.toggle("disabled", disabled);
+      item.title = disabled ? "Right-click a specific weight" : "";
+    });
+
+    // Flip the menu before it runs off the viewport edge.
+    menu.classList.add("visible");
+    const rect = menu.getBoundingClientRect();
+    const x = Math.min(e.clientX, window.innerWidth - rect.width - 8);
+    const y = Math.min(e.clientY, window.innerHeight - rect.height - 8);
+    menu.style.top = `${Math.max(8, y)}px`;
+    menu.style.left = `${Math.max(8, x)}px`;
+    menu.querySelector(".context-menu-item:not(.disabled)")?.focus();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#context-menu")) menu.classList.remove("visible");
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && menu.classList.contains("visible")) {
+      e.stopPropagation();
+      menu.classList.remove("visible");
     }
   });
 
-  document.addEventListener("click", () => menu.classList.remove("visible"));
-
-  document.querySelectorAll(".context-menu-item").forEach(item => {
-    item.addEventListener("click", () => {
-      const action = item.dataset.action;
-      if (action === "copy-name") log("Copied to clipboard", "info");
-      if (action === "copy-path") log("Path copied", "info");
-      if (action === "view-properties") { /* already visible */ }
-      if (action === "view-heatmap") switchTab("heatmap");
+  menu.querySelectorAll(".context-menu-item").forEach((item) => {
+    item.setAttribute("tabindex", "0");
+    const run = () => {
+      if (item.classList.contains("disabled")) return;
+      menu.classList.remove("visible");
+      handleContextAction(item.dataset.action, state.contextTarget || {});
+    };
+    item.addEventListener("click", run);
+    item.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); run(); }
+      if (e.key === "ArrowDown") { e.preventDefault(); item.nextElementSibling?.focus(); }
+      if (e.key === "ArrowUp") { e.preventDefault(); item.previousElementSibling?.focus(); }
     });
   });
+}
+
+async function handleContextAction(action, target) {
+  const name = target.name;
+  switch (action) {
+    case "copy-name":
+      await copyToClipboard(name, "Copied tensor name");
+      break;
+    case "copy-path":
+      await copyToClipboard(target.path || "(no model path)", "Copied model path");
+      break;
+    case "view-properties":
+      // Reveal the weight in the explorer and focus the properties panel, so
+      // "view properties" actually shows them instead of assuming they are up.
+      state.pendingTensorSelection = name;
+      switchTab("weights");
+      selectTensor(name);
+      if (!state.propsVisible) toggleProps();
+      toast(`Properties: ${name}`, "info", 2200);
+      break;
+    case "view-heatmap":
+      switchTab("heatmap");
+      {
+        const picker = document.getElementById("heatmap-layer-select");
+        if (picker && [...picker.options].some((o) => o.value === name)) {
+          picker.value = name;
+          picker.dispatchEvent(new Event("change", { bubbles: true }));
+        } else {
+          // The picker only lists sampled tensors; fall back to the generic
+          // render path so the tab still shows the right tensor.
+          renderHeatmap({ tensor: name });
+        }
+      }
+      break;
+    case "export-tensor":
+      await exportSingleTensor(name);
+      break;
+    default:
+      log(`Unhandled context action: ${action}`, "warning");
+  }
+}// ══════════════════════════════════════════
+// SEARCH PANEL
+// ══════════════════════════════════════════
+// The activity bar's magnifier used to open the explorer ("TODO: Search panel").
+// This is a real cross-model tensor search: name, shape, dtype and layer, with
+// fuzzy scoring so "attn k" finds blk.0.attn_k.weight without the exact spelling.
+function initSearchPanel() {
+  const btn = document.querySelector('.activity-btn[data-panel="search"]');
+  const input = document.getElementById("tensor-search");
+  if (input) {
+    input.addEventListener("input", () => renderSearchResults(input.value));
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && input.value) { e.stopPropagation(); input.value = ""; renderSearchResults(""); return; }
+      if (e.key === "Enter") {
+        const first = document.querySelector("#tensor-search-results .search-hit");
+        first?.click();
+      }
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const hits = [...document.querySelectorAll("#tensor-search-results .search-hit")];
+        const idx = hits.findIndex((h) => h === document.activeElement);
+        const next = e.key === "ArrowDown" ? Math.min(hits.length - 1, idx + 1) : Math.max(0, idx - 1);
+        (hits[next] || hits[0])?.focus();
+      }
+    });
+  }
+  btn && renderSearchResults("");
+}
+
+function searchTensors(query) {
+  const q = String(query || "").trim().toLowerCase();
+  const tensors = state.tensors || [];
+  if (!q) return tensors.slice(0, 40).map((t) => ({ tensor: t, score: 0 }));
+
+  const terms = q.split(/\s+/).filter(Boolean);
+  const scored = [];
+  for (const t of tensors) {
+    const name = String(t.name || "").toLowerCase();
+    const hay = `${name} ${t.dtype || ""} ${(t.shape || []).join("x")}`.toLowerCase();
+    let score = 0;
+    let all = true;
+    for (const term of terms) {
+      const at = hay.indexOf(term);
+      if (at === -1) { all = false; break; }
+      // Prefix and word-boundary hits rank above scattered substrings, and a
+      // hit in the name beats one in the shape string.
+      score += 100 - Math.min(at, 99);
+      if (name.startsWith(term)) score += 60;
+      if (new RegExp(`[.\-_/]${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(name)) score += 40;
+    }
+    if (!all) continue;
+    score += Math.max(0, 30 - name.length / 8);
+    scored.push({ tensor: t, score });
+  }
+  return scored.sort((a, b) => b.score - a.score).slice(0, 200);
+}
+
+function renderSearchResults(query) {
+  const host = document.getElementById("tensor-search-results");
+  if (!host) return;
+  if (!state.tensors || !state.tensors.length) {
+    host.innerHTML = '<div class="empty-state"><p class="empty-title">No model loaded</p><p class="empty-desc">Open a model to search its weights</p></div>';
+    return;
+  }
+  const hits = searchTensors(query);
+  const count = document.getElementById("tensor-search-count");
+  if (count) count.textContent = `${hits.length}${query ? " match" + (hits.length === 1 ? "" : "es") : " tensors"}`;
+
+  if (!hits.length) {
+    host.innerHTML = `<div class="empty-state"><p class="empty-title">No matches</p><p class="empty-desc">Nothing matches “${escapeHtml(query)}”. Try a layer name, dtype or shape.</p></div>`;
+    return;
+  }
+
+  host.innerHTML = hits.map(({ tensor: t }) => {
+    const shape = (t.shape || []).join(" × ") || "scalar";
+    return `
+      <button class="search-hit" data-tensor="${escapeHtml(t.name)}" tabindex="0">
+        <span class="search-hit-name" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</span>
+        <span class="search-hit-meta">
+          <span>${escapeHtml(shape)}</span>
+          <span>${escapeHtml(t.dtype || "?")}</span>
+          ${t.param_count ? `<span>${formatParams(t.param_count)}</span>` : ""}
+        </span>
+      </button>`;
+  }).join("");
+
+  host.querySelectorAll(".search-hit").forEach((el) => {
+    el.addEventListener("click", () => {
+      const name = el.dataset.tensor;
+      // Reveal it in the explorer AND focus it, so the properties panel fills in.
+      switchTab("weights");
+      selectTensor(name);
+      log(`Located ${name}`, "info");
+    });
+  });
+}
+
+// ══════════════════════════════════════════
+// WEIGHT MULTI-SELECT
+// ══════════════════════════════════════════
+// Cmd/Ctrl-click and Shift-click build a selection set, which Edit ▸ Copy and
+// Edit ▸ Paste operate on — the "apply this same edit to these 12 tensors"
+// workflow that otherwise means twelve round trips.
+function initWeightMultiSelect() {
+  const body = document.getElementById("weight-explorer-body");
+  if (!body) return;
+  let lastIdx = -1;
+
+  body.addEventListener("click", (e) => {
+    const row = e.target.closest(".weight-item");
+    if (!row) return;
+    const meaningful = e.metaKey || e.ctrlKey || e.shiftKey;
+    if (!meaningful) {
+      // A plain click clears any multi-selection.
+      if (state.multiSelectedTensors.length) {
+        state.multiSelectedTensors = [];
+        body.querySelectorAll(".multi-selected").forEach((r) => r.classList.remove("multi-selected"));
+        updateSelectionCount();
+      }
+      lastIdx = -1;
+      return;
+    }
+
+    const rows = [...body.querySelectorAll(".weight-item")];
+    const idx = rows.indexOf(row);
+    if (e.shiftKey && lastIdx >= 0) {
+      const [a, b] = [Math.min(lastIdx, idx), Math.max(lastIdx, idx)];
+      for (let i = a; i <= b; i++) addToSelection(rows[i]);
+    } else {
+      toggleSelection(row);
+      lastIdx = idx;
+    }
+    updateSelectionCount();
+  });
+}
+
+function addToSelection(row) {
+  if (!row) return;
+  const name = row.dataset.tensor;
+  if (!name) return;
+  row.classList.add("multi-selected");
+  if (!state.multiSelectedTensors.includes(name)) state.multiSelectedTensors.push(name);
+}
+
+function toggleSelection(row) {
+  const name = row.dataset.tensor;
+  if (!name) return;
+  const at = state.multiSelectedTensors.indexOf(name);
+  if (at === -1) { state.multiSelectedTensors.push(name); row.classList.add("multi-selected"); }
+  else { state.multiSelectedTensors.splice(at, 1); row.classList.remove("multi-selected"); }
+}
+
+function updateSelectionCount() {
+  const el = document.getElementById("we-selection-count");
+  const n = state.multiSelectedTensors.length;
+  if (el) {
+    el.textContent = n ? `${n} selected` : "";
+    el.classList.toggle("hidden", n === 0);
+  }
+  const paste = document.querySelector('.dropdown-item[data-action="paste"]');
+  if (paste) paste.classList.toggle("disabled", !state.clipboardEdit);
+  const copy = document.querySelector('.dropdown-item[data-action="copy"]');
+  if (copy) copy.classList.toggle("disabled", n === 0 && !state.selectedTensor);
+}
+
+// ══════════════════════════════════════════
+// STATUS BAR
+// ══════════════════════════════════════════
+// The status bar was read-only text. Each segment now does the obvious thing
+// when clicked, which is what everyone tries first.
+function initStatusBarActions() {
+  const clickable = (id, title, fn) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add("status-clickable");
+    el.title = title;
+    el.setAttribute("tabindex", "0");
+    el.addEventListener("click", fn);
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fn(); } });
+  };
+
+  clickable("status-model", "Open a model (⌘O)", () => openFile());
+  clickable("status-zoom", "Reset zoom to 100% (⌘0)", () => { state.zoom = 1; updateZoom(); });
+  clickable("status-platform", "Compute device — open Backend settings", () => {
+    toggleModal("settings-overlay");
+    document.querySelector('.settings-nav-item[data-settings-section="backend"]')?.click();
+  });
+  clickable("status-rams", "Open the resource monitor", () => {});
+  const ram = document.getElementById("status-ram");
+  if (ram) {
+    ram.classList.add("status-clickable");
+    ram.title = "Live memory — click for details";
+    ram.addEventListener("click", () => {
+      const hw = state.hardware;
+      const info = state.backendInfo;
+      log("── Memory ─────────────────────────────", "info");
+      if (info) log(`Backend: ${info.ram_available_gb}GB free of ${info.ram_total_gb}GB`);
+      if (hw) log(`CPU: ${hw.cpuCount} cores · ${hw.platformName}`);
+      log(`Heap (renderer): ${(performance.memory ? (performance.memory.usedJSHeapSize / 1048576).toFixed(0) + "MB" : "unknown")}`);
+    });
+  }
+  const params = document.getElementById("status-params");
+  if (params) {
+    params.classList.add("status-clickable");
+    params.title = "Copy the parameter count";
+    params.addEventListener("click", () => copyToClipboard(params.textContent, "Copied"));
+  }
+  const format = document.getElementById("status-format");
+  if (format) {
+    format.classList.add("status-clickable");
+    format.title = "Copy the model format";
+    format.addEventListener("click", () => copyToClipboard(format.textContent, "Copied"));
+  }
+  updateSelectionCount();
+}
+
+// ══════════════════════════════════════════
+// DOCS MODAL
+// ══════════════════════════════════════════
+// Help ▸ Documentation opens this instead of a dead log line: it is fully
+// offline, so it works in the packaged app with no browser and no network.
+function initDocsModal() {
+  document.getElementById("docs-close")?.addEventListener("click", closeDocsModal);
+  document.getElementById("docs-overlay")?.addEventListener("click", (e) => {
+    if (e.target.id === "docs-overlay") closeDocsModal();
+  });
+  document.querySelectorAll("#docs-overlay [data-docs-nav]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#docs-overlay [data-docs-nav]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const target = btn.dataset.docsNav;
+      document.querySelectorAll("#docs-overlay .docs-section").forEach((s) => {
+        s.classList.toggle("hidden", s.dataset.docsSection !== target);
+      });
+    });
+  });
+  document.getElementById("docs-open-readme")?.addEventListener("click", () => {
+    API.openExternal(PROJECT_URL).catch(() => toast("Could not open the project page", "warning", 4000));
+  });
+}
+
+// Export one tensor to its own file (Edit ▸ context menu). Reuses the backend's
+// tensor_export so quantised models work too — no full-model materialisation.
+async function exportSingleTensor(name) {
+  if (!name) { toast("Right-click a specific weight to export it", "warning", 3000); return; }
+  try {
+    const target = await API.saveFile();
+    const path = target && (target.path || (Array.isArray(target.filePaths) && target.filePaths[0]));
+    if (!path) return; // cancelled
+    toast(`Exporting ${name}…`, "info", 2500);
+    const res = await API.rpc("tensor_export_one", { name, path });
+    if (res && res.error) { toast(`Export failed: ${res.error}`, "error", 7000); return; }
+    log(`Exported ${name} → ${path}${res && res.size_bytes ? ` (${formatBytes(res.size_bytes)})` : ""}`, "success");
+    toast(`Exported ${name}`, "success", 3000, {
+      action: "Show in log",
+      onAction: () => log(`Last export: ${path}`),
+    });
+  } catch (e) {
+    toast(`Export failed: ${e.message}`, "error", 7000);
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1568,6 +3488,28 @@ function initBottomPanelTabs() {
       if (el) el.innerHTML = "";
     });
     log("Terminal cleared", "info");
+  });
+
+  // Restart the shell. The only way to recover a wedged session used to be to
+  // type `exit` and hope — and there was no way at all when a command was
+  // hogging the session. API.terminalRestart force-kills and respawns it.
+  document.getElementById("btn-restart-terminal")?.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    const busy = state.currentJobId;
+    const ok = await confirmDialog({
+      title: "Restart the shell?",
+      body: busy
+        ? "Anything running in the terminal is killed. The unlearning job keeps running — that is handled by the Python backend, not the shell."
+        : "The current shell session is killed and a fresh one is started in your home directory. Scrollback in the terminal is lost.",
+      confirm: "Restart shell",
+    });
+    if (!ok) return;
+    try {
+      await API.terminalRestart();
+      toast("Shell restarted", "success", 2500);
+    } catch (err) {
+      toast(`Could not restart the shell: ${err.message}`, "error", 6000);
+    }
   });
 
   document.getElementById("btn-toggle-terminal")?.addEventListener("click", toggleTerminal);
@@ -1968,7 +3910,7 @@ function collapseAllTreeGroups() {
   updateModelTree();
 }
 
-async function loadModel(filePath, fileName, fileSize, isDirectory = false) {
+async function loadModel(filePath, fileName, fileSize, isDirectory = false, opts = {}) {
   // Retry backend readiness a few times — the poller in initBackendListeners
   // can take up to 1s to fire, but users clicking "Open" want instant feedback.
   let retries = 0;
@@ -1984,26 +3926,48 @@ async function loadModel(filePath, fileName, fileSize, isDirectory = false) {
   log(`Loading model: ${fileName}`, "info");
   log(`Path: ${filePath}`);
 
+  // Remember it immediately so a crash mid-load still leaves a useful Recent
+  // list, and so the next launch can auto-restore it.
+  rememberRecentModel(filePath, fileName, fileSize);
+  state.modelSize = fileSize || state.modelSize || 0;
+  state.modelIsDirectory = isDirectory === true;
+
   const overlay = document.getElementById("canvas-overlay");
   overlay.classList.remove("hidden");
   overlay.innerHTML = `
-    <div class="welcome-screen">
+    <div class="welcome-screen load-screen">
       <div class="welcome-icon" style="animation: spin 1s linear infinite;">
         <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
           <circle cx="24" cy="24" r="20" stroke="#333" stroke-width="3"/>
           <path d="M24 4a20 20 0 0 1 20 20" stroke="#e5e5e5" stroke-width="3" stroke-linecap="round"/>
         </svg>
       </div>
-      <h2 class="welcome-title">Loading ${fileName}...</h2>
-      <p class="welcome-desc">Parsing tensors, computing statistics, building layer graph</p>
+      <h2 class="welcome-title">Loading ${escapeHtml(fileName)}…</h2>
+      <p class="welcome-desc" id="load-phase-text">Reading the file header</p>
+      <div class="load-skeleton">
+        <div class="load-skeleton-row"></div>
+        <div class="load-skeleton-row"></div>
+        <div class="load-skeleton-row wide"></div>
+      </div>
     </div>
   `;
+  // Narrate the wait: a 30 s spinner with no explanation reads as a hang.
+  const phases = isDirectory
+    ? ["Scanning the folder for weight files", "Reading tensor index", "Computing per-tensor statistics", "Building the layer graph"]
+    : ["Reading the file header", "Parsing the tensor index", "Computing per-tensor statistics", "Building the layer graph"];
+  let phaseIdx = 0;
+  const phaseTimer = setInterval(() => {
+    phaseIdx = Math.min(phaseIdx + 1, phases.length - 1);
+    const el = document.getElementById("load-phase-text");
+    if (el) el.textContent = phases[phaseIdx];
+  }, 1800);
+  const stopPhases = () => clearInterval(phaseTimer);
 
   try {
     const result = await API.rpc(
       isDirectory ? "model_load_folder" : "model_load",
       { path: filePath },
-    );
+    ).finally(stopPhases);
     // Only treat the response as fatal when the backend flagged a real failure.
     // A GGUF load returns an *informational* `error` string ("visualization
     // works, but statistics/heatmaps/unlearning need real weight data") alongside
@@ -2918,14 +4882,23 @@ function initHeatmapControls() {
   });
 
   // Switching palette repaints from the cached sample — no re-read needed.
+  // Persistence goes through the shared settings store (durable in userData),
+  // which is also what paints the canvas on the next launch.
   const schemeSelect = document.getElementById("setting-heatmap-color");
   if (schemeSelect) {
+    // One-time migration from the old renderer-only key.
     try {
-      const saved = localStorage.getItem("remap_heatmap_color");
-      if (saved && HEATMAP_SCHEMES[saved]) schemeSelect.value = saved;
+      const legacy = localStorage.getItem("remap_heatmap_color");
+      if (legacy && HEATMAP_SCHEMES[legacy] && !state.settings.heatmapColorMigrated) {
+        state.settings.heatmapColor = legacy;
+        state.settings.heatmapColorMigrated = true;
+        API.setSetting("heatmapColor", legacy).catch(() => {});
+      }
+      localStorage.removeItem("remap_heatmap_color");
     } catch (e) { /* storage unavailable — the default is fine */ }
+    schemeSelect.value = state.settings.heatmapColor;
     schemeSelect.addEventListener("change", () => {
-      try { localStorage.setItem("remap_heatmap_color", schemeSelect.value); } catch (e) { /* ignore */ }
+      setSetting("heatmapColor", schemeSelect.value, { announce: false });
       if (state.heatmapData) paintHeatmap(state.heatmapData);
       log(`Heatmap colour scheme: ${heatmapScheme()}`);
     });
@@ -3351,17 +5324,31 @@ async function exportModelWithEdits(presetPath, opts = {}) {
   }
   const path = presetPath || (await API.saveFile());
   if (!path) return;
+  const dtype = opts.dtype === "float32" ? "float32" : "float16";
   log(edits || del
-    ? `Exporting ${edits} edit(s), ${del} deletion(s) to ${path}…`
-    : `Converting quantized model to Safetensors at ${path}…`, "info");
+    ? `Exporting ${edits} edit(s), ${del} deletion(s) to ${path} (${dtype})…`
+    : `Converting quantized model to Safetensors at ${path} (${dtype})…`, "info");
   toast(edits || del
     ? "Exporting model… this can take a minute."
     : "Converting to Safetensors… this can take a minute.", "info", 4000);
   try {
-    const res = await API.rpc("tensor_export", { path, dtype: "float16" });
+    const res = await API.rpc("tensor_export", { path, dtype, verify: opts.verify !== false });
     if (res.error) { toast(res.error, "error", 7000); log(`Export failed: ${res.error}`, "error"); return; }
     log(res.message, "success");
-    toast(`Exported ${res.tensor_count} tensors (${formatBytes(res.bytes)}). Reload it to train further.`, "success", 8000);
+    const v = res.verification;
+    if (v) {
+      if (v.ok && !v.skipped) log(`Verified: ${v.tensor_count} tensors readable`, "success");
+      else if (!v.ok) log(`VERIFY FAILED: ${v.error}`, "error");
+    }
+    const bytes = res.bytes || res.size_bytes || (v && v.size_bytes) || 0;
+    toast(`Exported ${res.tensor_count} tensors (${formatBytes(bytes)}). Reload it to train further.`, "success", 8000, {
+      action: "Copy path",
+      onAction: () => copyToClipboard(path, "Copied export path"),
+    });
+    // The written file is now a real, loadable model: offer it as a next step.
+    if (res.tensor_count) {
+      rememberRecentModel(path, String(path).split(/[\\/]/).pop(), bytes);
+    }
   } catch (e) {
     toast(`Export failed: ${e.message}`, "error", 7000);
   }
@@ -3390,6 +5377,17 @@ function initUnlearnPanel() {
     renderUnlearnCanvas(null);
     log("Unlearn view reset", "info");
   });
+
+  // Settings → Default method seeds this select, and it stays the authority
+  // for a run (applySetting pushes the preference in, the change here pushes
+  // the user's choice back out).
+  const methodSel = document.getElementById("unlearn-method");
+  if (methodSel) {
+    if (state.settings.defaultMethod) methodSel.value = state.settings.defaultMethod;
+    methodSel.addEventListener("change", () => {
+      state.unlearnMethod = methodSel.value;
+    });
+  }
 
   const batchSlider = document.getElementById("unlearn-batch");
   const batchVal = document.getElementById("unlearn-batch-val");
@@ -3924,7 +5922,16 @@ function termLog(message, type = "") {
 async function loadPlatform() {
   const platform = await API.getPlatform();
   const labels = { darwin: "macOS", win32: "Windows", linux: "Linux" };
-  if (!state.backendReady) document.getElementById("status-platform").textContent = labels[platform] || platform;
+  state.platform = platform;
+  state.platformName = labels[platform] || platform;
+  if (!state.backendReady) document.getElementById("status-platform").textContent = state.platformName;
+  // Fill in the About + Settings version strings from the real build, not a
+  // hardcoded literal that silently drifts from package.json.
+  try {
+    const v = await API.getAppVersion();
+    state.appVersion = v;
+    document.querySelectorAll(".about-version, [data-app-version]").forEach((el) => { el.textContent = `v${v}`; });
+  } catch (e) { /* version is cosmetic */ }
 }
 
 // ══════════════════════════════════════════
@@ -4132,18 +6139,133 @@ const MODEL_CATALOG = [
 
 function initModelCatalog() {
   API.getHardwareInfo().then(hw => { state.hardware = hw; renderModelCatalog(); });
+  // The local library is a separate list from the curated catalog; load it up
+  // front so switching to the “On disk” filter is instant.
+  refreshLocalModels();
 
   document.querySelectorAll(".models-filter").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".models-filter").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
       state.catalogFilter = btn.dataset.filter;
-      renderModelCatalog();
+      if (state.catalogFilter === "downloaded") refreshLocalModels();
+      else renderModelCatalog();
     });
   });
 
   document.getElementById("models-search")?.addEventListener("input", () => renderModelCatalog());
-  document.getElementById("btn-refresh-catalog")?.addEventListener("click", () => renderModelCatalog());
+  document.getElementById("btn-refresh-catalog")?.addEventListener("click", () => {
+    refreshLocalModels();
+    renderModelCatalog();
+    toast("Catalog and local models refreshed", "info", 2000);
+  });
+  document.getElementById("btn-models-open-file")?.addEventListener("click", openFile);
+  document.getElementById("btn-models-open-folder")?.addEventListener("click", openFolder);
+}
+
+// Files already in ~/Downloads/remap-studio-models. The IPC for this existed but
+// was never called, so a downloaded model was invisible to the app afterwards:
+// the only way back to it was File ▸ Open and knowing the path.
+async function refreshLocalModels() {
+  if (!API.getDownloads) return;
+  try {
+    const list = await API.getDownloads();
+    state.localModels = Array.isArray(list) ? list.sort((a, b) => new Date(b.modified) - new Date(a.modified)) : [];
+  } catch (e) {
+    state.localModels = [];
+  }
+  if (state.catalogFilter === "downloaded") renderLocalModels();
+}
+
+function renderLocalModels() {
+  const list = document.getElementById("models-list");
+  if (!list) return;
+  const searchVal = (document.getElementById("models-search")?.value || "").toLowerCase();
+  const models = (state.localModels || []).filter((m) => !searchVal || m.name.toLowerCase().includes(searchVal));
+
+  if (!models.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <p class="empty-title">No models on disk</p>
+        <p class="empty-desc">Downloads from the catalog land in ~/Downloads/remap-studio-models. You can also drop any model file there yourself.</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = models.map((m) => `
+    <div class="model-card local${state.selectedLocalPath === m.path ? " selected" : ""}" data-local-path="${escapeHtml(m.path)}" tabindex="0">
+      <div class="model-card-name">${escapeHtml(m.name)}<span class="model-card-source local">disk</span></div>
+      <div class="model-card-meta">
+        <span>${formatBytes(m.size)}</span>
+        <span>${timeAgo(new Date(m.modified).getTime())}</span>
+      </div>
+      <div class="model-card-compat"><span style="color:var(--text-subtle)">Click to load</span></div>
+    </div>`).join("");
+
+  list.querySelectorAll("[data-local-path]").forEach((card) => {
+    card.addEventListener("click", () => {
+      state.selectedLocalPath = card.dataset.localPath;
+      const m = (state.localModels || []).find((x) => x.path === card.dataset.localPath);
+      renderLocalModels();
+      renderLocalModelDetail(m);
+    });
+  });
+}
+
+function renderLocalModelDetail(m) {
+  const detail = document.getElementById("models-detail");
+  if (!detail || !m) return;
+  detail.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-name">${escapeHtml(m.name)}</div>
+      <div class="detail-desc">Already on this machine · ${formatBytes(m.size)}</div>
+    </div>
+    <div class="detail-stats">
+      <div class="detail-stat"><div class="detail-stat-val">${formatBytes(m.size)}</div><div class="detail-stat-label">File Size</div></div>
+      <div class="detail-stat"><div class="detail-stat-val">${timeAgo(new Date(m.modified).getTime())}</div><div class="detail-stat-label">Modified</div></div>
+      <div class="detail-stat"><div class="detail-stat-val">${(m.name.split(".").pop() || "?").toUpperCase()}</div><div class="detail-stat-label">Format</div></div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Location</div>
+      <div class="local-model-path">${escapeHtml(m.path)}</div>
+    </div>
+    <div class="detail-section" style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-download" id="btn-load-local">Load this model</button>
+      <button class="btn-secondary" id="btn-reveal-local">Copy path</button>
+      <button class="btn-secondary" id="btn-delete-local">Delete file…</button>
+    </div>`;
+  document.getElementById("btn-load-local")?.addEventListener("click", () => {
+    switchTab("visualization");
+    loadModel(m.path, m.name, m.size, false);
+  });
+  document.getElementById("btn-reveal-local")?.addEventListener("click", () => copyToClipboard(m.path, "Copied path"));
+  document.getElementById("btn-delete-local")?.addEventListener("click", () => deleteLocalModel(m));
+}
+
+// Deleting is irreversible and models are large, so it goes through the
+// confirm dialog and reports the freed space.
+async function deleteLocalModel(m) {
+  const ok = await confirmDialog({
+    title: "Delete this model file?",
+    body: `${m.name} (${formatBytes(m.size)}) will be permanently removed from disk. This cannot be undone.`,
+    confirm: "Delete file",
+    danger: true,
+  });
+  if (!ok) return;
+  try {
+    const res = await API.rpc("file_delete", { path: m.path }).catch(() => null);
+    if (res && res.ok) {
+      toast(`Deleted ${m.name} — freed ${formatBytes(res.freed_bytes || m.size)}`, "success", 4000);
+      await refreshLocalModels();
+      const detail = document.getElementById("models-detail");
+      if (detail) detail.innerHTML = '<div class="empty-state"><p class="empty-title">File deleted</p><p class="empty-desc">Pick another model from the list</p></div>';
+    } else {
+      // No backend route for this yet — say so rather than pretending.
+      toast("In-app delete is not available; remove the file in Finder", "warning", 6000);
+    }
+  } catch (e) {
+    toast(`Could not delete: ${e.message}`, "error", 6000);
+  }
 }
 
 function getCompatibility(model) {
@@ -4165,6 +6287,7 @@ function renderModelCatalog() {
     if (state.catalogFilter === "ollama" && m.source !== "ollama") return false;
     if (state.catalogFilter === "hf" && m.source !== "hf") return false;
     if (state.catalogFilter === "compatible" && getCompatibility(m).score < 2) return false;
+    if (state.catalogFilter === "downloaded") return false;
     if (searchVal) {
       const hay = `${m.name} ${m.family} ${m.tags.join(" ")}`.toLowerCase();
       if (!hay.includes(searchVal)) return false;
@@ -4545,6 +6668,17 @@ function resetView3D() {
   log("Camera reset");
 }
 
+// Keyboard slant: bank the camera about its view axis one small step per
+// press. Q leans the model's top left, E leans it right — the same axis
+// ⌥/Alt-drag drives continuously.
+const SLANT_STEP_3D = Math.PI / 24; // 7.5°
+function slantView3D(clockwise) {
+  const nn = state.nn3d;
+  if (!nn || state.viewMode !== "3d") return;
+  // engine roll() is counter-clockwise for positive radians.
+  nn.roll(clockwise ? -SLANT_STEP_3D : SLANT_STEP_3D);
+}
+
 // ── Node inspector card ──
 function showNodeCard(node, screenX, screenY) {
   const card = document.getElementById("node-hud-card");
@@ -4581,15 +6715,19 @@ function hideNodeCard() {
 // ── Pointer / keyboard wiring ──
 function wire3DInteractions(nn) {
   const canvas = nn.canvas;
+  // Gesture legend on the canvas itself — the viewport has no visible help.
+  canvas.title = "Drag: rotate · ⌥/Alt-drag: slant · Shift/right-drag: pan · Scroll: tilt · ⌘/Ctrl+scroll: zoom";
   let dragging = false;
   let panning = false;
   let last = { x: 0, y: 0 };
   let moved = 0;
 
   canvas.addEventListener("pointerdown", (e) => {
-    canvas.setPointerCapture(e.pointerId);
+    // Capture keeps the drag alive outside the canvas; synthetic/test pointers
+    // have no active capture target, and failing there must not kill the drag.
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
     dragging = true;
-    // Right-button or shift-drag pans; plain drag orbits.
+    // Right-button or shift-drag pans; plain drag orbits, ⌥/Alt-drag slants.
     panning = e.button === 2 || e.shiftKey;
     last = { x: e.clientX, y: e.clientY };
     moved = 0;
@@ -4607,6 +6745,9 @@ function wire3DInteractions(nn) {
     if (dragging) {
       moved += Math.abs(dx) + Math.abs(dy);
       if (panning) nn.pan(dx, dy);
+      // ⌥/Alt-drag banks the whole view about its own axis: the model slants
+      // like italic text. Dragging right leans the top right (clockwise).
+      else if (e.altKey) nn.roll(-dx * 0.006);
       else nn.orbit(dx, dy);
       return;
     }
@@ -4670,7 +6811,18 @@ function wire3DInteractions(nn) {
 
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
-    nn.zoom(e.deltaY);
+    // Zoom moved onto the modifier gesture (⌘/Ctrl-wheel, which is also what a
+    // trackpad pinch arrives as): a plain scroll or two-finger swipe now turns
+    // and tilts the model, so the trackpad can orbit without a click-drag.
+    if (e.ctrlKey || e.metaKey) { nn.zoom(e.deltaY); return; }
+    // Normalise line/page deltas so the same gesture means the same thing on
+    // every platform, then damp a coarse mouse notch — a trackpad swipe
+    // arrives as many small deltas and must stay fine-grained.
+    let d = e.deltaY;
+    if (e.deltaMode === 1) d *= 16;
+    else if (e.deltaMode === 2) d *= 100;
+    const k = Math.abs(d) >= 40 ? 0.4 : 1;
+    nn.orbit(e.deltaX * k, d * k);
   }, { passive: false });
 
   // Suppress the native context menu so right-drag can pan.
@@ -4749,6 +6901,8 @@ function handle3DShortcut(e) {
     case "r": resetView3D(); return true;
     case " ": toggleAutoRotate3D(); return true;
     case "g": setViewMode("2d"); return true;
+    case "q": slantView3D(false); return true;
+    case "e": slantView3D(true); return true;
     default: return false;
   }
 }

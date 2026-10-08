@@ -6,7 +6,9 @@
 // tags with no bundler, and the packaged app must work fully offline.
 //
 // Features
-//   · 360° orbit camera (drag), pan (shift-drag / right-drag), zoom (wheel)
+//   · 360° orbit camera (drag) with near-vertical pitch, view-axis slant
+//     (⌥/Alt-drag), pan (shift-drag / right-drag), tilt on scroll/swipe and
+//     zoom (⌘/Ctrl-wheel or pinch)
 //   · Instanced icosphere "neurons" with fresnel rim-light + emissive core
 //   · Connection fibres (instanced screen-space ribbons) with flow pulses
 //   · Depth-cued starfield over the panel's own surface tone (no painted
@@ -66,6 +68,19 @@
       o[c * 4 + 2] = a[2] * b0 + a[6] * b1 + a[10] * b2 + a[14] * b3;
       o[c * 4 + 3] = a[3] * b0 + a[7] * b1 + a[11] * b2 + a[15] * b3;
     }
+    return o;
+  }
+
+  // Rotation about Z. Applied to a finished view matrix it banks the camera
+  // about its own forward axis — a screen-space rotation of the whole scene,
+  // which is exactly what the slant control needs (and keeps the projection
+  // matrix, picking and the DOM label anchors consistent for free).
+  function m4rotZ(o, a) {
+    const c = Math.cos(a), s = Math.sin(a);
+    o[0] = c; o[1] = s; o[2] = 0; o[3] = 0;
+    o[4] = -s; o[5] = c; o[6] = 0; o[7] = 0;
+    o[8] = 0; o[9] = 0; o[10] = 1; o[11] = 0;
+    o[12] = 0; o[13] = 0; o[14] = 0; o[15] = 1;
     return o;
   }
 
@@ -1041,15 +1056,26 @@ void main() {
     uploadStars(420);
 
     // ── Camera / interaction state ──
+    // Vertical travel stops just short of the poles: at exactly ±90° the
+    // look-at up-vector is parallel to the view direction and the matrix
+    // collapses, so "straight down onto the spiral" is 89.5° — an order of
+    // magnitude further than the old ±83° clamp allowed.
+    const PHI_LIMIT = 1.5620;
+    // A quarter turn of bank each way is all the slant needs; past that the
+    // model reads as upside-down rather than italic.
+    const ROLL_LIMIT = Math.PI / 2;
     const cam = {
       // theta = pi/2 puts +Z toward the viewer, so the X axis (the layer
       // progression) runs horizontally on screen.
       theta: Math.PI / 2, phi: 0.20, radius: 34,
+      // Bank about the view axis (radians, positive = scene turns
+      // counter-clockwise on screen). Zero unless the user slants the view.
+      roll: 0,
       target: [0, 0, 0],
       // Distance frameGraph() chose; the zoom-out clamp is relative to it.
       fitRadius: 34,
       // Damped values actually used for rendering.
-      dTheta: Math.PI / 2, dPhi: 0.20, dRadius: 34, dTarget: [0, 0, 0],
+      dTheta: Math.PI / 2, dPhi: 0.20, dRadius: 34, dRoll: 0, dTarget: [0, 0, 0],
       autoRotate: true,
       autoRotateSpeed: 0.055,
     };
@@ -1066,6 +1092,11 @@ void main() {
       worldRadius: 2,
       hoverId: -1,
       selectedId: -1,
+      // Settings → Show connection lines. False skips passes 3 and 5 entirely
+      // (fibres and the flow particles that ride them), which is both the
+      // visual preference and a real win on integrated GPUs.
+      connectionsVisible: true,
+      fps: 0,
       bloomStrength: 0.30,
       quality: options.quality || "high",
       paused: false,
@@ -1682,6 +1713,7 @@ void main() {
     const vp = new Float32Array(16);
     const view = new Float32Array(16);
     const proj = new Float32Array(16);
+    const rollM = new Float32Array(16);
 
     function drawScene() {
       const aspect = canvas.width / Math.max(canvas.height, 1);
@@ -1703,6 +1735,14 @@ void main() {
         cam.dTarget[2] + cam.dRadius * cp * Math.sin(cam.dTheta),
       ];
       m4lookAt(view, eye, cam.dTarget, [0, 1, 0]);
+      // Bank about the camera's own forward axis for the slant control. Doing
+      // it here (rather than tilting the up-vector) rotates the *image* about
+      // the viewport centre exactly, and every consumer of `vp` — picking,
+      // stage anchors, fibres, stars — inherits it without special cases.
+      if (cam.dRoll) {
+        m4rotZ(rollM, cam.dRoll);
+        m4mul(view, rollM, view);
+      }
       m4mul(vp, proj, view);
       lastVP = vp;
 
@@ -1752,7 +1792,7 @@ void main() {
         gl.uniform1f(progLine._u.uTime, time);
         gl.uniform1f(progLine._u.uOpacity, 0.40);
         gl.bindVertexArray(lineVAO);
-        gl.drawArrays(gl.TRIANGLES, 0, lineVertexCount);
+        if (state.connectionsVisible) gl.drawArrays(gl.TRIANGLES, 0, lineVertexCount);
       }
 
       // ── Pass 4: neurons (opaque-ish, depth write on) ──
@@ -1772,7 +1812,7 @@ void main() {
       }
 
       // ── Pass 5: flow particles — information moving through the network ──
-      if (flowCount > 0) {
+      if (flowCount > 0 && state.connectionsVisible) {
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
         gl.depthMask(false);
@@ -1864,6 +1904,7 @@ void main() {
         frameAcc += dt; frameN++;
         if (frameN >= 90) {
           const fps = frameN / frameAcc;
+          state.fps = fps;
           if (fps < 32) {
             degraded = true;
             state.quality = "medium";
@@ -1883,6 +1924,7 @@ void main() {
       const k = 1 - Math.pow(0.0016, dt);
       cam.dTheta += (cam.theta - cam.dTheta) * k;
       cam.dPhi += (cam.phi - cam.dPhi) * k;
+      cam.dRoll += (cam.roll - cam.dRoll) * k;
       cam.dRadius += (cam.radius - cam.dRadius) * k;
       for (let i = 0; i < 3; i++) cam.dTarget[i] += (cam.target[i] - cam.dTarget[i]) * k;
 
@@ -1927,6 +1969,23 @@ void main() {
         relayout(true);
       },
       setAutoRotate(on) { cam.autoRotate = !!on; },
+      /**
+       * Show/hide the connection fibres (and the flow particles that travel
+       * along them). Driven by Settings → Show connection lines.
+       */
+      setConnections(on) {
+        state.connectionsVisible = !!on;
+        state.dirty = true;
+      },
+      /**
+       * Frames per second measured over the last 90 rendered frames, or 0
+       * before enough frames have been timed. The engine measures this itself
+       * because the auto-degrade path already does — two counters would drift.
+       */
+      readFps() { return state.fps || 0; },
+      /** The engine's natural spin rate, so a settings multiplier is neutral at 1×. */
+      baseAutoRotateSpeed: 0.055,
+      frameAccumulator() { return { frames: frameN, seconds: frameAcc }; },
       setBloom(v) { state.bloomStrength = v; },
       setQuality(q) {
         state.quality = q;
@@ -1941,11 +2000,29 @@ void main() {
 
       orbit(dx, dy) {
         cam.theta -= dx * 0.006;
-        cam.phi = Math.max(-1.45, Math.min(1.45, cam.phi + dy * 0.006));
+        cam.phi = Math.max(-PHI_LIMIT, Math.min(PHI_LIMIT, cam.phi + dy * 0.006));
+        camUserAdjusted = true;
+      },
+      /**
+       * Bank the camera about its own view axis — the slant control. Positive
+       * radians turn the scene counter-clockwise on screen (the model's top
+       * leans left); the caller decides which gesture maps to which sign.
+       */
+      roll(delta) {
+        cam.roll = Math.max(-ROLL_LIMIT, Math.min(ROLL_LIMIT, cam.roll + delta));
         camUserAdjusted = true;
       },
       pan(dx, dy) {
         camUserAdjusted = true;
+        // With the view banked, the screen axes no longer coincide with the
+        // camera's: undo the roll on the drag first so the graph keeps
+        // following the cursor exactly when slanted.
+        if (cam.dRoll) {
+          const cr = Math.cos(cam.dRoll), sr = Math.sin(cam.dRoll);
+          const ux = dx * cr - dy * sr;
+          const uy = dx * sr + dy * cr;
+          dx = ux; dy = uy;
+        }
         // Pan in the camera's screen plane.
         const s = cam.radius * 0.0016;
         const ct = Math.cos(cam.dTheta), st = Math.sin(cam.dTheta);
@@ -1959,7 +2036,7 @@ void main() {
         camUserAdjusted = true;
       },
       resetView() {
-        cam.theta = Math.PI / 2; cam.phi = 0.20;
+        cam.theta = Math.PI / 2; cam.phi = 0.20; cam.roll = 0;
         cam.target = [0, 0, 0];
         frameGraph();
       },
@@ -2139,6 +2216,6 @@ void main() {
     depthColor,
     dtypeColor,
     extractBlockIndex,
-    version: "1.3.2",
+    version: "1.5.0",
   };
 })(window);

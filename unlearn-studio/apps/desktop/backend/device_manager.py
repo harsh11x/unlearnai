@@ -1,21 +1,60 @@
 """
 Device Manager — Detects and manages GPU/CPU compute resources.
-Selects the best available device (CUDA > MPS > CPU).
+Selects the best available device (CUDA > MPS > CPU), unless the user has
+pinned one (Settings → Backend → Compute device, or the REMAP_DEVICE env var,
+which is what the desktop shell passes through on spawn).
 """
+
+import os
 
 import torch
 import psutil
 import time
 
+VALID_PREFERENCES = ("auto", "cpu", "mps", "cuda")
+
 
 class DeviceManager:
-    def __init__(self):
+    def __init__(self, preference: str | None = None):
+        self.preference = self._normalise(preference if preference is not None else os.environ.get("REMAP_DEVICE"))
         self.device = self._select_device()
         self._last_cpu = None
         self._last_time = None
 
+    @staticmethod
+    def _normalise(pref) -> str:
+        if not isinstance(pref, str):
+            return "auto"
+        pref = pref.strip().lower()
+        return pref if pref in VALID_PREFERENCES else "auto"
+
+    def available_devices(self) -> list:
+        """Every device this machine could run on, for the settings dropdown."""
+        out = ["cpu"]
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            out.append("mps")
+        if torch.cuda.is_available():
+            out.append("cuda")
+        return out
+
     def _select_device(self) -> torch.device:
-        """Select the best available compute device."""
+        """Select the compute device, honouring an explicit user preference."""
+        pref = self.preference
+
+        # An explicit pin is only honoured when the hardware really supports it;
+        # silently falling back keeps the app usable instead of crashing at the
+        # first tensor op.
+        if pref == "cpu":
+            return torch.device("cpu")
+        if pref == "mps":
+            if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+                return torch.device("mps")
+            return torch.device("cpu")
+        if pref == "cuda":
+            if torch.cuda.is_available():
+                return torch.device("cuda:0")
+            return torch.device("cpu")
+
         if torch.cuda.is_available():
             # Use the first CUDA device
             return torch.device("cuda:0")
@@ -25,9 +64,17 @@ class DeviceManager:
         else:
             return torch.device("cpu")
 
+    def set_preference(self, preference: str) -> dict:
+        """Pin (or unpin) the compute device without restarting the backend."""
+        self.preference = self._normalise(preference)
+        self.device = self._select_device()
+        return self.get_info()
+
     def get_info(self) -> dict:
         """Get detailed device information."""
         info = {
+            "preference": getattr(self, "preference", "auto"),
+            "available": self.available_devices(),
             "device": str(self.device),
             "device_type": self.device.type,
         }

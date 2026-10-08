@@ -1,6 +1,6 @@
 # Remap Studios — Full Application Test Report
 
-Date: 2026-10-04 · Branch `main` · macOS arm64
+Date: 2026-10-05 · Branch `main` · macOS arm64
 Model under test: `~/Downloads/remap-studio-models/qwen2.5-coder-0.5b-q4_k_m.gguf`
 (491 MB, qwen2, 291 tensors, 219 layers, 630.2 M params, Q4_K_M)
 Harness: Electron dev build with `--remote-debugging-port=9333` (CDP).
@@ -9,16 +9,19 @@ Harness: Electron dev build with `--remote-debugging-port=9333` (CDP).
 
 | Suite | What it covers | Result |
 |---|---|---|
-| `scripts/verify-app-sweep.js` (new) | 14 sections: every page, modal, menu, button, shortcut, real system shell, dock panes, chatbot, heatmap readability, weight-explorer analytics, 3D backdrop + zoom-depth range, and every backend RPC | **202 passed, 0 failed, 6 skipped** |
+| `scripts/verify-app-sweep.js` (new) | 15 sections: every page, modal, menu, button, shortcut, real system shell, dock panes, chatbot, heatmap readability, weight-explorer analytics, 3D camera axes + backdrop + zoom-depth range, Python dependency gate, and every backend RPC | **223 passed, 0 failed, 6 skipped** |
 | `/tmp/cdpdrive/verify-all.js` | Core end-to-end (load → inspect → tree → heatmap → unlearn → CPU/RAM → 3D) | **28 / 28** |
 | `/tmp/cdpdrive/uiflow.js` | Real UI flow incl. unlearn + inspector pending banner | **9 / 9** |
 | `scripts/verify-nn3d-graph.js` | nn3d graph builder / palettes / layout maths | **all checks passed** |
 | `scripts/verify-weight-editing.js` | Backend surgery + real 1.2 GB Safetensors export + reload as trainable | **all checks passed** |
 | `scripts/verify-model-load.js` | GGUF load contract, dequant stats, heatmap, surgery | **all checks passed** |
-| `backend/test_gguf_dequant.py` | Quantised dequantiser (Q4_K/…/Q8_0) | **27 / 27** |
+| `backend/test_gguf_dequant.py` | Quantised dequantiser (Q4_K/…/Q8_0), run with the app-owned environment interpreter | **27 / 27** |
 
 Skipped on purpose (external flows, not safe to auto-run): Google/Apple OAuth click,
 Razorpay upgrade checkout click.
+
+Also skipped, conditionally, is the trio of welcome-screen open buttons (4 checks) — those
+elements only exist while no model is loaded, so they are skipped when a model is already open.
 
 ## Fixed AI assistant + minimisable bottom dock (output | terminal)
 
@@ -99,16 +102,18 @@ for Windows):
 
 | Artifact | Path | Size | SHA-256 (first 16) |
 |---|---|---|---|
-| macOS arm64 DMG | `unlearn-studio/apps/desktop/dist/mac/Remap Studios-1.0.0-arm64.dmg` | 112,171,771 B | `77f44a4fc080e0a8` |
-| Windows x64 NSIS installer | `unlearn-studio/apps/desktop/dist/win/Remap Studios-1.0.0-x64.exe` | 93,192,240 B | `c8bec423218591bd` |
+| macOS arm64 DMG | `unlearn-studio/apps/desktop/dist/mac/Remap Studios-1.0.0-arm64.dmg` | 114,448,524 B | `4f8d808fdb87f7da` |
+| Windows x64 NSIS installer | `unlearn-studio/apps/desktop/dist/win/Remap Studios-1.0.0-x64.exe` | 95,364,544 B | `709e31e86df351d3` |
 
-Both were rebuilt last after the heatmap + Weight Explorer work and then again after the
-3D backdrop / zoom-depth fix (macOS 2026-10-04 23:56, Windows 23:59) and copied to
-`~/Desktop` — the copied files hash byte-for-byte identical to the build outputs.
+Both were rebuilt after the heatmap + Weight Explorer work, again after the 3D backdrop /
+zoom-depth fix, again after the automatic Python setup work, and finally after the spiral-view
+camera axes (macOS + Windows 2026-10-05 23:39) and copied to `~/Desktop` — the copied files
+hash byte-for-byte identical to the build outputs.
 `hdiutil verify` reports the DMG checksum is VALID; the Windows artifact is a
 `PE32 … Nullsoft Installer self-extracting archive`, and the payload that goes into it
-(`dist/win/win-unpacked/resources/app.asar`) carries the same engine (`nn3d.js` 1.3.2,
-`SURFACE_TONE`, `depthRange`, `worldRadius`) as the DMG.
+(`dist/win/win-unpacked/resources/app.asar`) carries the same engine (`nn3d.js` **1.4.0** —
+`m4rotZ`, `PHI_LIMIT`, `ROLL_LIMIT`, `SLANT_STEP_3D`, `SURFACE_TONE`, `depthRange`,
+`worldRadius`) as the DMG.
 
 The DMG was mounted, the app extracted to a clean directory and launched with CDP on
 port 9455:
@@ -119,6 +124,31 @@ port 9455:
   ran green against the same payload: **55 passed, 0 failed, exit 0**, reporting
   surface 12.86 at both viewport corners, grid 25, `far=1384px`, `0/291` nodes outside
   the frustum at 1.0×–3.2× and the graph painted at every zoom step (11.19% → 2.25%).
+
+The dependency bootstrap is in the shipped payloads too: `main.js` in both asars carries
+`python-env` / `PROBE_MARKER` / `installPythonDependencies` / `deps:install` / `deps:getPython`
+and `specSatisfied`, `preload.js` carries the dependency IPC, `renderer/index.html` carries the
+`deps-overlay` dialog, and `Contents/Resources/backend/requirements.txt` (21 lines, 8 package
+declarations) is bundled for both platforms.
+
+The DMG was mounted again and the packaged app was driven through the whole feature: with an
+empty environment directory it showed the setup dialog listing exactly what was missing, Allow
+built the environment and installed all 8 packages (~75 s with a warm pip cache, phases visible),
+the backend then reported ready on `…/python-env/bin/python3`, and a deliberately broken
+environment (PyYAML deleted) produced the repair dialog followed by a one-package repair and the
+dialog closing automatically. Sections **[5] + [6] + [7] + [15]** against that payload ran
+**65 passed, 0 failed, 0 skipped**.
+
+The spiral-view camera work was verified against the shipped DMG as well: the image was mounted
+(`hdiutil verify` VALID), the app extracted with `ditto` and launched with CDP. Section **[5]**
+ran **30 passed, 0 failed, 0 skipped** against that payload — including all eleven new camera
+checks (pitch to ±1.5620 rad, slant clamp exactly ±π/2, scroll tilt with the radius untouched,
+⌘+scroll zoom, Q/E stepping, the −28.65° projection rotation for +0.5 rad, slant-aware pan
+parity) plus the backdrop/depth checks — and real `Input.dispatchMouseEvent` input drove an
+alt-drag to roll −0.6 rad on the packaged build. One environmental note worth recording: when the
+packaged window is fully occluded, Chromium reports the page `hidden`, suspends
+`requestAnimationFrame` and the fps readout stays at “— fps”, which made the fps check fail until
+the app was relaunched so its window was frontmost (`open -n`, `visibility: visible`, 41 fps).
 
 Because the terminal is native-module-free, the Windows build cross-compiles cleanly
 from macOS: `win-unpacked/resources/app.asar` contains the same terminal code paths,
@@ -145,7 +175,11 @@ chatbot send, status view, clear terminal, terminal send, auth guest/google/appl
 
 **Keyboard shortcuts:** Cmd+K palette, Cmd+O/Cmd+Shift+O open, Cmd+E export, Cmd+, settings,
 Cmd+B sidebar, Cmd+Shift+P properties, Cmd+` terminal, Cmd+Shift+R unlearn, Cmd+/ shortcuts,
-Cmd+1–5 tabs, Cmd++/−/0 zoom, G 2D↔3D, L/C/R/Space in 3D, Escape closes overlays.
+Cmd+1–5 tabs, Cmd++/−/0 zoom, G 2D↔3D, L/C/R/Space/Q/E in 3D, Escape closes overlays.
+
+**3D camera gestures:** drag *or* two-finger swipe = rotate (all directions, pitch to ±89.5°),
+⌥/Alt-drag or Q/E = slant the view, Shift/right-drag = pan, scroll = tilt, ⌘/Ctrl+scroll
+(or trackpad pinch) = zoom, R = reset.
 
 **Terminal:** real shell session, `echo`, shell arithmetic, `pwd`, `cd`, `ls`, stderr,
 env vars, Ctrl+C, `exit`/restart, app commands (`help`, `status`, `layers`), unknown
@@ -413,6 +447,63 @@ Both installers were rebuilt after this fix and copied to the Desktop; sections 
 of the sweep pass against the payload extracted from the finished DMG (55/0, see “Packaged
 builds”).
 
+## Spiral view: near-vertical tilt, scroll tilt + slant — engine v1.4.0 (`nn3d.js`)
+
+Reported: “when we choose the spiral view … we are able to rotate the model 360° left↔right and
+move it front and back, but not slanting — rotation in the horizontal axis. Make sure it does that
+as well.”
+
+**First, what the drag already did.** The Helix layout (the “spiral”) is one of three
+(`layered | helix | sphere`). A left-button drag already drove two axes — `theta` (yaw, unlimited)
+and `phi` (pitch). Both a synthetic and a real vertical drag of 200 px moved pitch **0.2 → −1.0
+rad** and shifted all 27 stage captions by a mean of **133 px**, so the axis existed. What was
+really missing: (a) the last 7° at each end of the pitch (`phi` clamped at ±1.45 rad = ±83°, so
+the spiral could never be seen straight down or up), (b) any affordance for it, (c) **slant** —
+rotation about the view axis — at all, and (d) the trackpad-native gestures.
+
+**What changed (additive only).**
+
+| Gesture | Before | Now |
+|---|---|---|
+| Drag | yaw 360° + pitch clamped ±83° | unchanged, pitch clamp now **±89.5°** (`PHI_LIMIT = 1.5620`) — straight down/up onto the spiral, stopping only where the look-at up-vector degenerates |
+| ⌥/Alt-drag | — | **slant** the whole view about its own axis, clamped to ±90° (`ROLL_LIMIT`) |
+| Scroll / two-finger swipe | zoom | **tilt** (vertical) and **turn** (horizontal); a coarse mouse notch is damped to 0.4× so one click cannot slam the camera at the pole |
+| ⌘/Ctrl + scroll | zoom | still **zoom** — this is also what a macOS trackpad pinch arrives as |
+| Q / E | — | slant left / right in 7.5° steps (`SLANT_STEP_3D`) |
+| Shift / right-drag | pan | unchanged, and still follows the cursor exactly while slanted |
+| Reset (R) | yaw / pitch / zoom | also clears the slant |
+
+- `m4rotZ()` is post-multiplied onto the finished view matrix, so the camera banks about its own
+  forward axis: the image rotates about the viewport centre exactly, and picking, stage captions,
+  fibres and the starfield all inherit it from the same `vp` matrix with no special cases.
+- `pan()` undoes the roll on the drag delta before panning, so a slanted view still pans under
+  the cursor, and the slant is damped exactly like yaw/pitch (`dRoll`).
+- The canvas tooltip carries the gesture legend, the Keyboard Shortcuts overlay gained a
+  **3D View** group (24 rows, incl. `⌥ Drag → Slant the view` and `Q E → Slant left / right`),
+  and the palette gained “Slant 3D View Left / Right” — both confirmed in the running app
+  (opening the overlay, and searching the palette for “slant”, which returns exactly those two).
+- `NN3D.version` → **1.4.0**.
+
+**Verification.** Section **[5]** gained eleven checks: tilt reaching **±1.5620 rad** at both stops
+with the right signs, slant clamped to **exactly ±π/2**, reset clearing the slant, plain scroll
+tilting without zooming (`phi 0.200 → 0.488`, radius untouched), **⌘/Ctrl+scroll still zooming**
+(47.4 → 52.1 → 47.4) without touching pitch, a horizontal swipe turning the model without
+tilting, ⌥/Alt-drag → **roll −0.6 rad for a 100 px drag**, the slant rotating the *rendered
+projection* by **−28.65° for +0.5 rad**, the slant-aware pan parity, Q/E stepping
+(**+0.131 / 0 / −0.131 rad**), and **R** clearing the slant. Real (non-synthetic) input against the dev app:
+`Input.dispatchMouseEvent` alt-drag 100 px → roll −0.6; wheel 120 → `phi 0.200 → 0.488` with the
+radius untouched; ⌘+wheel → radius 47.4 → 52.1 with `phi` untouched. Frames read back from the
+engine at **61 fps**: slanting by −0.22 rad changes the rendered image by a mean **11.7/255** luma
+per pixel and pitching to 1.55 rad by **16.5/255** — the picture really moves, it is not just
+state. Full sweep **223 passed, 0 failed, 6 skipped**; `verify-nn3d-graph.js` green.
+Screenshots: `nn3d-slant-helix.png` (slanted spiral), `nn3d-topdown-helix.png` (pitch at +1.55 rad).
+
+**Bug found while verifying this.** The first cut of the slant-aware pan rotated the drag the wrong
+way (`Rz(+ρ)` instead of `Rz(−ρ)`). A single-axis probe cannot see it, because with `dy = 0` both
+rotations agree; the parity check “at +90° roll a rightward drag must pan exactly like an unrolled
+downward drag” caught it (the first run produced the exact negative of the correct target). Fixed
+and pinned by that check.
+
 ## Heatmap readability + Weight Explorer 2.0
 
 ### Heatmap
@@ -463,8 +554,88 @@ and the weight-row → heatmap jump end to end. **36/36 in sections 6+7, 198 pas
 Both installers were rebuilt afterwards, so `dist/mac` + `dist/win` now carry this work
 (`../backend/**/*.py` is bundled as extraResources — verified present in both payloads).
 
+## Automatic Python setup — check every launch, install everything on Allow
+
+New users reported errors caused by conflicting Python libraries. The root cause was that the
+app ran on whatever `python3` happened to be first on `PATH` and **never read its own
+`backend/requirements.txt`**: the same file listed `torch`, `safetensors`, `transformers`,
+`accelerate`, `numpy`, `psutil`, while the interpreters actually available on a machine could
+have any subset of them at any version. On this Mac alone `python3` resolved to Apple's 3.9.6
+(torch, no `transformers`) while Homebrew's 3.14.7 had torch + transformers but no `accelerate`,
+`h5py` or `PyYAML` — the exact class of mismatch that surfaces as “backend degraded” or an
+import-time ABI failure.
+
+### What the app does now
+
+`main.js` gained a **Python dependency bootstrap** (plus IPC in `preload.js`, the dialog in
+`index.html` / `styles/main.css`, and the gate logic in `renderer/app.js`):
+
+1. **Every launch** probes the interpreter that will run the backend against every line of
+   `backend/requirements.txt`. For each requirement it checks the installed distribution
+   version (PEP 440 subset: `>=`, `>`, `<=`, `<`, `==`, `!=`, `~=`, prereleases below the matching
+   release, `+local` labels ignored) **and actually imports the module** — a broken or
+   conflicting install reports as `installed but will not import — …` instead of silently
+   passing a metadata check.
+2. **All satisfied** → the backend starts on that interpreter, silently. Verified on this
+   machine: `[check] 8 packages present in …/python-env/bin/python3 (app-env) in 2357 ms`, no
+   dialog (a later run measured 3352 ms; the cost is importing torch/transformers).
+3. **Anything missing/broken** → a modal lists each offending package with the version it needs
+   and the reason, plus **Allow & Install Everything** and **Close Application**; it cannot be
+   dismissed. On a machine with no interpreter at all the primary action becomes
+   **Get Python 3** (macOS: Apple's own `xcode-select --install` dialog; elsewhere: python.org)
+   and the install button is disabled, because there is nothing to install into yet.
+4. **Allow** → the app builds its own environment at
+   `~/Library/Application Support/Remap Studios/python-env` (a real venv, so installs never
+   touch the user's global site-packages — this is what removes the conflict class of failure),
+   runs `pip install --upgrade -r requirements.txt` with streamed output, then **re-probes** so
+   “installed” means “imports and satisfies”, and finally starts the backend from that
+   environment. If `venv` is unavailable it falls back to `--without-pip` + `ensurepip`, then to
+   a private `--target` directory used via `PYTHONPATH`.
+
+`requirements.txt` now declares the complete set — `torch`, `numpy`, `safetensors`, `psutil`,
+`transformers`, `accelerate`, and the two extra formats the open dialog advertises: `h5py` and
+`PyYAML` (previously missing, so `.h5`/`.yaml` files failed with “pip install h5py”).
+
+### Verified flows
+
+| Scenario | How it was produced | Result |
+|---|---|---|
+| Fresh machine, incomplete environment | `REMAP_PYTHON=/opt/homebrew/bin/python3`, empty env dir | dialog listed `accelerate`, `h5py`; Allow created the venv, installed all 8 (+38 transitive) and started the backend from `…/python-env/bin/python3` |
+| Environment needs repair | deleted `PyYAML` from the app environment | dialog reported the app environment needs repair, including the cascade (`transformers`, `accelerate`: `installed but will not import — No module named 'yaml'`); Allow pip-installed only `PyYAML` |
+| No Python at all | `REMAP_PYTHON=/nonexistent-python3` | dialog switched to the “no usable Python 3” copy, install disabled, **Get Python 3** present (runs `xcode-select --install` → “already installed” note surfaced as a toast) |
+| Install fails (offline) | `PIP_INDEX_URL=http://127.0.0.1:9/simple` | state `failed` with `pip exited with code 1. 8 package(s) still missing.`, the pip error streamed into the dialog log, and Retry / Check Again / Continue Anyway (limited) / Close offered — the backend still starts in degraded mode if the user chooses to continue |
+| Close Application | dialog in the missing state | the app exited cleanly (process gone, CDP endpoint gone); an unrelated instance kept running untouched |
+| Healthy machine, every launch | normal launch | no dialog, `8 packages present … in 2357 ms`, backend on the app environment |
+
+Two real bugs were found by these tests and fixed: after an install finished the dialog **stayed
+on screen** (the `ok` status was broadcast while the renderer's local “installing” flag was still
+set, so it rendered as in-progress), and a slow `getDepsStatus` round-trip could deliver an older
+"checking" snapshot **after** the "missing" verdict and wipe the dialog. The second is fixed with
+a monotonic counter (`seq`) on every status payload — the renderer drops snapshots older than the
+one on screen — plus the rule that only a definite `ok`/`skipped` may close the dialog.
+
+### Verification added
+
+Sweep section **[15] PYTHON DEPENDENCY GATE** (10 checks): the launch check produced a verdict,
+`requirements.txt` drives it (8 requirements), an interpreter was resolved, the dialog is absent
+and empty when everything is present, the renderer holds install/check/continue/quit IPC, both
+status and progress events are subscribed, and Settings → Backend shows the environment plus the
+Install / Repair Packages control. Screenshot: `scripts/app-python-setup-dialog.png`.
+
+The sweep no longer needs `ws`: the CDP socket uses the `ws` package when present and Node's
+built-in `WebSocket` otherwise (the harness previously failed outright once `/tmp/cdpdrive` was
+cleaned).
+
+Section **[15]** was also run against the packaged DMG build: **65 passed, 0 failed, 0 skipped**
+for sections **[5] + [6] + [7] + [15]**, including the prompt → Allow → install → backend-starts
+path inside the packaged app (its `requirements.txt` is read from `Contents/Resources/backend`).
+
 ## Known limitations observed (not bugs)
 
+- The first automatic install needs network access and can take a few minutes (torch is a
+  ~127 MB wheel); on failure the dialog says so and offers retry or degraded mode.
+- The launch check costs ~2–3.5 s before the backend spawns (importing torch/transformers for
+  real is what catches conflicts); the window is already interactive while it runs.
 - `weight_gradient` / `eval_probes` report “No model loaded” for GGUF — a quantised model has no
   autograd graph to read gradients or run probes from.
 - `model_export` can only export live (non-quantised) state dicts; GGUF goes through

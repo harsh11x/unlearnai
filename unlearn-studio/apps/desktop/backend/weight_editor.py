@@ -732,6 +732,110 @@ class GGUFWeightEditor:
             "deleted_omitted": len(self.deleted),
         }
 
+    def export_tensor_stream(self, name, path, dtype="float32", progress=None):
+        """
+        Write ONE tensor (edits applied) to its own file, chunk by chunk.
+
+        The whole-tensor helper `_edited_flat` refuses anything over ~67M
+        elements, which excludes exactly the tensors people most want to pull
+        out on their own — embeddings and output projections. This streams, so
+        peak memory is one chunk regardless of tensor size.
+
+        Writes .npy (header then raw chunks) or .safetensors (header with
+        precomputed offsets, then the same chunks). Returns a summary dict.
+        """
+        import json as _json
+        import struct
+
+        if not self.supports(name):
+            raise ValueError(f"Tensor is not readable in this format: {name}")
+        info = self._info(name)
+        if info is None:
+            raise ValueError(f"Unknown tensor: {name}")
+
+        torch_shape = [int(d) for d in info.get("shape", [])]
+        n = self._element_count(info)
+        if n <= 0:
+            raise ValueError(f"Tensor {name} has no elements.")
+        # GGUF stores dims in ggml order (reversed from torch); the export must
+        # present them the way every other tool reads them.
+        torch_shape = list(reversed(torch_shape))
+
+        np_dtype = np.float16 if dtype == "float16" else np.float32
+        st_dtype = "F16" if dtype == "float16" else "F32"
+        itemsize = np.dtype(np_dtype).itemsize
+        total_bytes = n * itemsize
+        ext = os.path.splitext(path)[1].lower()
+        tmp_path = path + ".part"
+
+        def chunks():
+            """Yield (start, float32 array) covering the tensor in order."""
+            step = self.CHUNK_ELEMENTS
+            for start in range(0, n, step):
+                take = min(step, n - start)
+                vals = self._dequant_chunk(name, start, take)
+                if vals is None:
+                    raise ValueError(f"Could not read {name} at element {start}.")
+                vals = self._apply_edits(name, vals[:take], start)
+                yield start, np.asarray(vals, dtype=np_dtype)
+
+        written = 0
+        try:
+            with open(tmp_path, "wb") as fh:
+                if ext == ".safetensors":
+                    header = {
+                        name: {"dtype": st_dtype, "shape": torch_shape, "data_offsets": [0, total_bytes]}
+                    }
+                    header_bytes = _json.dumps(header, separators=(",", ":")).encode("utf-8")
+                    header_bytes += b" " * ((-len(header_bytes)) % 8)
+                    fh.write(struct.pack("<Q", len(header_bytes)))
+                    fh.write(header_bytes)
+                elif ext == ".npy":
+                    # .npy v1.0: magic, version, uint16 header length, then an
+                    # ASCII dict padded so the whole header is 64-byte aligned.
+                    shape_str = "(" + ",".join(str(d) for d in torch_shape)
+                    shape_str += ",)" if len(torch_shape) == 1 else ")"
+                    dict_str = (
+                        "{'descr': '%s', 'fortran_order': False, 'shape': %s, }"
+                        % (np.dtype(np_dtype).str, shape_str)
+                    )
+                    # 10 bytes of preamble + dict + newline must be a multiple of 64.
+                    pad = 64 - ((10 + len(dict_str) + 1) % 64)
+                    if pad == 64:
+                        pad = 0
+                    dict_str += " " * pad + "\n"
+                    fh.write(b"\x93NUMPY")
+                    fh.write(struct.pack("<BBH", 1, 0, len(dict_str)))
+                    fh.write(dict_str.encode("latin1"))
+                else:
+                    raise ValueError(f"Unsupported per-tensor export format: {ext or '(none)'}")
+
+                for _start, arr in chunks():
+                    fh.write(arr.tobytes(order="C"))
+                    written += arr.size
+                    if progress is not None:
+                        progress(written, n)
+
+            os.replace(tmp_path, path)
+        except Exception:
+            try:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except OSError:
+                pass
+            raise
+
+        return {
+            "name": name,
+            "path": path,
+            "shape": torch_shape,
+            "dtype": np.dtype(np_dtype).name,
+            "count": int(written),
+            "size_bytes": os.path.getsize(path),
+            "format": ext.lstrip("."),
+            "streamed": True,
+        }
+
     def _dequant_whole(self, name, n):
         """
         Dequantize an entire tensor.

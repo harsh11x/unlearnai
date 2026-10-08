@@ -2840,3 +2840,421 @@ body.drag-active {
 
 /* Mid-range resource usage colour (green -> amber -> red). */
 .resource-bar-fill.mid { background: var(--warning); }
+
+/* ══════════════════════════════════════════
+   PYTHON DEPENDENCY SETUP
+   ══════════════════════════════════════════ */
+
+.deps-panel { min-width: 620px; max-width: 720px; }
+
+.deps-intro {
+  font-size: 13px; line-height: 1.65;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.deps-meta {
+  font-family: var(--font-mono); font-size: 11px; line-height: 1.75;
+  color: var(--text-subtle);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px; margin-bottom: 12px;
+  word-break: break-all;
+}
+.deps-meta b { color: var(--text-muted); font-weight: 600; }
+
+.deps-list {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-bottom: 12px;
+  max-height: 220px; overflow-y: auto;
+}
+
+.deps-item {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 7px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--warning);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+.deps-item-name {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+  color: var(--text); min-width: 104px;
+}
+.deps-item-need {
+  font-family: var(--font-mono); font-size: 11px; color: var(--warning);
+}
+.deps-item-reason {
+  flex: 1; font-size: 11px; line-height: 1.5;
+  color: var(--text-subtle); word-break: break-word;
+}
+
+.deps-progress { margin-bottom: 12px; }
+.deps-progress-track {
+  height: 4px; border-radius: 2px;
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+.deps-progress-bar {
+  height: 100%; width: 0%;
+  background: var(--text);
+  transition: width var(--transition-normal);
+}
+.deps-progress-label {
+  margin-top: 7px;
+  font-family: var(--font-mono); font-size: 11px; line-height: 1.5;
+  color: var(--text-muted);
+  word-break: break-word;
+}
+
+.deps-log {
+  margin: 0;
+  font-family: var(--font-mono); font-size: 10.5px; line-height: 1.55;
+  color: var(--text-subtle);
+  background: #0a0a0a;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  max-height: 170px; overflow-y: auto;
+  white-space: pre-wrap; word-break: break-word;
+}
+
+.deps-actions {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+}
+.deps-actions button { min-width: 0; }
+
+/* ══════════════════════════════════════════════════════
+   UX LAYER — feedback, motion, focus and the new panels
+   Everything here is additive: no existing selector changes
+   behaviour, and every new animation is gated behind
+   prefers-reduced-motion at the bottom of this block.
+   ══════════════════════════════════════════════════════ */
+
+:root {
+  /* One easing family for the whole app. "emphasized" is for things that
+     appear (dialogs, toasts, panels); "standard" is for state changes. */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-1: 90ms;
+  --dur-2: 140ms;
+  --dur-3: 220ms;
+  --dur-4: 340ms;
+  --anim-scale: 1;
+}
+
+/* One hiding rule for the whole app. Every existing `.hidden` rule already
+   means display:none, but they were per-component — so any new element that
+   used the class silently stayed visible. !important because a component rule
+   with equal specificity would otherwise win on source order. */
+[hidden],
+.hidden { display: none !important; }
+
+/* ── Focus: one visible ring everywhere, keyboard-only ── */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--highlight);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+/* Mouse users never see the ring; keyboard users always do. */
+:where(button, a, input, select, textarea, [tabindex]):focus:not(:focus-visible) {
+  outline: none;
+}
+.dropdown-item:focus-visible,
+.context-menu-item:focus-visible,
+.search-hit:focus-visible,
+.recent-row:focus-visible {
+  outline-offset: -2px;
+  background: var(--bg-hover);
+}
+
+/* ── Toast notifications 2.0 ── */
+#toast-container {
+  gap: 8px;
+  align-items: flex-end;
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 240px;
+  max-width: 420px;
+  padding: 10px 10px 10px 12px;
+  border-left-width: 2px;
+  animation: toastIn var(--dur-3) var(--ease-emphasized) both;
+}
+.toast-icon {
+  flex: 0 0 auto;
+  width: 16px; height: 16px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  font-size: 10px; font-weight: 700; line-height: 1;
+  background: var(--bg-active); color: var(--text-muted);
+  margin-top: 1px;
+}
+.toast-body { flex: 1 1 auto; overflow-wrap: anywhere; }
+.toast-count { flex: 0 0 auto; font-size: 10px; color: var(--text-subtle); font-variant-numeric: tabular-nums; align-self: center; }
+.toast-count:empty { display: none; }
+.toast-action {
+  flex: 0 0 auto;
+  background: transparent; border: 1px solid var(--border-strong);
+  color: var(--text); border-radius: var(--radius-sm);
+  font-size: 10.5px; font-weight: 600; padding: 3px 8px; cursor: pointer;
+  transition: background var(--dur-1) var(--ease-standard), border-color var(--dur-1) var(--ease-standard);
+}
+.toast-action:hover { background: var(--bg-hover); border-color: var(--border-focus); }
+.toast-close {
+  flex: 0 0 auto;
+  background: transparent; border: 0; cursor: pointer;
+  color: var(--text-subtle); font-size: 14px; line-height: 1;
+  width: 18px; height: 18px; border-radius: var(--radius-sm);
+  transition: color var(--dur-1) var(--ease-standard), background var(--dur-1) var(--ease-standard);
+}
+.toast-close:hover { color: var(--text); background: var(--bg-hover); }
+.toast-info .toast-icon { background: var(--info-dim); color: #93c5fd; }
+.toast-success .toast-icon { background: var(--highlight-dim); color: #86efac; }
+.toast-warning .toast-icon { background: #422006; color: #fde047; }
+.toast-error .toast-icon { background: var(--danger-dim); color: #fca5a5; }
+/* A repeated message pulses instead of stacking a duplicate card. */
+.toast-pulse { animation: toastPulse var(--dur-3) var(--ease-emphasized); }
+@keyframes toastPulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.015); }
+  100% { transform: scale(1); }
+}
+
+/* ── Status bar: clickable segments ── */
+.status-clickable {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 1px 4px;
+  margin: 0 -4px;
+  transition: background var(--dur-1) var(--ease-standard), color var(--dur-1) var(--ease-standard);
+}
+.status-clickable:hover { background: var(--bg-hover); color: var(--text); }
+#status-platform.status-clickable { text-underline-offset: 2px; }
+#status-platform.status-cpu { color: var(--warning); }
+
+/* ── Dropdown items that cannot run right now ── */
+.dropdown-item.disabled,
+.context-menu-item.disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+.dropdown-item.disabled:hover,
+.context-menu-item.disabled:hover { background: transparent; }
+
+/* ── Settings: search, hints, inline rows, filtering ── */
+.settings-search-wrap {
+  position: relative;
+  padding: 10px 20px 4px;
+  display: flex; align-items: center; gap: 8px;
+}
+.settings-search-wrap .settings-input { flex: 1 1 auto; }
+.settings-search-hint {
+  font-size: 10.5px; color: var(--text-subtle);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.settings-hint {
+  display: block;
+  font-size: 10px; font-weight: 400; color: var(--text-subtle);
+  margin-top: 2px; line-height: 1.4;
+}
+.settings-inline { display: flex; align-items: center; gap: 6px; }
+.settings-inline .settings-input { min-width: 0; width: 190px; }
+.btn-sm { font-size: 10.5px; padding: 4px 9px; }
+.settings-row.settings-row-hidden,
+.settings-section.settings-row-hidden { display: none; }
+.settings-nav-item.settings-nav-dim { opacity: 0.35; }
+
+/* ── Confirm dialog ── */
+.confirm-modal { max-width: 420px; }
+.confirm-body { font-size: 12.5px; line-height: 1.6; color: var(--text-muted); margin: 0; }
+.btn-danger { background: var(--danger) !important; border-color: var(--danger) !important; color: #fff !important; }
+.btn-danger:hover { background: #dc2626 !important; }
+
+/* ── Recent models ── */
+.recent-modal { width: min(560px, 92vw); }
+.recent-body { display: flex; flex-direction: column; gap: 2px; max-height: 52vh; overflow-y: auto; }
+.recent-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "name meta" "path path";
+  gap: 2px 10px;
+  width: 100%;
+  text-align: left;
+  background: transparent; border: 1px solid transparent; cursor: pointer;
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  transition: background var(--dur-1) var(--ease-standard), border-color var(--dur-1) var(--ease-standard);
+}
+.recent-row:hover { background: var(--bg-hover); border-color: var(--border); }
+.recent-name { grid-area: name; font-size: 12px; font-weight: 600; color: var(--text); }
+.recent-meta { grid-area: meta; font-size: 10.5px; color: var(--text-subtle); white-space: nowrap; }
+.recent-path {
+  grid-area: path;
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-subtle);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── Sidebar tensor search ── */
+.sidebar-search-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px 6px;
+}
+.sidebar-search-input {
+  flex: 1 1 auto; min-width: 0;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  color: var(--text); border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: 11.5px;
+  padding: 5px 8px;
+  transition: border-color var(--dur-2) var(--ease-standard);
+}
+.sidebar-search-input:focus { border-color: var(--border-focus); }
+.sidebar-search-count {
+  font-size: 10px; color: var(--text-subtle);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.sidebar-search-hint {
+  padding: 0 10px 8px;
+  font-size: 10px; line-height: 1.5; color: var(--text-subtle);
+}
+.sidebar-search-results { display: flex; flex-direction: column; gap: 1px; }
+.search-hit {
+  display: flex; flex-direction: column; gap: 2px;
+  width: 100%; text-align: left; cursor: pointer;
+  background: transparent; border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  transition: background var(--dur-1) var(--ease-standard);
+}
+.search-hit:hover { background: var(--bg-hover); border-color: var(--border); }
+.search-hit-name {
+  font-family: var(--font-mono); font-size: 11px; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.search-hit-meta {
+  display: flex; gap: 8px;
+  font-size: 10px; color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Weight explorer: multi-selection ── */
+.we-selection-count {
+  display: inline-block;
+  font-size: 10px; font-weight: 600;
+  color: var(--highlight);
+  background: var(--highlight-dim);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-left: 6px;
+}
+.weight-item.multi-selected {
+  background: var(--bg-active) !important;
+  box-shadow: inset 2px 0 0 var(--highlight);
+}
+
+/* ── Model loading: skeleton + phase narration ── */
+.load-screen .welcome-desc { min-height: 1.4em; }
+.load-skeleton {
+  display: flex; flex-direction: column; gap: 6px;
+  width: min(300px, 60vw);
+  margin: 18px auto 0;
+}
+.load-skeleton-row {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--bg-surface) 0%, var(--bg-active) 50%, var(--bg-surface) 100%);
+  background-size: 200% 100%;
+  animation: skeletonSweep 1.4s linear infinite;
+}
+.load-skeleton-row:nth-child(2) { width: 78%; }
+.load-skeleton-row.wide { width: 92%; }
+@keyframes skeletonSweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Documentation modal ── */
+.docs-panel { width: min(880px, 94vw); height: min(640px, 88vh); display: flex; flex-direction: column; }
+.docs-layout { display: flex; flex: 1 1 auto; min-height: 0; }
+.docs-nav {
+  flex: 0 0 180px;
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 10px 8px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.docs-nav-item {
+  text-align: left; width: 100%; cursor: pointer;
+  background: transparent; border: 0; border-radius: var(--radius-sm);
+  color: var(--text-muted); font-family: var(--font-body); font-size: 11.5px;
+  padding: 7px 10px;
+  transition: background var(--dur-1) var(--ease-standard), color var(--dur-1) var(--ease-standard);
+}
+.docs-nav-item:hover { background: var(--bg-hover); color: var(--text); }
+.docs-nav-item.active { background: var(--bg-active); color: var(--text); font-weight: 600; }
+.docs-body { flex: 1 1 auto; overflow-y: auto; padding: 20px 24px; }
+.docs-section h3 { font-size: 14px; font-weight: 700; margin: 0 0 10px; color: var(--text); }
+.docs-section p { font-size: 12.5px; line-height: 1.7; color: var(--text-muted); margin: 0 0 12px; }
+.docs-section ol, .docs-section ul { margin: 0 0 12px; padding-left: 20px; }
+.docs-section li { font-size: 12.5px; line-height: 1.8; color: var(--text-muted); }
+.docs-section b { color: var(--text); font-weight: 600; }
+.docs-section kbd {
+  display: inline-block;
+  font-family: var(--font-mono); font-size: 10.5px;
+  background: var(--bg-surface); border: 1px solid var(--border-strong);
+  border-bottom-width: 2px; border-radius: var(--radius-sm);
+  padding: 0 5px; margin: 0 1px;
+  color: var(--text);
+}
+.docs-note {
+  border-left: 2px solid var(--info);
+  background: rgba(59, 130, 246, 0.07);
+  padding: 8px 12px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.docs-faq dt { font-size: 12.5px; font-weight: 600; color: var(--text); margin-top: 14px; }
+.docs-faq dd { font-size: 12px; line-height: 1.7; color: var(--text-muted); margin: 4px 0 0; }
+
+/* ── Resize handles: bigger hit area, visible on hover/focus ── */
+.resize-handle { position: relative; }
+.resize-handle::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: transparent;
+  transition: background var(--dur-2) var(--ease-standard);
+}
+.resize-handle:hover::after,
+.resize-handle:focus-visible::after,
+.resize-handle.active::after { background: var(--highlight); opacity: 0.5; }
+.resize-handle[data-resize="sidebar"]::after,
+.resize-handle[data-resize="unlearn"]::after { left: -2px; right: -2px; }
+.resize-handle[data-resize="props"]::after { left: -2px; right: -2px; }
+
+/* ── Empty states: calmer, with a clear next action ── */
+.empty-state { animation: emptyFade var(--dur-4) var(--ease-emphasized) both; }
+@keyframes emptyFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ── Reduced motion: honour the OS setting ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .load-skeleton-row { animation: none; background: var(--bg-active); }
+}
+/* The Settings → Node animation speed control can also switch motion off. */
+html[data-anim="off"] *, html[data-anim="off"] *::before, html[data-anim="off"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}

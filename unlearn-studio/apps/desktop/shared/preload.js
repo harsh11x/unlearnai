@@ -45,6 +45,22 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getBackendStatus: () => ipcRenderer.invoke("app:backendStatus"),
   restartBackend: () => ipcRenderer.invoke("app:restartBackend"),
 
+  // Python dependency bootstrap — the app checks every requirement on launch
+  // and installs whatever is missing (torch, safetensors, …) into its own
+  // environment when the user allows it.
+  getDepsStatus: () => ipcRenderer.invoke("deps:status"),
+  checkDeps: () => ipcRenderer.invoke("deps:check"),
+  installDeps: () => ipcRenderer.invoke("deps:install"),
+  continueWithoutDeps: () => ipcRenderer.invoke("deps:continue"),
+  getPython: () => ipcRenderer.invoke("deps:getPython"),
+  quitApp: () => ipcRenderer.invoke("app:quit"),
+  onDepsStatus: (callback) => {
+    ipcRenderer.on("deps:status", (_event, status) => callback(status));
+  },
+  onDepsProgress: (callback) => {
+    ipcRenderer.on("deps:progress", (_event, data) => callback(data));
+  },
+
   // Backend lifecycle events
   onBackendStatus: (callback) => {
     ipcRenderer.on("backend:status", (_event, status) => callback(status));
@@ -52,6 +68,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   // Platform
   getPlatform: () => ipcRenderer.invoke("app:getPlatform"),
+
+  // Settings store — durable in the main process (userData/settings.json) so
+  // preferences survive a reinstall and the backend spawn can read them.
+  getSettings: () => ipcRenderer.invoke("settings:get"),
+  setSetting: (key, value) => ipcRenderer.invoke("settings:set", key, value),
+  resetSettings: () => ipcRenderer.invoke("settings:reset"),
 
   // Hardware info
   getHardwareInfo: () => ipcRenderer.invoke("app:hardwareInfo"),

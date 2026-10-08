@@ -16,6 +16,11 @@
  *   7 heatmap controls      8 unlearn + export       9 terminal
  *  10 chatbot              11 status bar + settings 12 backend RPC methods
  *  13 keyboard shortcuts   14 auth + subscription UI
+ *  15 python dependency gate
+ *  16 preferences, search, context menu + UX layer
+ *
+ * Requires a page target only — the CDP socket uses the `ws` package when it
+ * is present and Node's built-in WebSocket otherwise, so no npm install.
  */
 
 const http = require("http");
@@ -25,11 +30,39 @@ const MODEL = process.env.MODEL_PATH ||
   require("os").homedir() + "/Downloads/remap-studio-models/qwen2.5-coder-0.5b-q4_k_m.gguf";
 
 const args = process.argv.slice(2).map(Number).filter(Boolean);
-const only = new Set(args.length ? args : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
+const only = new Set(args.length ? args : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
 
-let wsModule;
-try { wsModule = require("/tmp/cdpdrive/node_modules/ws"); }
-catch (e) { wsModule = require("ws"); }
+// WebSocket transport: use the `ws` package when it is installed, otherwise
+// Node's built-in WebSocket (22+). Keeping both means the suite needs no npm
+// install and survives a wiped /tmp.
+let wsModule = null;
+for (const candidate of ["/tmp/cdpdrive/node_modules/ws", "ws"]) {
+  try { wsModule = require(candidate); break; } catch (e) { /* try the next one */ }
+}
+
+function openSocket(url) {
+  if (wsModule) {
+    const socket = new wsModule(url);
+    return {
+      send: (data) => socket.send(data),
+      close: () => socket.close(),
+      onMessage: (cb) => socket.on("message", (raw) => cb(String(raw))),
+      onOpen: (cb) => socket.on("open", cb),
+      onError: (cb) => socket.on("error", cb),
+    };
+  }
+  if (typeof WebSocket !== "function") {
+    throw new Error("no WebSocket implementation — install `ws` (npm i ws) or run Node 22+");
+  }
+  const socket = new WebSocket(url);
+  return {
+    send: (data) => socket.send(data),
+    close: () => socket.close(),
+    onMessage: (cb) => socket.addEventListener("message", (ev) => cb(String(ev.data))),
+    onOpen: (cb) => socket.addEventListener("open", cb),
+    onError: (cb) => socket.addEventListener("error", (ev) => cb(new Error(ev.message || "socket error"))),
+  };
+}
 
 const checks = { pass: 0, fail: 0, skip: 0 };
 const failures = [];
@@ -65,8 +98,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   if (!page) { console.error("no page target on " + PORT); process.exit(1); }
   console.log("attached: " + page.url);
 
-  const WebSocket = wsModule;
-  const ws = new WebSocket(page.webSocketDebuggerUrl);
+  const ws = openSocket(page.webSocketDebuggerUrl);
   let id = 0;
   const pending = new Map();
 
@@ -76,7 +108,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     ws.send(JSON.stringify({ id: mid, method, params }));
   });
 
-  ws.on("message", (raw) => {
+  ws.onMessage((raw) => {
     const msg = JSON.parse(raw);
     if (msg.id && pending.has(msg.id)) {
       const { resolve, reject } = pending.get(msg.id);
@@ -86,7 +118,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     }
   });
 
-  await new Promise((r, j) => { ws.on("open", r); ws.on("error", j); });
+  await new Promise((r, j) => { ws.onOpen(r); ws.onError(j); });
 
   // Needed so listenerInfo() can read the source line a listener was
   // registered on (Debugger.getScriptSource).
@@ -198,8 +230,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         // backdrop bands are only meaningful on the default layout.
         const savedLayout = nn.state.layout;
         if (savedLayout !== "layered") nn.setLayout("layered");
+        const savedRoll = cam.roll;
         const settle = () => {
-          cam.dRadius = cam.radius; cam.dTheta = cam.theta; cam.dPhi = cam.phi;
+          cam.dRadius = cam.radius; cam.dTheta = cam.theta; cam.dPhi = cam.phi; cam.dRoll = cam.roll;
           for (let i = 0; i < 3; i++) cam.dTarget[i] = cam.target[i];
           nn.renderOnce();
           return nn.readScenePixels();
@@ -254,7 +287,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
           sweep.push({ factor: k, radius: Math.round(cam.radius), litPct: f.litPct, outside: dep.outside, total: dep.total, far: dep.far });
         }
         if (savedLayout !== "layered") nn.setLayout(savedLayout);
+        cam.roll = savedRoll; cam.dRoll = savedRoll;
         nn.resetView();
+        nn.cam.dRoll = nn.cam.roll;
         return { version: (window.NN3D || {}).version, fitRadius: Math.round(fitRadius), fit, sweep };
       },
     };
@@ -287,8 +322,22 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   // Loads the known model if none is loaded — lets later sections run
   // standalone as well as after section 4.
+  // Load the model and prove the BACKEND has it, not just the renderer. Asking
+  // only `state.model` hid a real failure mode: after the backend respawns (new
+  // interpreter, Restart Backend) the window still shows the old model while
+  // Python has none, and every tensor RPC then fails against a UI that looks
+  // perfectly healthy.
   const ensureModel = async () => {
-    if (!(await ev("Boolean(state.model)"))) {
+    const backendHasModel = async () => {
+      const n = await ev(`(async () => { const l = await window.electronAPI.rpc("weight_list", {}); return ((l && l.tensors) || []).length; })()`);
+      return Number(n) > 0;
+    };
+    if (await backendHasModel()) return;
+    await ev(`window.loadModel(${JSON.stringify(MODEL)}, "qwen2.5-coder-0.5b-q4_k_m.gguf", 514708512)`);
+    await sleep(5000);
+    if (!(await backendHasModel())) {
+      // One retry: the backend may still have been starting when we asked.
+      await sleep(4000);
       await ev(`window.loadModel(${JSON.stringify(MODEL)}, "qwen2.5-coder-0.5b-q4_k_m.gguf", 514708512)`);
       await sleep(5000);
     }
@@ -521,6 +570,178 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     await click("btn-3d-reset");
     await sleep(300);
     check("3D reset does not throw", (await ev("true")) === true);
+
+    // ── Camera axes: pitch to the pole, scroll tilt, ⌘-scroll zoom, slant ──
+    const camAxes = await ev(`(() => {
+      const nn = state.nn3d;
+      if (!nn) return null;
+      nn.setAutoRotate(false);
+      const saved = { theta: nn.cam.theta, phi: nn.cam.phi, roll: nn.cam.roll, radius: nn.cam.radius };
+      nn.resetView();
+      nn.orbit(0, -100000);            // drag to the stops, both ways
+      const up = nn.cam.phi;
+      nn.orbit(0, 200000);
+      const down = nn.cam.phi;
+      nn.roll(100000);
+      const rollMax = nn.cam.roll;
+      nn.roll(-200000);
+      const rollMin = nn.cam.roll;
+      nn.resetView();
+      const rollAfterReset = nn.cam.roll;
+      nn.cam.theta = saved.theta; nn.cam.dTheta = saved.theta;
+      nn.cam.phi = saved.phi; nn.cam.dPhi = saved.phi;
+      nn.cam.roll = saved.roll; nn.cam.dRoll = saved.roll;
+      nn.cam.radius = saved.radius; nn.cam.dRadius = saved.radius;
+      return { up, down, rollMax, rollMin, rollAfterReset };
+    })()`);
+    if (camAxes) {
+      check(
+        "vertical drag tilts to the poles (pitch past the old ±83° clamp)",
+        Math.abs(camAxes.up) > 1.5 && Math.abs(camAxes.up) < Math.PI / 2 &&
+          Math.abs(camAxes.down) > 1.5 && Math.abs(camAxes.down) < Math.PI / 2 &&
+          camAxes.up < 0 && camAxes.down > 0,
+        `up=${camAxes.up.toFixed(4)} rad down=${camAxes.down.toFixed(4)} rad`
+      );
+      check(
+        "slant clamps at a quarter turn each way",
+        Math.abs(camAxes.rollMax - Math.PI / 2) < 1e-6 && Math.abs(camAxes.rollMin + Math.PI / 2) < 1e-6,
+        `max=${camAxes.rollMax.toFixed(4)} min=${camAxes.rollMin.toFixed(4)}`
+      );
+      check("camera reset clears the slant", camAxes.rollAfterReset === 0, `roll=${camAxes.rollAfterReset}`);
+    } else {
+      skip("tilt range + slant clamp checks", "no NN3D handle on the page");
+    }
+
+    const wheel = await ev(`(() => {
+      const nn = state.nn3d;
+      if (!nn) return null;
+      const canvas = nn.canvas;
+      nn.setAutoRotate(false);
+      nn.resetView();
+      nn.cam.dTheta = nn.cam.theta; nn.cam.dPhi = nn.cam.phi; nn.cam.dRoll = nn.cam.roll;
+      const fire = (opts) => canvas.dispatchEvent(new WheelEvent("wheel", Object.assign({ bubbles: true, cancelable: true, deltaMode: 0 }, opts)));
+      const before = { phi: nn.cam.phi, theta: nn.cam.theta, radius: nn.cam.radius };
+      fire({ deltaY: 120 });
+      const tilt = { phi: nn.cam.phi, theta: nn.cam.theta, radius: nn.cam.radius };
+      fire({ deltaY: 120, ctrlKey: true });
+      const zoomOut = { phi: nn.cam.phi, radius: nn.cam.radius };
+      fire({ deltaY: -120, metaKey: true });
+      const zoomIn = { phi: nn.cam.phi, radius: nn.cam.radius };
+      const preTurn = { theta: nn.cam.theta, phi: nn.cam.phi };
+      fire({ deltaX: 120 });
+      const turn = { theta: nn.cam.theta, phi: nn.cam.phi };
+      nn.resetView();
+      nn.cam.dTheta = nn.cam.theta; nn.cam.dPhi = nn.cam.phi;
+      return { before, tilt, zoomOut, zoomIn, preTurn, turn };
+    })()`);
+    if (wheel) {
+      check(
+        "plain scroll tilts the camera (no zoom)",
+        wheel.tilt.phi > wheel.before.phi && wheel.tilt.radius === wheel.before.radius,
+        `phi ${wheel.before.phi.toFixed(3)} -> ${wheel.tilt.phi.toFixed(3)}, radius ${wheel.tilt.radius.toFixed(1)}`
+      );
+      check(
+        "⌘/Ctrl + scroll still zooms (pinch gesture)",
+        wheel.zoomOut.radius > wheel.tilt.radius && wheel.zoomOut.phi === wheel.tilt.phi &&
+          wheel.zoomIn.radius < wheel.zoomOut.radius,
+        `radius ${wheel.tilt.radius.toFixed(1)} -> ${wheel.zoomOut.radius.toFixed(1)} -> ${wheel.zoomIn.radius.toFixed(1)}`
+      );
+      check(
+        "horizontal two-finger swipe turns the model (no tilt)",
+        wheel.turn.theta !== wheel.preTurn.theta && wheel.turn.phi === wheel.preTurn.phi,
+        `theta ${wheel.preTurn.theta.toFixed(3)} -> ${wheel.turn.theta.toFixed(3)}, phi ${wheel.preTurn.phi.toFixed(3)} -> ${wheel.turn.phi.toFixed(3)}`
+      );
+    } else {
+      skip("scroll/trackpad camera checks", "no NN3D handle on the page");
+    }
+
+    const slant = await ev(`(() => {
+      const nn = state.nn3d;
+      if (!nn) return null;
+      const canvas = nn.canvas;
+      nn.setAutoRotate(false);
+      nn.resetView();
+      const r = canvas.getBoundingClientRect();
+      const x = r.left + r.width / 2, y = r.top + r.height / 2;
+      const evt = (type, cx, cy, extra) => new PointerEvent(type, Object.assign({
+        bubbles: true, cancelable: true, clientX: cx, clientY: cy,
+        pointerId: 77, pointerType: "mouse", isPrimary: true, button: 0,
+        buttons: type === "pointerup" ? 0 : 1,
+      }, extra || {}));
+      canvas.dispatchEvent(evt("pointerdown", x, y));
+      canvas.dispatchEvent(evt("pointermove", x + 100, y, { altKey: true }));
+      canvas.dispatchEvent(evt("pointerup", x + 100, y));
+      const dragRoll = nn.cam.roll;
+
+      // The slant has to rotate the real projection, not just the state.
+      nn.resetView();
+      nn.cam.roll = 0; nn.cam.dRoll = 0;
+      nn.renderOnce();
+      let topNode = null;
+      for (const nd of nn.state.nodes) if (!topNode || nd.pos[1] > topNode.pos[1]) topNode = nd;
+      const a = topNode ? nn.projectNode(topNode.id) : null;
+      nn.cam.roll = 0.5; nn.cam.dRoll = 0.5;
+      nn.renderOnce();
+      const b = topNode ? nn.projectNode(topNode.id) : null;
+      let angleDeg = null;
+      if (a && b) {
+        const w = nn.canvas.clientWidth, h = nn.canvas.clientHeight;
+        const ang = (p) => Math.atan2(p.y - h / 2, p.x - w / 2);
+        angleDeg = +((ang(b) - ang(a)) * 180 / Math.PI).toFixed(2);
+      }
+      // Panning must still follow the cursor once the view is banked: at +90°
+      // roll a rightward drag has to pan exactly like an unrolled downward one.
+      nn.cam.target = [0, 0, 0]; nn.cam.roll = 0; nn.cam.dRoll = 0; nn.pan(0, 100);
+      const flatDown = nn.cam.target.map((v) => +v.toFixed(4));
+      nn.cam.target = [0, 0, 0]; nn.cam.roll = Math.PI / 2; nn.cam.dRoll = Math.PI / 2; nn.pan(100, 0);
+      const rolledRight = nn.cam.target.map((v) => +v.toFixed(4));
+      nn.resetView();
+      nn.cam.roll = 0; nn.cam.dRoll = 0; nn.cam.target = [0, 0, 0];
+      nn.cam.dTheta = nn.cam.theta; nn.cam.dPhi = nn.cam.phi;
+      return {
+        dragRoll: +dragRoll.toFixed(4), angleDeg,
+        panParity: JSON.stringify(flatDown) === JSON.stringify(rolledRight),
+        flatDown, rolledRight,
+      };
+    })()`);
+    if (slant) {
+      check(
+        "⌥/Alt-drag slants the view (lean right = clockwise)",
+        slant.dragRoll < -0.3 && slant.dragRoll > -0.7,
+        `roll=${slant.dragRoll} rad for a 100px drag`
+      );
+      check(
+        "slant rotates the rendered projection by the roll angle",
+        typeof slant.angleDeg === "number" && Math.abs(slant.angleDeg + 28.6) < 2.5,
+        `projection turned ${slant.angleDeg}° for +0.5 rad`
+      );
+      check(
+        "pan follows the cursor when the view is slanted",
+        slant.panParity === true,
+        `flat-down ${JSON.stringify(slant.flatDown)} vs rolled-right ${JSON.stringify(slant.rolledRight)}`
+      );
+    } else {
+      skip("Alt-drag slant checks", "no NN3D handle on the page");
+    }
+
+    await ev(`(() => { const nn = state.nn3d; if (nn) { nn.cam.roll = 0; nn.cam.dRoll = 0; nn.resetView(); } return true; })()`);
+    await key("q");
+    await sleep(200);
+    const rollQ = await ev(`state.nn3d ? +state.nn3d.cam.roll.toFixed(4) : null`);
+    await key("e");
+    await sleep(200);
+    const rollE = await ev(`state.nn3d ? +state.nn3d.cam.roll.toFixed(4) : null`);
+    await key("e");
+    await sleep(200);
+    const rollE2 = await ev(`state.nn3d ? +state.nn3d.cam.roll.toFixed(4) : null`);
+    check(
+      "Q / E slant the view left / right",
+      typeof rollQ === "number" && rollQ > 0 && rollE < rollQ && rollE2 < 0,
+      `q=${rollQ} e=${rollE} ee=${rollE2}`
+    );
+    await key("r");
+    await sleep(250);
+    check("R clears the slant", (await ev(`state.nn3d ? state.nn3d.cam.roll === 0 : false`)) === true);
 
     // Backdrop + depth range. The viewport must read as the panel's own
     // surface with only the reference grid behind the graph, and the wheel
@@ -1429,6 +1650,545 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     check("Continue as Guest restores the app", appBack === true);
     await click("settings-close");
     await sleep(200);
+  }
+
+  // ═════════════════════════════════════════════════════
+  // [15] PYTHON DEPENDENCY GATE
+  // The main process re-checks backend/requirements.txt on every launch and
+  // offers an automatic install when something is missing. A healthy machine
+  // must show no dialog at all; a broken one must list exactly what is wrong
+  // with Allow / Close. The install itself is skipped here — it pip-installs
+  // real packages.
+  // ═════════════════════════════════════════════════════
+  if (only.has(15)) {
+    section(15, "PYTHON DEPENDENCY GATE");
+
+    // Hygiene: earlier sections can pin a preferred interpreter (the settings
+    // tests exercise that control), which would make this section measure that
+    // choice instead of the launch-time check. Clear it and probe again so the
+    // section always describes a default configuration.
+    await ev(`(async () => { await window.electronAPI.setSetting("pythonPath", ""); await window.electronAPI.checkDeps(); })()`);
+    await sleep(2500);
+
+    const deps = await ev(`(async () => {
+      const d = await window.electronAPI.getDepsStatus();
+      return {
+        status: d.status,
+        envKind: d.envKind,
+        python: d.python || d.basePython || "",
+        missing: (d.missing || []).length,
+        reqs: d.requirementCount,
+        log: (d.log || []).filter((l) => l.startsWith("[check]"))[0] || "",
+      };
+    })()`);
+
+    check("launch dependency check produced a verdict", deps.status === "ok" || deps.status === "missing", "status=" + deps.status + " env=" + deps.envKind);
+    check("requirements.txt drives the check", deps.reqs >= 8, deps.reqs + " requirements");
+    check("an interpreter was resolved", Boolean(deps.python), deps.python);
+
+    const gate = await ev(`document.getElementById("deps-overlay").classList.contains("visible")`);
+    if (deps.status === "ok") {
+      check("no setup dialog when every package is present", gate === false, deps.log);
+      check("nothing reported missing", deps.missing === 0, deps.missing + " missing");
+      const rows = await ev(`document.querySelectorAll("#deps-list .deps-item").length`);
+      check("dialog body left empty on a healthy machine", rows === 0, rows + " rows");
+    } else {
+      check("setup dialog shown when packages are missing", gate === true);
+      const rows = await ev(`document.querySelectorAll("#deps-list .deps-item").length`);
+      check("dialog lists every missing package", rows === deps.missing, rows + " rows for " + deps.missing);
+      const btns = await ev(`Array.from(document.querySelectorAll(".deps-actions button")).filter((b) => b.style.display !== "none").map((b) => b.textContent.trim())`);
+      check("dialog offers Allow and Close the application", btns.some((t) => /install everything/i.test(t)) && btns.some((t) => /close application/i.test(t)), JSON.stringify(btns));
+      skip("Allow button click", "would pip-install real packages into the app environment");
+    }
+
+    const ipc = await ev(`typeof window.electronAPI.installDeps === "function" && typeof window.electronAPI.checkDeps === "function" && typeof window.electronAPI.continueWithoutDeps === "function" && typeof window.electronAPI.quitApp === "function"`);
+    check("dependency IPC exposed to the renderer", ipc === true);
+
+    const progressHook = await ev(`typeof window.electronAPI.onDepsProgress === "function" && typeof window.electronAPI.onDepsStatus === "function"`);
+    check("status + progress events subscribed by the UI", progressHook === true);
+
+    // The settings page must surface the same information without the dialog.
+    await click("btn-settings");
+    await sleep(200);
+    const envCard = await ev(`(() => { const item = Array.from(document.querySelectorAll(".settings-nav-item")).find((i) => i.dataset.settingsSection === "backend"); if (item) item.click(); return true; })()`);
+    await sleep(300);
+    const cardText = await ev(`document.getElementById("backend-env-card").innerText`);
+    check("settings → backend shows the environment", envCard === true && /Environment:/i.test(cardText || ""), (cardText || "").replace(/\n/g, " | "));
+    const repairBtn = await ev(`typeof document.getElementById("btn-backend-deps") !== "undefined" && document.getElementById("btn-backend-deps") !== null`);
+    check("settings offers Install / Repair Packages", repairBtn === true);
+    await click("settings-close");
+    await sleep(200);
+  }
+
+  // ═════════════════════════════════════════════════════
+  // [16] PREFERENCES, SEARCH, CONTEXT MENU + UX LAYER
+  // Covers the wiring added for the A-to-Z pass: the preference store and every
+  // control that used to be decorative, the dead menu items, the tensor search
+  // panel, the context menu, and the feedback/motion layer.
+  // ═════════════════════════════════════════════════════
+  if (only.has(16)) {
+    section(16, "PREFERENCES, SEARCH, CONTEXT MENU + UX LAYER");
+
+    await ensureModel();
+
+    // ── 16a. Preference store round-trips to disk ──
+    const store = await ev(`(async () => {
+      const set = await window.electronAPI.setSetting("animSpeed", "fast");
+      const reread = await window.electronAPI.getSettings();
+      const hasPath = typeof reread._path === "string" && reread._path.length > 0;
+      const hasVersion = typeof reread._appVersion === "string";
+      await window.electronAPI.setSetting("animSpeed", "normal");
+      return { ok: set.ok, stored: reread.animSpeed, hasPath, hasVersion, version: reread._appVersion };
+    })()`);
+    check("settings persist through the main process", store.ok === true && store.stored === "fast", "animSpeed=" + store.stored);
+    check("settings file has a real location", store.hasPath === true);
+    check("the app version comes from the build, not a literal", store.hasVersion === true, "v" + store.version);
+
+    // ── 16b. Every preference control is wired and has a live effect ──
+    await ev(`window.toggleModal && window.toggleModal("settings-overlay")`);
+    await sleep(300);
+    const controls = await ev(`(async () => {
+      const ids = ["setting-autoload","setting-welcome","setting-gpu","setting-anim-speed","setting-connections","setting-default-method","setting-autosave","setting-python","setting-device","setting-heatmap-color"];
+      const present = ids.filter((id) => document.getElementById(id));
+      const out = { present: present.length, total: ids.length };
+
+      // anim speed: applies to the 3D engine AND can switch motion off
+      document.querySelector('.settings-nav-item[data-settings-section="visualization"]').click();
+      const sel = document.getElementById("setting-anim-speed");
+      sel.value = "off"; sel.dispatchEvent(new Event("change", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 350));
+      out.animOffAttr = document.documentElement.getAttribute("data-anim");
+      out.animStored = (await window.electronAPI.getSettings()).animSpeed;
+      sel.value = "normal"; sel.dispatchEvent(new Event("change", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 300));
+      out.animCleared = document.documentElement.getAttribute("data-anim");
+
+      // connections reaches the renderer's own state flag
+      const conn = document.getElementById("setting-connections");
+      conn.checked = false; conn.dispatchEvent(new Event("change", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 300));
+      out.connOff = state.showConnections;
+      conn.checked = true; conn.dispatchEvent(new Event("change", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 300));
+      out.connOn = state.showConnections;
+
+      // the interpreter commits on blur and the hint follows it
+      document.querySelector('.settings-nav-item[data-settings-section="backend"]').click();
+      const py = document.getElementById("setting-python");
+      py.value = "/usr/bin/python3"; py.dispatchEvent(new Event("blur", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 700));
+      out.pythonStored = (await window.electronAPI.getSettings()).pythonPath;
+      out.pythonHint = document.getElementById("setting-python-hint").textContent;
+      document.getElementById("btn-python-reset").click();
+      await new Promise((r) => setTimeout(r, 700));
+      out.pythonCleared = (await window.electronAPI.getSettings()).pythonPath;
+      out.pythonHintAuto = document.getElementById("setting-python-hint").textContent;
+      return out;
+    })()`);
+    check("every preference control exists in the panel", controls.present === controls.total, controls.present + "/" + controls.total);
+    check("node animation speed = off switches CSS motion off", controls.animOffAttr === "off" && controls.animStored === "off", "data-anim=" + controls.animOffAttr);
+    check("animation speed restores cleanly", controls.animCleared === null);
+    check("Show connection lines reaches the renderer state", controls.connOff === false && controls.connOn === true);
+    check("preferred interpreter commits and persists", controls.pythonStored === "/usr/bin/python3", String(controls.pythonStored));
+    check("interpreter hint reflects the pinned path", /pinned/.test(controls.pythonHint || ""), controls.pythonHint);
+    check("interpreter can be released back to auto-detect", controls.pythonCleared === "" && /auto/.test(controls.pythonHintAuto || ""), controls.pythonHintAuto);
+
+    // ── 16c. Settings search filters the whole panel ──
+    const search = await ev(`(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const input = document.getElementById("settings-search");
+      const visible = () => Array.from(document.querySelectorAll(".settings-section-page .settings-row")).filter((r) => !r.classList.contains("settings-row-hidden")).length;
+      const total = document.querySelectorAll(".settings-section-page .settings-row").length;
+      input.value = "heatmap"; input.dispatchEvent(new Event("input", { bubbles: true }));
+      await wait(200);
+      const hit = visible();
+      const hint = document.getElementById("settings-search-hint").textContent;
+      input.value = ""; input.dispatchEvent(new Event("input", { bubbles: true }));
+      await wait(200);
+      return { total, hit, restored: visible(), hint };
+    })()`);
+    check("settings search narrows the panel to matching rows", search.hit > 0 && search.hit < search.total, search.hit + " of " + search.total + " rows for \"heatmap\"");
+    check("settings search reports the match count", /match/i.test(search.hint || ""), search.hint);
+    check("clearing the search restores every row", search.restored === search.total, search.restored + "/" + search.total);
+
+    // ── 16d. The preferences that gate behaviour are honoured ──
+    const welcomePref = await ev(`(async () => {
+      await window.electronAPI.setSetting("welcome", false);
+      state.settings.welcome = false;
+      window.hideWelcomeScreen();
+      await new Promise((r) => setTimeout(r, 150));
+      const hidden = document.getElementById("canvas-overlay").classList.contains("hidden");
+      await window.electronAPI.setSetting("welcome", true);
+      state.settings.welcome = true;
+      state.welcomeDismissed = false;
+      return { hidden };
+    })()`);
+    check("'Show welcome screen' actually hides the overlay", welcomePref.hidden === true);
+
+    await click("settings-close");
+    await sleep(200);
+
+    // ── 16e. Dead menu items are gone ──
+    const menuActions = await ev(`(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const out = {};
+
+      // Recent Models: a real list with real rows, seeded by the loaded model
+      window.handleMenuAction("recent");
+      await wait(250);
+      out.recentRows = document.querySelectorAll(".recent-row").length;
+      out.recentName = (document.querySelector(".recent-name") || {}).textContent || "";
+      out.recentClosable = !!document.querySelector("[data-recent-close]");
+      document.querySelector("[data-recent-close]").click();
+      await wait(150);
+      out.recentClosed = !document.querySelector(".recent-modal");
+
+      // Documentation: an offline modal, not a log line
+      window.handleMenuAction("docs");
+      await wait(200);
+      const overlay = document.getElementById("docs-overlay");
+      out.docsOpen = overlay.classList.contains("visible");
+      out.docsSections = overlay.querySelectorAll(".docs-section").length;
+      overlay.querySelector('[data-docs-nav="trouble"]').click();
+      await wait(150);
+      out.docsSwitched = !overlay.querySelector('[data-docs-section="trouble"]').classList.contains("hidden")
+        && overlay.querySelector('[data-docs-section="start"]').classList.contains("hidden");
+      window.closeDocsModal();
+      await wait(150);
+      out.docsClosed = !overlay.classList.contains("visible");
+
+      // Analysis + benchmark write real output instead of one hopeful line
+      const logLength = () => (document.getElementById("output-content") || document.body).textContent.length;
+      const before = logLength();
+      await window.runModelAnalysis();
+      await wait(250);
+      const afterAnalysis = logLength();
+      await window.runModelBenchmark();
+      await wait(250);
+      out.analysisWrote = afterAnalysis > before;
+      out.benchmarkWrote = logLength() > afterAnalysis;
+
+      // Legal (the auth screen's Terms / Privacy links used to be href="#")
+      window.openLegalModal("privacy");
+      await wait(200);
+      out.legalOpen = !!document.getElementById("legal-overlay");
+      out.legalMentionsLocal = /never leave this computer/i.test(document.getElementById("legal-overlay").textContent);
+      document.querySelector("[data-legal-close]").click();
+      await wait(150);
+      out.legalClosed = !document.getElementById("legal-overlay");
+      return out;
+    })()`);
+    check("File ▸ Recent Models lists the loaded model", menuActions.recentRows >= 1 && menuActions.recentName.length > 0, menuActions.recentName);
+    check("Recent Models closes properly", menuActions.recentClosable === true && menuActions.recentClosed === true);
+    check("Help ▸ Documentation opens the offline modal", menuActions.docsOpen === true, menuActions.docsSections + " sections");
+    check("documentation navigation swaps sections", menuActions.docsSwitched === true);
+    check("documentation closes properly", menuActions.docsClosed === true);
+    check("Run ▸ Analysis writes real output", menuActions.analysisWrote === true);
+    check("Run ▸ Benchmark writes real output", menuActions.benchmarkWrote === true);
+    check("Terms / Privacy open a real explanation, not href=\"#\"", menuActions.legalOpen === true && menuActions.legalMentionsLocal === true);
+    check("legal modal closes properly", menuActions.legalClosed === true);
+
+    // ── 16f. Tensor search panel (was "TODO: Search panel") ──
+    const searchPanel = await ev(`(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      document.querySelector('.activity-btn[data-panel="search"]').click();
+      await wait(250);
+      const out = {
+        treeHidden: document.getElementById("model-tree").classList.contains("hidden"),
+        searchVisible: !document.getElementById("sidebar-search").classList.contains("hidden"),
+        title: document.querySelector("#sidebar .panel-title").textContent,
+      };
+      const input = document.getElementById("tensor-search");
+      input.value = "attn_k"; input.dispatchEvent(new Event("input", { bubbles: true }));
+      await wait(250);
+      out.hits = document.querySelectorAll("#tensor-search-results .search-hit").length;
+      out.total = (state.tensors || []).length;
+      out.count = document.getElementById("tensor-search-count").textContent;
+      input.value = ""; input.dispatchEvent(new Event("input", { bubbles: true }));
+      await wait(200);
+      out.all = document.querySelectorAll("#tensor-search-results .search-hit").length;
+
+      // multi-term query matches regardless of term order
+      input.value = "weight attn"; input.dispatchEvent(new Event("input", { bubbles: true }));
+      await wait(250);
+      out.fuzzy = document.querySelectorAll("#tensor-search-results .search-hit").length;
+      input.value = "zzzzz-no-such-tensor"; input.dispatchEvent(new Event("input", { bubbles: true }));
+      await wait(250);
+      out.emptyState = !!document.querySelector("#tensor-search-results .empty-title");
+
+      // clicking a hit reveals the tensor in the explorer
+      input.value = "attn_k"; input.dispatchEvent(new Event("input", { bubbles: true }));
+      await wait(250);
+      const hit = document.querySelector("#tensor-search-results .search-hit");
+      const wanted = hit.dataset.tensor;
+      hit.click();
+      await wait(900);
+      out.selected = state.selectedTensor;
+      out.wanted = wanted;
+      out.tab = state.activeTab;
+
+      document.querySelector('.activity-btn[data-panel="explorer"]').click();
+      await wait(200);
+      out.treeBack = !document.getElementById("model-tree").classList.contains("hidden");
+      return out;
+    })()`);
+    check("search panel replaces the tree instead of duplicating it", searchPanel.treeHidden === true && searchPanel.searchVisible === true, searchPanel.title);
+    check("search matches a tensor-name fragment", searchPanel.hits > 0 && searchPanel.hits < searchPanel.total, searchPanel.hits + " of " + searchPanel.total + " for \"attn_k\"");
+    check("empty query lists tensors rather than nothing", searchPanel.all > 0, searchPanel.all + " shown");
+    check("multi-term search ignores term order", searchPanel.fuzzy > 0, searchPanel.fuzzy + " hits for \"weight attn\"");
+    check("a query with no matches shows an empty state", searchPanel.emptyState === true);
+    check("clicking a result reveals + selects that tensor", searchPanel.selected === searchPanel.wanted, searchPanel.selected);
+    check("the explorer view comes back", searchPanel.treeBack === true);
+
+    // ── 16g. Context menu does real work ──
+    const ctx = await ev(`(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      window.switchTab("weights");
+      await wait(500);
+      const row = document.querySelector("#weight-explorer-body .weight-item");
+      if (!row) return { noRow: true };
+      const out = { tensor: row.dataset.tensor };
+      row.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, clientX: 320, clientY: 320 }));
+      await wait(200);
+      const menu = document.getElementById("context-menu");
+      out.visible = menu.classList.contains("visible");
+      out.items = menu.querySelectorAll(".context-menu-item").length;
+      out.disabled = menu.querySelectorAll(".context-menu-item.disabled").length;
+      out.target = (state.contextTarget || {}).name;
+      out.actions = Array.from(menu.querySelectorAll(".context-menu-item")).map((i) => i.dataset.action);
+      // view-properties must select the tensor and reveal the properties panel
+      state.propsVisible = false;
+      menu.querySelector('[data-action="view-properties"]').click();
+      await wait(900);
+      out.selected = state.selectedTensor;
+      out.props = state.propsVisible;
+      out.closed = !menu.classList.contains("visible");
+      // a layer row (no tensor) disables the tensor-only entries
+      const treeNode = document.querySelector("#model-tree .tree-node");
+      if (treeNode) {
+        treeNode.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, clientX: 200, clientY: 200 }));
+        await wait(200);
+        out.layerDisabled = menu.querySelectorAll(".context-menu-item.disabled").length;
+        out.layerTarget = (state.contextTarget || {}).name;
+        document.body.click();
+        await wait(100);
+      }
+      return out;
+    })()`);
+    if (ctx.noRow) {
+      skip("context menu on a weight row", "no weight rows rendered");
+    } else {
+      check("right-clicking a weight opens the context menu", ctx.visible === true, ctx.items + " items");
+      check("the menu knows which tensor it targets", ctx.target === ctx.tensor, ctx.target);
+      check("every menu entry has a handler", ctx.actions.length === 5 && ctx.actions.every((a) => ["copy-name","copy-path","view-properties","view-heatmap","export-tensor"].includes(a)), JSON.stringify(ctx.actions));
+      check("View Properties selects the tensor and shows the panel", ctx.selected === ctx.tensor && ctx.props === true, ctx.selected);
+      check("the menu closes after acting", ctx.closed === true);
+      if (ctx.layerDisabled !== undefined) {
+        // `target` is the weight-row name from earlier; `layerTarget` is what the
+        // layer row produced. A layer has no single tensor, so the four
+        // tensor-only entries must switch off and the target must be empty.
+        check("tensor-only entries are disabled on a layer row", ctx.layerDisabled > 0 && !ctx.layerTarget, ctx.layerDisabled + " disabled, target=" + JSON.stringify(ctx.layerTarget));
+      }
+    }
+
+    // ── 16h. Undo / redo ──
+    const history = await ev(`(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const item = (a) => document.querySelector('.dropdown-item[data-action="' + a + '"]');
+      const out = { initiallyDisabled: item("undo").classList.contains("disabled") };
+      const ran = [];
+      window.pushEditHistory({ label: "sweep edit", apply: () => ran.push("undo"), redo: () => ran.push("redo") });
+      out.enabledAfterPush = !item("undo").classList.contains("disabled");
+      await window.undoLastEdit();
+      await wait(150);
+      out.undoRan = ran.includes("undo");
+      out.redoEnabled = !item("redo").classList.contains("disabled");
+      await window.redoLastEdit();
+      await wait(150);
+      out.redoRan = ran.includes("redo");
+      await window.undoLastEdit();
+      await wait(150);
+      // The stack must keep the entry we just undid, so it can be redone again.
+      out.redoStackAfterUndo = state.redoStack.length;
+      return out;
+    })()`);
+    check("Edit ▸ Undo starts disabled with no history", history.initiallyDisabled === true);
+    check("recording an edit enables Undo", history.enabledAfterPush === true);
+    check("Undo runs the recorded inverse", history.undoRan === true);
+    check("Redo becomes available and runs", history.redoEnabled === true && history.redoRan === true);
+    check("an undone edit stays redoable", history.redoStackAfterUndo === 1, history.redoStackAfterUndo + " in the redo stack");
+
+    // ── 16i. Panel geometry is remembered, and drivable from the keyboard ──
+    const panels = await ev(`(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const handle = document.querySelector('.resize-handle[data-resize="sidebar"]');
+      const out = {
+        focusable: handle.getAttribute("tabindex"),
+        role: handle.getAttribute("role"),
+        orientation: handle.getAttribute("aria-orientation"),
+        hasTitle: (handle.getAttribute("title") || "").length > 0,
+      };
+      handle.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, clientX: 300, clientY: 400 }));
+      await wait(60);
+      document.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, clientX: 360, clientY: 400 }));
+      await wait(60);
+      document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, clientX: 360, clientY: 400 }));
+      await wait(400);
+      out.dragged = document.getElementById("sidebar").style.width;
+      out.saved = (await window.electronAPI.getSettings()).sizes;
+      handle.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      await wait(300);
+      out.arrow = document.getElementById("sidebar").style.width;
+      handle.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+      await wait(400);
+      out.cleared = (await window.electronAPI.getSettings()).sizes;
+      return out;
+    })()`);
+    check("resize handles are keyboard reachable and labelled", panels.focusable === "0" && panels.role === "separator" && panels.orientation === "vertical" && panels.hasTitle === true);
+    check("dragging a handle resizes the panel", panels.dragged === "320px", panels.dragged);
+    check("the new panel size is persisted", panels.saved && panels.saved.sidebar === 320, JSON.stringify(panels.saved));
+    check("arrow keys resize the panel too", panels.arrow === "332px", panels.arrow);
+    check("double-click resets the saved size", panels.cleared && panels.cleared.sidebar === undefined, JSON.stringify(panels.cleared));
+
+    // ── 16j. Status bar segments are actionable ──
+    const status = await ev(`(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const ids = ["status-model", "status-zoom", "status-platform", "status-ram", "status-params"];
+      const out = { clickable: ids.filter((id) => (document.getElementById(id).classList.contains("status-clickable"))).length, total: ids.length };
+      state.zoom = 1.5; window.updateZoom();
+      document.getElementById("status-zoom").click();
+      await wait(200);
+      out.zoom = state.zoom;
+      document.getElementById("status-platform").click();
+      await wait(300);
+      out.settingsOpened = document.getElementById("settings-overlay").classList.contains("visible");
+      out.onBackendPage = !!document.querySelector('.settings-nav-item[data-settings-section="backend"].active');
+      window.toggleModal("settings-overlay");
+      await wait(200);
+      return out;
+    })()`);
+    check("status bar segments are clickable", status.clickable === status.total, status.clickable + "/" + status.total);
+    check("clicking the zoom segment resets zoom", status.zoom === 1, "zoom=" + status.zoom);
+    check("clicking the device segment opens Backend settings", status.settingsOpened === true && status.onBackendPage === true);
+
+    // ── 16k. Toast layer: stacking, dedupe, sticky errors, actions ──
+    const toasts = await ev(`(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      window.clearToasts();
+      // Dismissal animates: a card leaves the DOM 200 ms after it is dismissed,
+      // so count only the ones still on screen.
+      await wait(400);
+      for (let i = 0; i < 4; i++) window.toast("identical sweep message", "info", 5000);
+      await wait(200);
+      const out = {
+        cards: document.querySelectorAll("#toast-container .toast:not(.out)").length,
+        badge: (document.querySelector(".toast-count") || {}).textContent || "",
+      };
+      window.clearToasts();
+      await wait(120);
+      window.toast("sweep error", "error", 1000);
+      await wait(150);
+      const err = document.querySelector(".toast.toast-error");
+      out.stickyError = !!err && err.dataset.sticky === "1";
+      out.hasClose = !!document.querySelector(".toast-error .toast-close");
+      let acted = false;
+      window.toast("sweep action", "info", 4000, { action: "Do it", onAction: () => { acted = true; } });
+      await wait(120);
+      const btn = document.querySelector(".toast-action");
+      out.hasAction = !!btn;
+      if (btn) btn.click();
+      await wait(150);
+      out.actionRan = acted;
+      window.clearToasts();
+      await wait(400);
+      out.cleared = document.querySelectorAll("#toast-container .toast").length;
+      return out;
+    })()`);
+    check("repeated identical toasts collapse instead of stacking", toasts.cards === 1 && /2|3|4/.test(toasts.badge), toasts.cards + " card, badge " + toasts.badge);
+    check("error toasts stay until dismissed", toasts.stickyError === true);
+    check("toasts can be dismissed by hand", toasts.hasClose === true);
+    check("toasts support an action button that runs", toasts.hasAction === true && toasts.actionRan === true);
+    check("the toast stack can be cleared", toasts.cleared === 0);
+
+    // ── 16l. Export dialog honesty ──
+    const exportUI = await ev(`(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      window.toggleModal("export-overlay");
+      await wait(300);
+      const out = {
+        unsupported: document.querySelectorAll(".export-option.disabled").length,
+        unsupportedHaveReason: Array.from(document.querySelectorAll(".export-option.disabled")).every((o) => (o.dataset.unavailable || "").length > 10),
+        precision: !!document.getElementById("export-precision"),
+        verifyToggle: !!document.getElementById("export-verify"),
+        summary: (document.getElementById("export-summary") || {}).textContent || "",
+      };
+      const pt = document.querySelector('.export-option[data-format="pt"]');
+      pt.click();
+      await wait(200);
+      out.selectedFormat = state.exportFormat;
+      out.selectedClass = pt.classList.contains("selected");
+      const gguf = document.querySelector('.export-option[data-format="gguf"]');
+      gguf.click();
+      await wait(200);
+      out.ggufRejected = !gguf.classList.contains("selected");
+      window.toggleModal("export-overlay");
+      await wait(200);
+      return out;
+    })()`);
+    check("formats this build cannot write are marked unavailable", exportUI.unsupported === 2 && exportUI.unsupportedHaveReason === true, exportUI.unsupported + " unavailable");
+    check("clicking an unavailable format does not select it", exportUI.ggufRejected === true);
+    check("a supported format still selects", exportUI.selectedClass === true, exportUI.selectedFormat);
+    check("export options are real (precision + verify)", exportUI.precision === true && exportUI.verifyToggle === true);
+    check("the export dialog explains what it will write", /Format/i.test(exportUI.summary || ""), (exportUI.summary || "").slice(0, 60));
+
+    // ── 16m. New backend RPCs ──
+    const rpcs = await ev(`(async () => {
+      const out = {};
+      const dev = await window.electronAPI.rpc("device_preference", { device: "cpu" });
+      out.cpuPinned = dev.device === "cpu" && dev.preference === "cpu";
+      out.available = Array.isArray(dev.available) ? dev.available.length : 0;
+      const back = await window.electronAPI.rpc("device_preference", { device: "auto" });
+      out.autoBack = back.device;
+      out.autoPref = back.preference;
+
+      const one = await window.electronAPI.rpc("tensor_export_one", { name: "blk.0.attn_k.weight", path: "/tmp/sweep-tensor.npy" });
+      out.exported = one.error ? { error: String(one.error).slice(0, 90) } : { count: one.count, streamed: one.streamed, bytes: one.size_bytes };
+      const bad = await window.electronAPI.rpc("tensor_export_one", { name: "nope.nope", path: "/tmp/sweep-tensor.npy" });
+      out.badName = !!bad.error;
+      const badExt = await window.electronAPI.rpc("tensor_export_one", { name: "blk.0.attn_k.weight", path: "/tmp/sweep-tensor.txt" });
+      out.badExt = !!badExt.error;
+
+      const outside = await window.electronAPI.rpc("file_delete", { path: "/etc/hosts" });
+      out.deleteGuarded = outside.outside_downloads === true;
+
+      const unsupported = await window.electronAPI.rpc("model_export", { path: "/tmp/x.gguf", format: "gguf" });
+      out.formatRefused = unsupported.unsupported_format === true;
+      return out;
+    })()`);
+    check("device_preference pins the compute device", rpcs.cpuPinned === true, rpcs.available + " devices available");
+    check("device_preference returns to auto", rpcs.autoPref === "auto" && typeof rpcs.autoBack === "string", rpcs.autoBack);
+    if (rpcs.exported && rpcs.exported.error) {
+      check("tensor_export_one streams a single tensor", false, rpcs.exported.error);
+    } else {
+      check("tensor_export_one streams a single tensor", rpcs.exported.streamed === true && rpcs.exported.count > 0, rpcs.exported.count + " elements, " + rpcs.exported.bytes + " bytes");
+    }
+    check("tensor_export_one rejects an unknown tensor", rpcs.badName === true);
+    check("tensor_export_one rejects an unwritable extension", rpcs.badExt === true);
+    check("file_delete refuses paths outside the app's downloads", rpcs.deleteGuarded === true);
+    check("model_export refuses a format it cannot write", rpcs.formatRefused === true);
+
+    // ── 16n. The shell's own wiring audit stays clean ──
+    const audit = await ev(`(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      document.getElementById("btn-restart-terminal").click();
+      await wait(300);
+      const dialogShown = !!document.querySelector(".confirm-modal");
+      document.querySelector("[data-confirm-cancel]").click();
+      await wait(200);
+      return { dialogShown, dismissed: !document.querySelector(".confirm-modal") };
+    })()`);
+    check("the shell restart control asks before killing the session", audit.dialogShown === true);
+    check("the confirmation can be dismissed without acting", audit.dismissed === true);
   }
 
   // ── summary ──

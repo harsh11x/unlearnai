@@ -1,6 +1,21 @@
+# Everything the Python backend needs, A-to-Z.
+#
+# This file is read by the Electron main process at every launch: each line is
+# checked against the interpreter that will run the backend, and anything
+# missing or below the required version is offered for automatic installation
+# into the app's own environment (see main.js → PYTHON DEPENDENCY BOOTSTRAP).
+# Keep it in sync with the backend's imports.
+
+# Core: model loading, tensor math, device info, weight surgery
 torch>=2.1.0
+numpy>=1.24.0
 safetensors>=0.4.0
+psutil>=5.9.0
+
+# HuggingFace folder / transformers-format models
 transformers>=4.35.0
 accelerate>=0.25.0
-numpy>=1.24.0
-psutil>=5.9.0
+
+# Extra model formats the open dialog advertises
+h5py>=3.9.0
+PyYAML>=6.0

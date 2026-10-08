@@ -20,6 +20,7 @@ let rpcId = 0;
 let rpcCallbacks = new Map();
 let backendReady = false;
 let pendingQueue = [];
+let depsRecheckedAfterCrash = false; // one crash-triggered dependency re-check per session
 let backendPythonCmd = null;   // resolved interpreter used to spawn the backend
 let backendScriptPath = null;  // server.py that was launched
 let backendLastError = null;   // last startup/exit error, surfaced in UI
@@ -98,8 +99,9 @@ function createWindow() {
     mainWindow.loadURL(`http://localhost:${httpPort}/`);
   });
 
-  // Start Python backend
-  startPythonBackend();
+  // Check the Python environment first (every launch), then either start the
+  // backend silently or ask the user to allow an automatic install.
+  initializeBackendDependencies();
 }
 
 // ══════════════════════════════════════════
@@ -136,29 +138,27 @@ function startPythonBackend() {
     return;
   }
 
+  // The interpreter comes from the dependency bootstrap (app-owned venv, or a
+  // system interpreter whose requirements are all satisfied). Until that check
+  // finishes, fall back to the first existing candidate so an early manual
+  // restart still does something sensible.
   // Finder-launched apps get a minimal PATH (/usr/bin:/bin:...) that usually
   // misses python3 installed via Homebrew (/opt/homebrew/bin, /usr/local/bin)
-  // or pyenv. Probe candidates and use the first one that exists.
-  const candidates = process.platform === "win32"
-    ? ["python"]
-    : [
-        process.env.PYTHON_PATH || "python3",
-        "/opt/homebrew/bin/python3",
-        "/usr/local/bin/python3",
-        "/usr/bin/python3",
-        "/opt/local/bin/python3",
-      ];
-  let pythonCmd = candidates[0];
-  for (const c of candidates) {
-    if (c.includes("/")) {
-      try { if (fs.existsSync(c)) { pythonCmd = c; break; } } catch (e) { /* ignore */ }
-    }
+  // or pyenv — hence the absolute-path candidates.
+  let pythonCmd = depsState.python;
+  let pythonArgs = depsState.pythonArgs || [];
+  if (!pythonCmd) {
+    const candidates = pythonCandidates();
+    let chosen = candidates.find((c) => c.cmd.includes("/") && fs.existsSync(c.cmd));
+    if (!chosen) chosen = candidates[candidates.length - 1];
+    pythonCmd = chosen.cmd;
+    pythonArgs = chosen.args || [];
   }
   backendPythonCmd = pythonCmd;
-  console.log("[Backend] Using python:", pythonCmd);
+  console.log("[Backend] Using python:", pythonCmd, pythonArgs.join(" "));
 
   try {
-    pythonProcess = spawn(pythonCmd, [backendPath], {
+    pythonProcess = spawn(pythonCmd, [...pythonArgs, backendPath], {
     stdio: ["pipe", "pipe", "pipe"],
     env: {
       ...process.env,
@@ -170,6 +170,7 @@ function startPythonBackend() {
         process.env.PATH || "",
       ].join(":"),
       PYTHONUNBUFFERED: "1",
+      ...(depsState.pythonPath ? { PYTHONPATH: depsState.pythonPath } : {}),
     },
   });
   } catch (err) {
@@ -247,7 +248,15 @@ function startPythonBackend() {
     rpcCallbacks.clear();
     pendingQueue = [];
     if (code !== 0 && code !== null) {
-      backendLastError = `Python backend exited with code ${code}. Check that Python 3 and required packages (torch, safetensors, psutil) are installed.`;
+      backendLastError = `Python backend exited with code ${code}. Missing or conflicting Python packages — open Settings → Backend and install them.`;
+      // A backend that dies on startup is usually an environment problem (a
+      // package the probe cannot see, e.g. imported lazily at runtime). Re-run
+      // the check once per session so the setup dialog can offer the fix — but
+      // never in a loop, or a genuine crash would restart the app forever.
+      if (depsState.status === "ok" && !depsRecheckedAfterCrash) {
+        depsRecheckedAfterCrash = true;
+        setTimeout(() => { initializeBackendDependencies(); }, 500);
+      }
     }
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send("backend:log", `[error] ${backendLastError || `Python backend exited with code ${code}`}`);
@@ -259,7 +268,7 @@ function startPythonBackend() {
     if (pythonProcess !== proc) return; // stale-process event
     console.error("Failed to start Python backend:", err.message);
     backendReady = false;
-    backendLastError = `Failed to start Python backend: ${err.message}. Install Python 3 and run: pip install torch safetensors psutil h5py pyyaml`;
+    backendLastError = `Failed to start Python backend: ${err.message}. Install Python 3, then use Settings → Backend → Install packages.`;
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send("backend:log", `[error] ${backendLastError}`);
       mainWindow.webContents.send("backend:status", { ready: false, error: backendLastError });
@@ -323,8 +332,8 @@ function sendToBackend(method, params = {}, id = null) {
         queueWaiters.delete(reqId);
         if (!backendReady) {
           reject(new Error(
-            "Python backend not available — it needs Python 3 with torch, safetensors and psutil installed. " +
-            "See Settings → Backend for status, or Restart Backend after installing."
+            "Python backend not available — its Python packages are missing or broken. " +
+            "Use the setup dialog or Settings → Backend → Install packages."
           ));
         }
       }, 15000);
@@ -349,6 +358,655 @@ function sendToBackend(method, params = {}, id = null) {
     }, timeoutMs);
     if (typeof timer.unref === "function") timer.unref();
   });
+}
+
+// ══════════════════════════════════════════
+// PYTHON DEPENDENCY BOOTSTRAP
+// ══════════════════════════════════════════
+// New users used to get a degraded/broken backend because the app ran on
+// whatever `python3` happened to be on PATH — an interpreter that may be
+// missing torch/safetensors or carry a conflicting numpy/torch pair — and the
+// shipped requirements.txt was read by nothing at all.
+//
+// Now the app owns its Python environment and makes it a precondition for
+// starting the backend:
+//   1. every launch probes the chosen interpreter for every requirement in
+//      requirements.txt, checking the installed version AND actually importing
+//      the module (an ABI/version conflict shows up as an import failure);
+//   2. everything satisfied → start the backend on that interpreter, silently;
+//   3. anything missing or broken → the renderer shows a modal listing exactly
+//      what is wrong, with Allow / Close the application;
+//   4. Allow → create <appData>/Remap Studios/python-env (a real venv, so
+//      installs never fight the user's global site-packages) and pip install
+//      the whole requirements.txt with streamed progress, then start the
+//      backend from that environment.
+//
+// Env overrides (used by the verification harness):
+//   REMAP_PYTHON      force the interpreter to check/spawn with (skips env reuse)
+//   REMAP_PYTHON_ENV  force the app-owned environment directory
+
+const PROBE_MARKER = "__REMAP_PROBE__";
+const VENV_DIR_NAME = "python-env";
+const INSTALL_TIMEOUT_MS = 30 * 60 * 1000;
+
+// Distribution name → import name, where they differ (pip name vs module name).
+const MODULE_ALIASES = {
+  pyyaml: "yaml", pillow: "PIL", "opencv-python": "cv2", "scikit-learn": "sklearn",
+  "python-dateutil": "dateutil", "huggingface-hub": "huggingface_hub",
+};
+
+const PROBE_SCRIPT = [
+  "import json, sys, importlib, importlib.metadata as md",
+  "reqs = json.loads(sys.argv[1])",
+  'report = {"exe": sys.executable, "python": sys.version.split()[0], "platform": sys.platform, "packages": []}',
+  "for r in reqs:",
+  '    entry = {"name": r["name"], "module": r["module"], "version": None, "import_error": None}',
+  "    try:",
+  '        entry["version"] = md.version(r["name"])',
+  "    except Exception:",
+  '        entry["version"] = None',
+  '    if entry["version"] is not None:',
+  "        try:",
+  '            importlib.import_module(r["module"])',
+  "        except BaseException as e:",
+  '            entry["import_error"] = ("%s: %s" % (type(e).__name__, e))[:400].replace("\\n", " ")',
+  '    report["packages"].append(entry)',
+  `sys.stdout.write("${PROBE_MARKER}" + json.dumps(report) + "\\n")`,
+  "sys.stdout.flush()",
+].join("\n");
+
+let depsState = {
+  status: "unknown",   // unknown | checking | ok | missing | installing | failed
+  python: null,        // interpreter the backend will run on
+  pythonArgs: [],
+  pythonVersion: null,
+  envKind: null,       // app-env | system | target-dir
+  envPath: null,
+  pythonPath: null,    // PYTHONPATH for target-dir installs
+  basePython: null,    // interpreter used to build the venv
+  basePythonArgs: [],
+  basePythonVersion: null,
+  requirements: [],
+  missing: [],
+  detail: "",
+  progress: null,
+  log: [],
+};
+
+function requirementsPath() {
+  const candidates = app.isPackaged
+    ? [path.join(process.resourcesPath, "backend", "requirements.txt")]
+    : [
+        path.join(__dirname, "..", "backend", "requirements.txt"),
+        path.join(process.resourcesPath || "", "backend", "requirements.txt"),
+      ];
+  for (const c of candidates) {
+    try { if (c && fs.existsSync(c)) return c; } catch (e) { /* ignore */ }
+  }
+  return candidates[0];
+}
+
+function parseRequirements(text) {
+  const out = [];
+  for (const raw of String(text).split(/\r?\n/)) {
+    const body = raw.split("#")[0].trim();
+    if (!body) continue;
+    const m = body.match(/^([A-Za-z0-9._-]+)\s*(?:\[[^\]]*\])?\s*(.*)$/);
+    if (!m) continue;
+    const name = m[1];
+    const specifiers = m[2].split(",").map((s) => s.trim())
+      .filter((s) => /^(==|>=|<=|~=|!=|>|<)/.test(s));
+    out.push({
+      name,
+      specifiers,
+      module: MODULE_ALIASES[name.toLowerCase()] || name.toLowerCase().replace(/-/g, "_"),
+    });
+  }
+  return out;
+}
+
+function loadRequirements() {
+  const reqPath = requirementsPath();
+  try {
+    depsState.requirements = parseRequirements(fs.readFileSync(reqPath, "utf8"));
+  } catch (e) {
+    depsState.requirements = [];
+  }
+  return depsState.requirements;
+}
+
+// ── PEP 440 subset: compare dotted versions, prereleases rank below releases ──
+function versionCompare(a, b) {
+  // Local version labels (2.1.0+cu118) carry build metadata, not precedence —
+  // strip them so a CUDA-tagged torch still satisfies >= 2.1.0.
+  const parse = (s) => String(s).split("+")[0].split(/[.\-_]/).map((seg) => {
+    const m = /^(\d+)/.exec(seg);
+    return m ? parseInt(m[1], 10) : (seg === "" ? 0 : -1);
+  });
+  const A = parse(a); const B = parse(b);
+  const n = Math.max(A.length, B.length);
+  for (let i = 0; i < n; i++) {
+    const x = A[i] === undefined ? 0 : A[i];
+    const y = B[i] === undefined ? 0 : B[i];
+    if (x !== y) return x < y ? -1 : 1;
+  }
+  // Same release number: 2.1.0rc1 is older than 2.1.0, so a version pinned
+  // with >= never accepts a prerelease of exactly that version.
+  const pre = (s) => /[a-z]/i.test(String(s).split("+")[0]);
+  const preA = pre(a); const preB = pre(b);
+  if (preA !== preB) return preA ? -1 : 1;
+  return 0;
+}
+
+function specSatisfied(version, specifier) {
+  const m = /^(==|>=|<=|~=|!=|>|<)\s*([0-9][^,\s]*)$/.exec(String(specifier).trim());
+  if (!m) return true; // unrecognized specifier → never block the user on it
+  const op = m[1]; const want = m[2];
+  const cmp = versionCompare(version, want);
+  switch (op) {
+    case "==": return cmp === 0;
+    case ">=": return cmp >= 0;
+    case "<=": return cmp <= 0;
+    case ">": return cmp > 0;
+    case "<": return cmp < 0;
+    case "!=": return cmp !== 0;
+    case "~=": {
+      if (cmp < 0) return false;
+      const parts = want.split(".");
+      const idx = parts.length >= 3 ? parts.length - 2 : 0;
+      const upper = parts.slice();
+      upper[idx] = String(parseInt(upper[idx], 10) + 1);
+      for (let i = idx + 1; i < upper.length; i++) upper[i] = "0";
+      return versionCompare(version, upper.join(".")) < 0;
+    }
+    default: return true;
+  }
+}
+
+function pythonEnvDir() {
+  if (process.env.REMAP_PYTHON_ENV) return process.env.REMAP_PYTHON_ENV;
+  return path.join(app.getPath("appData"), "Remap Studios", VENV_DIR_NAME);
+}
+
+function envPythonPath(dir) {
+  return process.platform === "win32"
+    ? path.join(dir, "Scripts", "python.exe")
+    : path.join(dir, "bin", "python3");
+}
+
+// Ordered interpreter candidates. Absolute paths first so a Finder-launched
+// app (minimal PATH, no Homebrew) still finds a real Python 3.
+function pythonCandidates() {
+  // Order of preference: the interpreter the user picked in Settings, then the
+  // REMAP_PYTHON/PYTHON_PATH override, then well-known absolute paths, then
+  // whatever PATH resolves.
+  const picked = preferredPython();
+  if (process.platform === "win32") {
+    const list = [];
+    if (picked) list.push({ cmd: picked, args: [] });
+    if (process.env.PYTHON_PATH) list.push({ cmd: process.env.PYTHON_PATH, args: [] });
+    list.push({ cmd: "py", args: ["-3"] }, { cmd: "python", args: [] }, { cmd: "python3", args: [] });
+    return list;
+  }
+  const list = [];
+  if (picked) list.push({ cmd: picked, args: [] });
+  if (process.env.PYTHON_PATH) list.push({ cmd: process.env.PYTHON_PATH, args: [] });
+  for (const p of ["/opt/homebrew/bin/python3", "/usr/local/bin/python3", "/usr/bin/python3", "/opt/local/bin/python3"]) {
+    try { if (fs.existsSync(p)) list.push({ cmd: p, args: [] }); } catch (e) { /* ignore */ }
+  }
+  list.push({ cmd: "python3", args: [] });
+  return list;
+}
+
+// Run the probe script inside one interpreter; resolves with a parsed report
+// (or a synthetic failure report) — never rejects, so callers stay simple.
+function probeInterpreter(spec, timeoutMs = 60000) {
+  return new Promise((resolve) => {
+    const reqs = depsState.requirements.map((r) => ({ name: r.name, module: r.module }));
+    let proc;
+    const env = { ...process.env, PYTHONUNBUFFERED: "1", PYTHONDONTWRITEBYTECODE: "1" };
+    if (depsState.pythonPath) env.PYTHONPATH = depsState.pythonPath;
+    try {
+      proc = spawn(spec.cmd, [...(spec.args || []), "-c", PROBE_SCRIPT, JSON.stringify(reqs)], {
+        stdio: ["ignore", "pipe", "pipe"],
+        env,
+        windowsHide: true,
+      });
+    } catch (err) {
+      resolve({ ok: false, cmd: spec.cmd, error: err.message });
+      return;
+    }
+
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+    const finish = (report) => { if (!settled) { settled = true; resolve(report); } };
+    const timer = setTimeout(() => {
+      try { proc.kill(); } catch (e) { /* gone */ }
+      finish({ ok: false, cmd: spec.cmd, error: `Timed out after ${Math.round(timeoutMs / 1000)}s` });
+    }, timeoutMs);
+
+    proc.stdout.on("data", (d) => { stdout += d.toString(); });
+    proc.stderr.on("data", (d) => {
+      stderr += d.toString();
+      if (stderr.length > 4000) stderr = stderr.slice(-4000);
+    });
+    proc.on("error", (err) => { clearTimeout(timer); finish({ ok: false, cmd: spec.cmd, error: err.message }); });
+    proc.on("exit", () => {
+      clearTimeout(timer);
+      const line = stdout.split(/\r?\n/).find((l) => l.startsWith(PROBE_MARKER));
+      if (!line) {
+        finish({ ok: false, cmd: spec.cmd, error: (stderr.trim() || "interpreter produced no report").slice(-800) });
+        return;
+      }
+      try {
+        const report = JSON.parse(line.slice(PROBE_MARKER.length));
+        report.ok = true;
+        report.cmd = spec.cmd;
+        report.args = spec.args || [];
+        report.stderrTail = stderr.trim().slice(-800);
+        finish(report);
+      } catch (e) {
+        finish({ ok: false, cmd: spec.cmd, error: `unparsable report: ${e.message}` });
+      }
+    });
+  });
+}
+
+// What is missing/unsatisfied in a probe report? Empty array = environment is good.
+function evaluateProbe(report) {
+  const missing = [];
+  if (!report || !report.ok) {
+    return [{
+      name: "python", module: "python", found: null, need: "Python 3.9 or newer with pip",
+      reason: `no usable Python 3 interpreter was found (${(report && report.error) || "it could not be started"})`,
+    }];
+  }
+  for (const pkg of report.packages || []) {
+    const req = depsState.requirements.find((r) => r.name.toLowerCase() === String(pkg.name).toLowerCase());
+    const specifiers = req ? req.specifiers : [];
+    if (!pkg.version) {
+      missing.push({ name: pkg.name, module: pkg.module, found: null, need: specifiers.join(", "), reason: "not installed" });
+      continue;
+    }
+    if (pkg.import_error) {
+      missing.push({ name: pkg.name, module: pkg.module, found: pkg.version, need: specifiers.join(", "), reason: `installed but will not import — ${pkg.import_error}` });
+      continue;
+    }
+    const bad = specifiers.filter((s) => !specSatisfied(pkg.version, s));
+    if (bad.length > 0) {
+      missing.push({ name: pkg.name, module: pkg.module, found: pkg.version, need: bad.join(", "), reason: `needs ${bad.join(", ")}, found ${pkg.version}` });
+    }
+  }
+  return missing;
+}
+
+function summarizeMissing(missing) {
+  return missing.map((m) => `${m.name} (${m.reason})`).join("; ");
+}
+
+async function probeFreshEnv() {
+  const dir = pythonEnvDir();
+  const py = envPythonPath(dir);
+  try { if (!fs.existsSync(py)) return null; } catch (e) { return null; }
+  const report = await probeInterpreter({ cmd: py, args: [] });
+  if (!report.ok) return null;
+  const missing = evaluateProbe(report);
+  report.dir = dir;
+  report.missing = missing;
+  return report;
+}
+
+function depsLog(line) {
+  const text = String(line).slice(0, 400);
+  depsState.log.push(text);
+  if (depsState.log.length > 400) depsState.log.splice(0, depsState.log.length - 400);
+  sendToRenderer("deps:progress", { phase: depsState.progress ? depsState.progress.phase : "log", line: text });
+}
+
+let depsSeq = 0; // monotonic status counter so the renderer can drop stale snapshots
+
+// Guards against overlapping checks. The probe takes seconds, and the user can
+// start a second one long before the first finishes (pressing Check Again twice,
+// or pinning a different interpreter in Settings, which re-checks the runtime).
+// Without this the slower — and now irrelevant — probe landed last and stamped
+// its verdict over the newer one, so the app could insist 4 packages were
+// missing moments after proving they were all present.
+let depsRunToken = 0;
+
+function broadcastDeps() {
+  depsSeq++; // every verdict bumps the counter; a slow fetch must not win
+  sendToRenderer("deps:status", publicDepsState());
+}
+
+function publicDepsState() {
+  return {
+    seq: depsSeq,
+    status: depsState.status,
+    python: depsState.python,
+    pythonVersion: depsState.pythonVersion,
+    basePython: depsState.basePython,
+    basePythonVersion: depsState.basePythonVersion,
+    envKind: depsState.envKind,
+    envPath: depsState.envPath,
+    plannedEnvPath: pythonEnvDir(),
+    pythonPath: depsState.pythonPath,
+    missing: depsState.missing,
+    requirementCount: depsState.requirements.length,
+    detail: depsState.detail,
+    progress: depsState.progress,
+    log: depsState.log.slice(-300),
+  };
+}
+
+function setDepsProgress(progress) {
+  depsState.progress = progress;
+  sendToRenderer("deps:progress", { phase: progress.phase, label: progress.label, percent: progress.percent, done: progress.done, total: progress.total });
+}
+
+// ── Streaming child-process helper (venv creation + pip) ──
+function runStreaming(cmd, args, opts, onLine, timeoutMs = INSTALL_TIMEOUT_MS) {
+  return new Promise((resolve) => {
+    let proc;
+    try {
+      proc = spawn(cmd, args, { stdio: ["ignore", "pipe", "pipe"], windowsHide: true, env: { ...process.env, ...(opts.env || {}) } });
+    } catch (err) {
+      resolve({ code: -1, output: [err.message], error: err.message });
+      return;
+    }
+    const output = [];
+    let settled = false;
+    const collect = (chunk) => {
+      for (const rawLine of String(chunk).split(/\r|\n/)) {
+        const line = rawLine.replace(/\s+$/, "");
+        if (!line.trim()) continue;
+        output.push(line);
+        if (output.length > 600) output.shift();
+        if (onLine) onLine(line);
+      }
+    };
+    const timer = setTimeout(() => {
+      try { proc.kill("SIGKILL"); } catch (e) { /* gone */ }
+      if (!settled) { settled = true; resolve({ code: -1, output, error: `timed out after ${Math.round(timeoutMs / 60000)} min` }); }
+    }, timeoutMs);
+    proc.stdout.on("data", collect);
+    proc.stderr.on("data", collect);
+    proc.on("error", (err) => { clearTimeout(timer); if (!settled) { settled = true; resolve({ code: -1, output, error: err.message }); } });
+    proc.on("exit", (code) => { clearTimeout(timer); if (!settled) { settled = true; resolve({ code, output }); } });
+  });
+}
+
+// ── Decide which interpreter runs the backend, every launch ──
+// Order: (1) the app-owned environment, (2) the first system interpreter whose
+// requirements are all satisfied, (3) nothing usable → report what is missing
+// and which interpreter is the best base for building the app environment.
+async function resolvePythonRuntime() {
+  // Settings → Backend → Interpreter wins over the env var so the UI control
+  // is authoritative; REMAP_PYTHON stays as the CI/scripting override when no
+  // preference has been saved.
+  const forcedSpec = preferredPython() || process.env.REMAP_PYTHON || null;
+  const forced = forcedSpec ? { cmd: forcedSpec, args: [] } : null;
+
+  if (!forced) {
+    const fresh = await probeFreshEnv();
+    if (fresh && fresh.missing.length === 0) {
+      return { ok: true, python: envPythonPath(fresh.dir), pythonArgs: [], version: fresh.python, envKind: "app-env", envPath: fresh.dir, pythonPath: null };
+    }
+    if (fresh) {
+      // The app environment exists but is incomplete (a package was removed,
+      // an upgrade went wrong, …): report what is wrong in *that* environment
+      // and let the repair install into it. Falling through to system probing
+      // here would blame the system Python for a problem the app can fix.
+      return {
+        ok: false,
+        python: envPythonPath(fresh.dir),
+        pythonVersion: fresh.python,
+        basePython: envPythonPath(fresh.dir),
+        basePythonArgs: [],
+        basePythonVersion: fresh.python,
+        envKind: "app-env",
+        envPath: fresh.dir,
+        missing: fresh.missing,
+        detail: "The app's own Python environment needs repair.",
+      };
+    }
+  }
+
+  const candidates = forced ? [forced] : pythonCandidates();
+  let best = null;
+  for (const cand of candidates) {
+    const report = await probeInterpreter(cand);
+    if (!report.ok) {
+      if (!best) best = { spec: cand, report, missing: evaluateProbe(report) };
+      continue;
+    }
+    const missing = evaluateProbe(report);
+    if (missing.length === 0) {
+      return { ok: true, python: cand.cmd, pythonArgs: cand.args || [], version: report.python, envKind: "system", envPath: null, pythonPath: null };
+    }
+    if (!best || missing.length < best.missing.length) best = { spec: cand, report, missing };
+  }
+
+  // Only an interpreter that actually ran can be offered as the base for the
+  // app environment — an ENOENT candidate must not be presented as "found".
+  const usable = best && best.report.ok ? best : null;
+  return {
+    ok: false,
+    basePython: usable ? usable.spec.cmd : null,
+    basePythonArgs: usable ? usable.spec.args || [] : [],
+    basePythonVersion: usable ? usable.report.python : null,
+    missing: best ? best.missing : [{ name: "python", reason: "no working Python 3 interpreter found", need: "Python 3.9+ with pip" }],
+    detail: usable ? "" : (best && best.report.error) || "",
+  };
+}
+
+// Adopt a runtime decision into depsState (single place so UI + spawn agree).
+function applyRuntime(result) {
+  depsState.python = result.python || null;
+  depsState.pythonArgs = result.pythonArgs || [];
+  depsState.pythonVersion = result.version || null;
+  depsState.envKind = result.envKind || null;
+  depsState.envPath = result.envPath || null;
+  depsState.missing = result.missing || [];
+  if (result.ok) depsState.pythonPath = result.pythonPath || null;
+}
+
+// ── Install everything into the app-owned environment ──
+async function installPythonDependencies() {
+  if (depsState.status === "installing") return { ok: false, error: "an install is already running" };
+  loadRequirements();
+  const reqPath = requirementsPath();
+  if (depsState.requirements.length === 0 || !fs.existsSync(reqPath)) {
+    return { ok: false, error: `requirements.txt not found (looked in ${reqPath})` };
+  }
+
+  depsState.status = "installing";
+  depsState.detail = "";
+  depsState.log = [];
+  depsState.progress = null;
+  depsState.pythonPath = null; // a stale PYTHONPATH must not leak into a fresh venv
+  broadcastDeps();
+
+  const total = depsState.requirements.length;
+  const dir = pythonEnvDir();
+  try { fs.mkdirSync(dir, { recursive: true }); } catch (e) { /* exists */ }
+
+  // 1 — pick a base interpreter to build the environment from
+  let base = depsState.basePython
+    ? { cmd: depsState.basePython, args: depsState.basePythonArgs || [] }
+    : null;
+  if (!base || !fs.existsSync(base.cmd)) {
+    const candidates = pythonCandidates();
+    for (const cand of candidates) {
+      if (cand.cmd.includes("/") && fs.existsSync(cand.cmd)) { base = cand; break; }
+    }
+    if (!base) base = candidates[candidates.length - 1];
+  }
+
+  setDepsProgress({ phase: "env", label: `Preparing an isolated Python environment in ${dir}`, percent: 3, done: 0, total });
+  depsLog(`[setup] base interpreter: ${base.cmd}${base.args ? " " + base.args.join(" ") : ""}`);
+  depsLog(`[setup] environment: ${dir}`);
+
+  let venvPython = envPythonPath(dir);
+  let usingTargetDir = false;
+
+  if (!fs.existsSync(venvPython)) {
+    const makeVenv = async (extraArgs) => runStreaming(base.cmd, [...(base.args || []), "-m", "venv", ...extraArgs, dir], {}, (line) => depsLog(`[venv] ${line}`), 300000);
+    let res = await makeVenv([]);
+    if (res.code !== 0) {
+      depsLog("[setup] plain venv failed — retrying without bundled pip");
+      res = await makeVenv(["--without-pip"]);
+      if (res.code === 0 && fs.existsSync(venvPython)) {
+        const boot = await runStreaming(venvPython, ["-m", "ensurepip", "--upgrade"], {}, (line) => depsLog(`[ensurepip] ${line}`), 300000);
+        if (boot.code !== 0) depsLog(`[setup] ensurepip reported an error (${boot.code})`);
+      }
+    }
+    if (!fs.existsSync(venvPython)) {
+      // Last resort: install into a plain directory and point PYTHONPATH at it.
+      usingTargetDir = true;
+      venvPython = base.cmd;
+      depsState.pythonPath = path.join(dir, "packages");
+      try { fs.mkdirSync(depsState.pythonPath, { recursive: true }); } catch (e) { /* exists */ }
+      depsLog("[setup] could not create a venv — falling back to a private package directory");
+    }
+  }
+
+  // 2 — pip install the full requirement set
+  const pipBase = { cmd: venvPython, args: usingTargetDir ? base.args || [] : [] };
+  const pipArgs = ["-m", "pip", "install", "--upgrade", "--no-input", "--disable-pip-version-check", "--progress-bar", "off"];
+  if (usingTargetDir) pipArgs.push("--target", depsState.pythonPath);
+  pipArgs.push("-r", reqPath);
+
+  const seen = new Set();
+  let lastLine = "";
+  const onPipLine = (line) => {
+    if (line === lastLine) return;
+    lastLine = line;
+    depsLog(`[pip] ${line}`);
+    const collecting = /^\s*Collecting\s+([A-Za-z0-9._-]+)/.exec(line);
+    if (collecting) seen.add(collecting[1].toLowerCase());
+    const downloading = /^\s*Downloading\s+(\S+)\s*\(([^)]+)\)/.exec(line);
+    const installing = /Installing collected packages/.test(line);
+    // pip also resolves transitive dependencies, so the number of packages it
+    // collects can far exceed the requirements count. Saturate towards 92%
+    // instead of pretending the job has a known length, and let the
+    // "Installing collected packages" phase be the last visible step.
+    const pct = installing ? 94 : Math.min(92, 8 + Math.round(84 * (1 - Math.exp(-seen.size / 14))));
+    const label = installing
+      ? "Installing collected packages…"
+      : downloading
+        ? `Downloading ${downloading[1].split("/").pop()} (${downloading[2]})…`
+        : (collecting ? `Resolving ${collecting[1]}…` : null);
+    setDepsProgress({ phase: "install", label: label || `Installing packages… (${seen.size} resolved)`, percent: pct, done: Math.min(seen.size, total), total });
+  };
+
+  setDepsProgress({ phase: "install", label: `Installing ${total} packages (torch is a large download)…`, percent: 6, done: 0, total });
+  let install = await runStreaming(pipBase.cmd, [...pipBase.args, ...pipArgs], {}, onPipLine);
+
+  if (install.code !== 0 && /No module named pip/i.test(install.output.join("\n"))) {
+    depsLog("[setup] pip is missing in the base interpreter — bootstrapping it with ensurepip");
+    const boot = await runStreaming(base.cmd, [...(base.args || []), "-m", "ensurepip", "--upgrade", "--user"], {}, (line) => depsLog(`[ensurepip] ${line}`), 300000);
+    if (boot.code !== 0) {
+      await runStreaming(base.cmd, [...(base.args || []), "-m", "ensurepip", "--upgrade"], {}, (line) => depsLog(`[ensurepip] ${line}`), 300000);
+    }
+    install = await runStreaming(pipBase.cmd, [...pipBase.args, ...pipArgs], {}, onPipLine);
+  }
+
+  // 3 — verify by re-probing, so "installed" means "imports and satisfies"
+  setDepsProgress({ phase: "verify", label: "Verifying the installed packages…", percent: 96, done: total, total });
+  const verifySpec = usingTargetDir ? { cmd: base.cmd, args: base.args || [] } : { cmd: venvPython, args: [] };
+  const report = await probeInterpreter(verifySpec);
+  const missing = evaluateProbe(report);
+
+  if (install.code !== 0 && missing.length > 0) {
+    const tail = install.output.slice(-12).join("\n");
+    depsState.status = "failed";
+    depsState.detail = `pip exited with code ${install.code}. ${missing.length} package(s) still missing.`;
+    depsState.missing = missing;
+    depsLog(`[error] ${depsState.detail}`);
+    depsLog(tail);
+    setDepsProgress({ phase: "failed", label: `Install failed — ${summarizeMissing(missing)}`, percent: 0, done: 0, total });
+    broadcastDeps();
+    return { ok: false, error: depsState.detail, missing };
+  }
+
+  if (missing.length > 0) {
+    depsState.status = "failed";
+    depsState.detail = `Install finished but these are still broken: ${summarizeMissing(missing)}`;
+    depsState.missing = missing;
+    depsLog(`[error] ${depsState.detail}`);
+    setDepsProgress({ phase: "failed", label: depsState.detail, percent: 0, done: 0, total });
+    broadcastDeps();
+    return { ok: false, error: depsState.detail, missing };
+  }
+
+  applyRuntime({
+    ok: true,
+    python: usingTargetDir ? base.cmd : venvPython,
+    pythonArgs: usingTargetDir ? base.args || [] : [],
+    version: report.python,
+    envKind: usingTargetDir ? "target-dir" : "app-env",
+    envPath: dir,
+    missing: [],
+  });
+  depsState.status = "ok";
+  depsState.detail = "";
+  setDepsProgress({ phase: "done", label: `All ${total} packages installed — starting the Python backend…`, percent: 100, done: total, total });
+  depsLog(`[setup] environment ready: ${depsState.python}`);
+  broadcastDeps();
+
+  // Backend can now start for real.
+  startPythonBackend();
+  return { ok: true, python: depsState.python, envKind: depsState.envKind, envPath: dir };
+}
+
+// ── Launch gate: check every time the app opens, then start or ask ──
+async function initializeBackendDependencies() {
+  loadRequirements();
+  const myToken = ++depsRunToken;
+  depsState.status = "checking";
+  depsState.missing = [];
+  depsState.detail = "";
+  depsState.pythonPath = null;
+  const checkStarted = Date.now();
+  broadcastDeps();
+
+  let result;
+  try {
+    result = await resolvePythonRuntime();
+  } catch (e) {
+    result = { ok: false, missing: [{ name: "python", reason: e.message, need: "Python 3.9+" }] };
+  }
+
+  // A newer check started while this one was probing: its verdict is the only
+  // one that describes the current configuration, so discard this one entirely
+  // rather than mutating shared state.
+  if (myToken !== depsRunToken) {
+    depsLog("[check] discarded a stale result (a newer check superseded it)");
+    return publicDepsState();
+  }
+
+  if (result.ok) {
+    applyRuntime(result);
+    depsState.status = "ok";
+    depsState.basePython = result.python;
+    depsState.basePythonArgs = result.pythonArgs || [];
+    depsLog(`[check] ${depsState.requirements.length} packages present in ${result.python} (${result.envKind}) in ${Date.now() - checkStarted} ms`);
+    broadcastDeps();
+    depsRecheckedAfterCrash = false;
+    startPythonBackend();
+    return publicDepsState();
+  }
+
+  applyRuntime(result);
+  depsState.basePython = result.basePython || null;
+  depsState.basePythonArgs = result.basePythonArgs || [];
+  depsState.basePythonVersion = result.basePythonVersion || null;
+  depsState.status = "missing";
+  depsState.detail = result.detail || "";
+  console.warn(`[Deps] missing (checked in ${Date.now() - checkStarted} ms):`, summarizeMissing(depsState.missing));
+  broadcastDeps();
+  return publicDepsState();
 }
 
 // ══════════════════════════════════════════
@@ -634,6 +1292,53 @@ ipcMain.handle("app:getPlatform", () => process.platform);
 
 ipcMain.handle("app:isBackendReady", () => backendReady);
 
+// ── Python dependency bootstrap ──
+ipcMain.handle("deps:status", () => publicDepsState());
+ipcMain.handle("deps:check", () => initializeBackendDependencies());
+ipcMain.handle("deps:install", () => installPythonDependencies());
+ipcMain.handle("deps:continue", () => {
+  // Escape hatch for offline users: run with whatever interpreter actually
+  // works on this machine (never a candidate that failed to start), and let
+  // the backend report degraded mode for the missing pieces.
+  const isRunnable = (p) => {
+    try { return Boolean(p) && (p.includes("/") ? fs.existsSync(p) : true); } catch (e) { return false; }
+  };
+  const forced = [...(preferredPython() ? [{ cmd: preferredPython(), args: [] }] : []), ...(process.env.REMAP_PYTHON ? [{ cmd: process.env.REMAP_PYTHON, args: [] }] : [])];
+  const candidates = [...forced, ...pythonCandidates()];
+  const chosen = candidates.find((c) => c.cmd.includes("/") && isRunnable(c.cmd))
+    || candidates.find((c) => !c.cmd.includes("/"))
+    || (isRunnable(depsState.python) ? { cmd: depsState.python, args: depsState.pythonArgs || [] } : null);
+  if (chosen) {
+    depsState.python = chosen.cmd;
+    depsState.pythonArgs = chosen.args || [];
+  }
+  depsState.envKind = "system";
+  depsState.status = "skipped";
+  broadcastDeps();
+  startPythonBackend();
+  return { ok: true, python: depsState.python };
+});
+ipcMain.handle("app:quit", () => { app.quit(); });
+
+// Last resort when no interpreter exists: get Python 3 onto the machine. On
+// macOS /usr/bin/python3 comes with the command line tools, and the supported
+// way to install those is the system dialog xcode-select opens (no admin
+// password, no silent installer). Everywhere else, send the user to python.org.
+ipcMain.handle("deps:getPython", async () => {
+  if (process.platform === "darwin") {
+    const res = await runStreaming("/usr/bin/xcode-select", ["--install"], {}, (line) => depsLog(`[python] ${line}`), 120000);
+    const output = res.output.join("\n").trim();
+    const already = /already installed/i.test(output);
+    return { ok: res.code === 0 || already, already, platform: "darwin", output: output.slice(0, 400) };
+  }
+  if (process.platform === "win32") {
+    shell.openExternal("https://www.python.org/downloads/windows/");
+  } else {
+    shell.openExternal("https://www.python.org/downloads/");
+  }
+  return { ok: true, opened: true, platform: process.platform };
+});
+
 // Full status incl. the resolved interpreter and the last startup error —
 // used by the Backend settings page so failures are visible in the UI.
 ipcMain.handle("app:backendStatus", () => ({
@@ -641,12 +1346,19 @@ ipcMain.handle("app:backendStatus", () => ({
   python: backendPythonCmd,
   script: backendScriptPath,
   lastError: backendLastError,
+  deps: publicDepsState(),
 }));
 
 // Restart the backend (e.g. after installing missing Python packages).
+// If the environment is known to be incomplete, re-check it first so the
+// setup dialog comes back instead of the same failure.
 ipcMain.handle("app:restartBackend", () => {
   backendLastError = null;
-  startPythonBackend();
+  if (depsState.status === "missing" || depsState.status === "failed") {
+    initializeBackendDependencies();
+  } else {
+    startPythonBackend();
+  }
   return { ok: true };
 });
 
@@ -842,6 +1554,96 @@ ipcMain.handle("model:getDownloads", () => {
     return { name: f, size: stat.size, path: path.join(downloadsDir, f), modified: stat.mtime };
   });
 });
+
+// ══════════════════════════════════════════
+// SETTINGS STORE
+// ══════════════════════════════════════════
+// The renderer owns the schema and the UI; this is the durable store. Keeping
+// it in the main process (not localStorage) means a packaged app that is
+// reinstalled or cleared of site data still remembers the user's preferences,
+// and the backend spawn can read them (interpreter choice, autoload path).
+//
+// Every write is atomic (tmp + rename) so a crash mid-save cannot leave a
+// half-written settings.json that would lose every preference.
+
+let settingsCache = null;
+
+function settingsFile() {
+  return path.join(appUtil.getPath("userData"), "settings.json");
+}
+
+function readSettings() {
+  if (settingsCache) return settingsCache;
+  try {
+    const raw = fs.readFileSync(settingsFile(), "utf8");
+    const parsed = JSON.parse(raw);
+    settingsCache = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch (e) {
+    // First launch (or a corrupt file) — defaults come from the renderer.
+    settingsCache = {};
+  }
+  return settingsCache;
+}
+
+function writeSettings(next) {
+  const file = settingsFile();
+  const dir = path.dirname(file);
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const tmp = `${file}.${process.pid}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(next, null, 2), "utf8");
+    fs.renameSync(tmp, file);
+    settingsCache = next;
+    return { ok: true, path: file };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+ipcMain.handle("settings:get", () => {
+  const s = readSettings();
+  return {
+    ...s,
+    // Where the file lives, so Settings → Backend can show the real path.
+    _path: settingsFile(),
+    // Facts the renderer cannot know on its own.
+    _appVersion: app.getVersion(),
+    _packaged: app.isPackaged,
+    _platform: process.platform,
+  };
+});
+
+ipcMain.handle("settings:set", (_event, key, value) => {
+  if (typeof key !== "string" || !key || key.startsWith("_")) {
+    return { ok: false, error: "invalid setting key" };
+  }
+  const before = readSettings();
+  const next = { ...before, [key]: value };
+  const res = writeSettings(next);
+  // A changed interpreter invalidates the resolved Python; re-check so the
+  // next model load uses the interpreter the user asked for.
+  if (res.ok && key === "pythonPath") {
+    depsState.python = null;
+    depsState.pythonArgs = [];
+    depsState.pythonPath = null;
+    initializeBackendDependencies();
+  }
+  return { ...res, settings: { ...next, _path: settingsFile() } };
+});
+
+ipcMain.handle("settings:reset", () => {
+  const res = writeSettings({});
+  return res;
+});
+
+// A user-chosen interpreter beats every auto-detected candidate.
+function preferredPython() {
+  const p = readSettings().pythonPath;
+  if (typeof p !== "string") return null;
+  const trimmed = p.trim();
+  if (!trimmed || trimmed === "python3" || trimmed === "python") return null;
+  return trimmed;
+}
 
 // ── App Lifecycle ──
 

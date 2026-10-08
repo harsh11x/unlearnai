@@ -188,6 +188,10 @@
         <!-- General Section -->
         <div class="settings-section-page" id="settings-section-general">
           <div class="settings-section-page-title">General</div>
+          <div class="settings-search-wrap">
+            <input type="text" class="settings-input" id="settings-search" placeholder="Search settings…" spellcheck="false" />
+            <span class="settings-search-hint" id="settings-search-hint"></span>
+          </div>
           <div class="settings-section">
             <div class="settings-group-title">STARTUP</div>
             <div class="settings-row">
@@ -260,14 +264,43 @@
             <div id="backend-status-card" class="settings-row" style="display:block;font-size:11px;line-height:1.7;color:var(--text-subtle)">Checking…</div>
           </div>
           <div class="settings-section">
+            <div class="settings-group-title">PACKAGES</div>
+            <div id="backend-env-card" class="settings-row" style="display:block;font-size:11px;line-height:1.7;color:var(--text-subtle)">Checking…</div>
+            <div class="settings-row" style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn-primary" id="btn-backend-deps">Install / Repair Packages</button>
+              <button class="btn-secondary" id="btn-backend-check">Check Again</button>
+            </div>
+          </div>
+          <div class="settings-section">
             <div class="settings-group-title">PYTHON</div>
             <div class="settings-row">
-              <div class="settings-label">Python path</div>
-              <input type="text" class="settings-input" id="setting-python" value="python3" />
+              <div class="settings-label">Preferred interpreter
+                <span class="settings-hint" id="setting-python-hint">auto-detect</span>
+              </div>
+              <div class="settings-inline">
+                <input type="text" class="settings-input" id="setting-python" placeholder="auto-detect" value="" spellcheck="false" />
+                <button class="btn-secondary btn-sm" id="btn-python-browse" title="Choose a Python 3 executable">Browse…</button>
+                <button class="btn-secondary btn-sm" id="btn-python-reset" title="Go back to auto-detecting the interpreter">Auto</button>
+              </div>
             </div>
             <div class="settings-row">
-              <div class="settings-label">Backend port</div>
-              <input type="number" class="settings-input" id="setting-port" value="8420" style="width:80px" />
+              <div class="settings-label">Compute device
+                <span class="settings-hint">used by the PyTorch backend for model loads and unlearning</span>
+              </div>
+              <select class="settings-select" id="setting-device">
+                <option value="auto" selected>Auto (best available)</option>
+                <option value="cpu">CPU only</option>
+                <option value="mps">Apple GPU (MPS)</option>
+                <option value="cuda">NVIDIA GPU (CUDA)</option>
+              </select>
+            </div>
+            <div class="settings-row">
+              <div class="settings-label">Settings file
+                <span class="settings-hint" id="setting-store-path">…</span>
+              </div>
+              <div class="settings-inline">
+                <button class="btn-secondary btn-sm" id="btn-settings-reset">Reset all settings</button>
+              </div>
             </div>
             <div class="settings-row">
               <button class="btn-primary" id="btn-backend-restart" style="margin-top:8px">Restart Backend</button>
@@ -303,19 +336,21 @@
             </div>
             <div class="export-option-check">✓</div>
           </div>
-          <div class="export-option" data-format="gguf">
+          <!-- Formats this build has no writer for stay listed (so users know
+               where to go next) but are disabled with the reason shown. -->
+          <div class="export-option disabled" data-format="gguf" data-unavailable="GGUF is written by llama.cpp's convert tooling, not this app">
             <div class="export-option-icon">📦</div>
             <div class="export-option-info">
-              <div class="export-option-name">GGUF (Quantized)</div>
-              <div class="export-option-desc">For llama.cpp, Ollama — requires conversion</div>
+              <div class="export-option-name">GGUF (Quantized) <span class="export-badge">not supported</span></div>
+              <div class="export-option-desc">Export Safetensors, then quantize with llama.cpp</div>
             </div>
             <div class="export-option-check">✓</div>
           </div>
-          <div class="export-option" data-format="onnx">
+          <div class="export-option disabled" data-format="onnx" data-unavailable="ONNX export needs the onnx package and an export graph">
             <div class="export-option-icon">📦</div>
             <div class="export-option-info">
-              <div class="export-option-name">ONNX</div>
-              <div class="export-option-desc">Cross-platform inference format</div>
+              <div class="export-option-name">ONNX <span class="export-badge">not supported</span></div>
+              <div class="export-option-desc">Export Safetensors, then convert with torch.onnx</div>
             </div>
             <div class="export-option-check">✓</div>
           </div>
@@ -323,14 +358,22 @@
         <div class="config-group" style="margin-top:16px">
           <label class="config-label">EXPORT OPTIONS</label>
           <div class="settings-row">
-            <div class="settings-label">Include optimizer state</div>
-            <label class="toggle"><input type="checkbox" id="export-optimizer" /><span class="toggle-slider"></span></label>
+            <div class="settings-label">Precision for converted tensors
+              <span class="settings-hint">float16 halves the file size; float32 keeps full precision</span>
+            </div>
+            <select class="settings-select" id="export-precision">
+              <option value="float16" selected>float16</option>
+              <option value="float32">float32</option>
+            </select>
           </div>
           <div class="settings-row">
-            <div class="settings-label">Shard large models (>4GB)</div>
-            <label class="toggle"><input type="checkbox" id="export-shard" checked /><span class="toggle-slider"></span></label>
+            <div class="settings-label">Verify the file after writing
+              <span class="settings-hint">re-reads the header so a truncated export is caught</span>
+            </div>
+            <label class="toggle"><input type="checkbox" id="export-verify" checked /><span class="toggle-slider"></span></label>
           </div>
         </div>
+        <div class="export-summary" id="export-summary"></div>
         <button class="btn-primary" id="btn-do-export" style="margin-top:16px;width:100%">Export Model</button>
       </div>
     </div>
@@ -372,6 +415,18 @@
             <div class="shortcut-row"><kbd>⌘0</kbd><span>Reset Zoom</span></div>
             <div class="shortcut-row"><kbd>⌘↵</kbd><span>Fullscreen</span></div>
           </div>
+          <div class="shortcut-group">
+            <div class="shortcut-group-title">3D View</div>
+            <div class="shortcut-row"><kbd>Drag</kbd><span>Rotate (all axes)</span></div>
+            <div class="shortcut-row"><kbd>⌥ Drag</kbd><span>Slant the view</span></div>
+            <div class="shortcut-row"><kbd>⇧ Drag</kbd><span>Pan</span></div>
+            <div class="shortcut-row"><kbd>Scroll</kbd><span>Tilt</span></div>
+            <div class="shortcut-row"><kbd>⌘ Scroll</kbd><span>Zoom / pinch</span></div>
+            <div class="shortcut-row"><kbd>Q E</kbd><span>Slant left / right</span></div>
+            <div class="shortcut-row"><kbd>L C R</kbd><span>Layout / Colour / Reset</span></div>
+            <div class="shortcut-row"><kbd>Space</kbd><span>Auto-orbit</span></div>
+            <div class="shortcut-row"><kbd>G</kbd><span>To 2D graph</span></div>
+          </div>
         </div>
       </div>
     </div>
@@ -388,7 +443,7 @@
         <img src="logo.png" alt="Remap Studios" style="width:48px;height:48px;object-fit:contain;margin:0 auto 16px;border-radius:12px" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
         <div class="logo-mark" style="width:48px;height:48px;font-size:24px;margin:0 auto 16px;border-radius:12px;display:none">R</div>
         <h2 style="font-size:18px;font-weight:700;margin-bottom:4px">Remap Studios</h2>
-        <p style="font-size:12px;color:var(--text-subtle);margin-bottom:16px">v1.0.0 — Neural Network Unlearning IDE</p>
+        <p style="font-size:12px;color:var(--text-subtle);margin-bottom:16px"><span class="about-version" data-app-version>v1.0.0</span> — Neural Network Unlearning IDE</p>
         <p style="font-size:11px;color:var(--text-subtle);line-height:1.6">Advanced model analysis and capability unlearning<br>for Safetensors, GGUF, PyTorch, ONNX, and IPYNB formats.</p>
       </div>
     </div>
@@ -456,6 +511,17 @@
             <button class="btn-outline-sm" id="btn-open-folder-empty">Open Folder</button>
           </div>
         </div>
+      </div>
+
+      <!-- Search view: same sidebar, swapped in by the activity bar. Searches
+           every tensor by name, shape, dtype and layer name. -->
+      <div class="panel-body hidden" id="sidebar-search">
+        <div class="sidebar-search-head">
+          <input type="text" id="tensor-search" class="sidebar-search-input" placeholder="Search tensors…" spellcheck="false" autocomplete="off" />
+          <span class="sidebar-search-count" id="tensor-search-count">0</span>
+        </div>
+        <div class="sidebar-search-hint">Match on name, shape, dtype or layer. ↑↓ to move, Enter to open.</div>
+        <div id="tensor-search-results" class="sidebar-search-results"></div>
       </div>
     </aside>
 
@@ -610,7 +676,7 @@
               <option value="size">Size</option>
             </select>
           </div>
-          <div class="we-summary" id="weight-summary"></div>
+          <div class="we-summary" id="weight-summary"><span class="we-selection-count hidden" id="we-selection-count"></span></div>
           <div class="weight-explorer-body" id="weight-explorer-body">
             <div class="empty-state">
               <p class="empty-title">Load a model first</p>
@@ -671,6 +737,7 @@
                 <button class="models-filter" data-filter="ollama">Ollama</button>
                 <button class="models-filter" data-filter="hf">HuggingFace</button>
                 <button class="models-filter" data-filter="compatible">My HW</button>
+                <button class="models-filter" data-filter="downloaded" title="Models already on this machine">On disk</button>
               </div>
               <div class="models-list" id="models-list"></div>
             </div>
@@ -685,7 +752,11 @@
                   </svg>
                 </div>
                 <p class="empty-title">Select a model</p>
-                <p class="empty-desc">Browse the catalog and pick a model to download</p>
+                <p class="empty-desc">Browse the catalog, or open a model you already have on disk</p>
+                <div class="empty-actions">
+                  <button class="btn-primary-sm" id="btn-models-open-file">Open File</button>
+                  <button class="btn-outline-sm" id="btn-models-open-folder">Open Folder</button>
+                </div>
               </div>
             </div>
           </div>
@@ -875,6 +946,9 @@
         <button class="bp-pane-toggle" id="btn-pane-terminal" data-pane-toggle="terminal" title="Show / hide the terminal pane">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 9h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
         </button>
+        <button class="panel-action" id="btn-restart-terminal" title="Restart the shell (kills the current session)">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 5.5A4 4 0 002 3.2M2 6.5A4 4 0 0010 8.8" stroke="currentColor" stroke-width="1.2"/><path d="M10 2v2.6H7.4M2 10V7.4h2.6" stroke="currentColor" stroke-width="1.2"/></svg>
+        </button>
         <button class="panel-action" id="btn-clear-terminal" title="Clear">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
         </button>
@@ -982,10 +1056,141 @@
           <button type="submit" id="auth-submit-btn" class="auth-submit-btn">Sign In</button>
         </form>
 
-        <p class="auth-terms">By continuing, you agree to our <a href="#" style="color:var(--accent)">Terms</a> and <a href="#" style="color:var(--accent)">Privacy Policy</a>.</p>
+        <p class="auth-terms">Your models never leave this machine. <button type="button" class="auth-legal-link" data-legal="terms">Terms</button> and <button type="button" class="auth-legal-link" data-legal="privacy">Privacy</button>.</p>
       </div>
 
 
+    </div>
+  </div>
+
+  <!-- ── PYTHON SETUP (first-run dependency bootstrap) ──
+       Shown when the launch check finds missing/broken Python packages. It has
+       no close button on purpose: the app either installs what is missing
+       (Allow) or the user closes the application. "Continue anyway" only
+       appears after a failed install, for offline users. -->
+  <div class="modal-overlay" id="deps-overlay">
+    <div class="modal-panel deps-panel">
+      <div class="modal-header">
+        <span class="modal-title" id="deps-title">PYTHON SETUP REQUIRED</span>
+      </div>
+      <div class="modal-body">
+        <p class="deps-intro" id="deps-intro">
+          Remap Studios runs its machine-learning backend on Python. Some required
+          packages are missing or broken on this machine, so the app cannot load or
+          analyse models yet. Allow it to install everything automatically?
+        </p>
+        <div class="deps-meta" id="deps-meta"></div>
+        <div class="deps-list" id="deps-list"></div>
+        <div class="deps-progress" id="deps-progress" style="display:none">
+          <div class="deps-progress-track"><div class="deps-progress-bar" id="deps-progress-bar"></div></div>
+          <div class="deps-progress-label" id="deps-progress-label">Starting…</div>
+        </div>
+        <pre class="deps-log" id="deps-log" style="display:none"></pre>
+      </div>
+      <div class="deps-actions">
+        <button class="btn-secondary" id="deps-quit">Close Application</button>
+        <button class="btn-secondary" id="deps-continue" style="display:none">Continue Anyway (limited)</button>
+        <button class="btn-secondary" id="deps-getpython" style="display:none">Get Python 3</button>
+        <button class="btn-primary" id="deps-recheck" style="display:none">Check Again</button>
+        <button class="btn-primary" id="deps-install">Allow &amp; Install Everything</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DOCUMENTATION (offline help, Help ▸ Documentation) ── -->
+  <div class="modal-overlay docs-overlay" id="docs-overlay">
+    <div class="modal-panel docs-panel">
+      <div class="modal-header">
+        <span class="modal-title">DOCUMENTATION</span>
+        <button class="modal-close" id="docs-close">✕</button>
+      </div>
+      <div class="docs-layout">
+        <nav class="docs-nav">
+          <button class="docs-nav-item active" data-docs-nav="start">Getting started</button>
+          <button class="docs-nav-item" data-docs-nav="formats">Supported formats</button>
+          <button class="docs-nav-item" data-docs-nav="visualize">Visualizing a model</button>
+          <button class="docs-nav-item" data-docs-nav="weights">Weights &amp; surgery</button>
+          <button class="docs-nav-item" data-docs-nav="unlearn">Unlearning</button>
+          <button class="docs-nav-item" data-docs-nav="keys">Keyboard &amp; gestures</button>
+          <button class="docs-nav-item" data-docs-nav="trouble">Troubleshooting</button>
+        </nav>
+        <div class="docs-body">
+          <section class="docs-section" data-docs-section="start">
+            <h3>Getting started</h3>
+            <p>Remap Studios visualizes and edits neural-network weights, and runs capability unlearning. Everything runs locally — no model data leaves this machine.</p>
+            <ol>
+              <li><b>Open a model</b> with <kbd>⌘O</kbd>, drag a file onto the window, or open a folder of weights with <kbd>⌘⇧O</kbd>.</li>
+              <li><b>Explore it</b> — the Visualization tab draws the architecture, the Weight Explorer lists every tensor, the Heatmap shows value distributions.</li>
+              <li><b>Edit</b> a tensor from the Weight Explorer, then export with <kbd>⌘E</kbd> to write the changes out.</li>
+              <li><b>Unlearn</b> a capability from the Unlearn tab, which needs a trainable (Safetensors/PyTorch) model.</li>
+            </ol>
+            <p class="docs-note">The Python environment is checked on every launch. If packages are missing the app offers to install them into its own private environment.</p>
+          </section>
+          <section class="docs-section hidden" data-docs-section="formats">
+            <h3>Supported formats</h3>
+            <ul>
+              <li><b>Safetensors</b> — full support, including unlearning.</li>
+              <li><b>GGUF</b> (quantized llama.cpp) — visualization, statistics, heatmaps and weight surgery; unlearning needs an export to Safetensors first.</li>
+              <li><b>PyTorch</b> (.pt/.pth/.bin/.ckpt) — full support.</li>
+              <li><b>ONNX, HDF5, NumPy, TensorFlow, CoreML, pickle, IPYNB</b> — metadata and structure where the format allows.</li>
+              <li><b>Folders</b> — a HuggingFace-style directory of shards and a config.</li>
+            </ul>
+            <p class="docs-note">Quantized models are edited in place without dequantizing the whole file, so a 500 MB GGUF opens in seconds rather than tens of minutes.</p>
+          </section>
+          <section class="docs-section hidden" data-docs-section="visualize">
+            <h3>Visualizing a model</h3>
+            <p>Press <kbd>G</kbd> to switch between the 2D canvas and the 3D network. In 3D:</p>
+            <ul>
+              <li><b>Drag</b> or swipe to rotate, all the way to <b>±89.5° pitch</b>.</li>
+              <li><b>⌥/Alt-drag</b> or <kbd>Q</kbd>/<kbd>E</kbd> slants the view around its own axis.</li>
+              <li><b>Shift-drag</b> or right-drag pans; <b>scroll</b> tilts; <b>⌘/Ctrl-scroll</b> or pinch zooms.</li>
+              <li><kbd>L</kbd> cycles the layout (Layers / Helix / Sphere), <kbd>C</kbd> the colour mode, <kbd>Space</kbd> spins, <kbd>R</kbd> resets.</li>
+            </ul>
+          </section>
+          <section class="docs-section hidden" data-docs-section="weights">
+            <h3>Weights &amp; surgery</h3>
+            <p>Click a tensor to load its statistics and edit controls. Edits are <b>pending</b> until you export — the original file on disk is never modified in place.</p>
+            <ul>
+              <li>Operations: scale, clamp, zero-fraction, add noise, add constant.</li>
+              <li><kbd>⌘Z</kbd> / <kbd>⌘⇧Z</kbd> undo and redo edits.</li>
+              <li><kbd>⌘C</kbd> copies the selected names, so one edit can be pasted onto its siblings.</li>
+              <li>Right-click a weight to copy its name or path, view properties, open its heatmap, or export just that tensor.</li>
+            </ul>
+          </section>
+          <section class="docs-section hidden" data-docs-section="unlearn">
+            <h3>Unlearning</h3>
+            <p>Unlearning suppresses a capability while trying to leave the rest of the model intact. Choose a target, a method (Retain-Aware or Gradient Forgetting) and a strength, then run it with <kbd>⌘⇧R</kbd>.</p>
+            <p>Progress streams into the Unlearn tab; cancel at any time. With <b>Auto-save checkpoints</b> on, a checkpoint is written when the run finishes.</p>
+            <p class="docs-note">Quantized GGUF models cannot be unlearned directly — export to Safetensors first (⌘E), then reload.</p>
+          </section>
+          <section class="docs-section hidden" data-docs-section="keys">
+            <h3>Keyboard &amp; gestures</h3>
+            <p>Open <b>Keyboard Shortcuts</b> from the Help menu (<kbd>⌘/</kbd>) for the full list of 24 bindings. The essentials:</p>
+            <ul>
+              <li><kbd>⌘K</kbd> command palette · <kbd>⌘,</kbd> settings · <kbd>⌘B</kbd> sidebar · <kbd>⌘`</kbd> terminal</li>
+              <li><kbd>⌘1</kbd>–<kbd>⌘5</kbd> switch tabs · <kbd>⌘+</kbd>/<kbd>⌘-</kbd>/<kbd>⌘0</kbd> zoom</li>
+              <li><kbd>Esc</kbd> closes any overlay, clears the settings search, then the tensor search</li>
+            </ul>
+          </section>
+          <section class="docs-section hidden" data-docs-section="trouble">
+            <h3>Troubleshooting</h3>
+            <dl class="docs-faq">
+              <dt>“Python backend not ready”</dt>
+              <dd>Open Settings → Backend, press <b>Install / Repair Packages</b>, then <b>Restart Backend</b>. If you use a specific interpreter, set it under <b>Preferred interpreter</b>.</dd>
+              <dt>Model loads but statistics are empty</dt>
+              <dd>Quantized formats are read lazily; open the Weight Explorer and use <b>Load per-tensor statistics</b> for exact numbers.</dd>
+              <dt>Unlearning says the model is not trainable</dt>
+              <dd>Export to Safetensors (⌘E) and reload the exported file.</dd>
+              <dt>The 3D view is slow</dt>
+              <dd>Settings → Visualization: lower the animation speed or turn off connection lines. The engine also degrades quality automatically if the frame rate drops.</dd>
+            </dl>
+          </section>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="docs-open-readme">Project page</button>
+        <button class="btn-primary" onclick="document.getElementById('docs-close').click()">Close</button>
+      </div>
     </div>
   </div>
 

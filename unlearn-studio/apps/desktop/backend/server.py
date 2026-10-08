@@ -91,6 +91,16 @@ class Backend:
             return self._missing_dep_error("monitor the device")
         return self.device_manager.get_usage()
 
+    def _device_preference(self, device: str = "auto") -> dict:
+        """Pin the compute device (auto | cpu | mps | cuda) for this session.
+
+        Honoured only when the hardware supports it, so asking for cuda on a
+        Mac quietly lands on cpu instead of failing every later tensor op.
+        """
+        if self.device_manager is None:
+            return self._missing_dep_error("change the compute device")
+        return self.device_manager.set_preference(device)
+
     # ── Model Loading ──
 
     def _model_load(self, path: str) -> dict:
@@ -304,12 +314,160 @@ class Backend:
             return self.weight_editor.pending()
         return {"edited": {}, "deleted": [], "edit_count": 0, "delete_count": 0}
 
-    def _tensor_export(self, path: str = None, dtype: str = "float16") -> dict:
+    def _tensor_export_one(self, name: str = None, path: str = None) -> dict:
+        """Write ONE tensor (with pending edits applied) to its own file.
+
+        Right-click ▸ Export Tensor used to call tensor_export, which writes the
+        entire model — surprising, slow, and useless when the point is to pull a
+        single weight out for inspection. This writes just the requested tensor
+        as .npy (raw), .safetensors (named) or .json (small tensors only).
+        """
+        import numpy as np
+
+        if not name or not isinstance(name, str):
+            return {"error": "No tensor name provided."}
+        if path is None or not isinstance(path, str):
+            return {"error": "No export path provided."}
+
+        ext = os.path.splitext(path)[1].lower()
+
+        # Preferred path: the quantised editor. It streams, so even a 136M-element
+        # embedding exports without ever being fully materialised, and pending
+        # edits are applied as the chunks go by.
+        if self.weight_editor is not None and self.weight_editor.supports(name):
+            if ext not in (".npy", ".safetensors"):
+                return {
+                    "error": (
+                        f"Per-tensor export writes .npy or .safetensors, not "
+                        f"\"{ext or '(no extension)'}\". Choose one of those."
+                    )
+                }
+            try:
+                return self.weight_editor.export_tensor_stream(name, path, dtype="float32")
+            except ValueError as e:
+                return {"error": str(e)}
+            except OSError as e:
+                return {"error": f"Could not write {path}: {e}"}
+
+        values = None
+        source = None
+
+        # Fall back to a real state_dict when the model is loaded in memory.
+        if values is None and self.model_loader is not None:
+            data = None
+            try:
+                data = self.model_loader.get_tensor_data(name)
+            except Exception as e:
+                return {"error": f"Could not read {name}: {e}"}
+            if data is None:
+                return {"error": f"Unknown tensor: {name}"}
+            try:
+                import torch as _torch
+                if isinstance(data, _torch.Tensor):
+                    data = data.detach().to("cpu").float().numpy()
+            except Exception:
+                pass
+            values = np.asarray(data)
+            source = "model"
+
+        if values is None:
+            return {"error": "No model loaded"}
+
+        try:
+            if ext == ".safetensors":
+                from safetensors.numpy import save_file
+                # safetensors needs contiguous arrays.
+                save_file({name: np.ascontiguousarray(values.astype(np.float32))}, path)
+            elif ext == ".json":
+                if values.size > 100000:
+                    return {"error": f"{name} has {values.size} values — too many for JSON. Use .npy or .safetensors."}
+                import json as _json
+                with open(path, "w", encoding="utf-8") as fh:
+                    _json.dump({"name": name, "shape": list(values.shape), "values": values.tolist()}, fh)
+            else:
+                np.save(path, np.ascontiguousarray(values))
+        except Exception as e:
+            return {"error": f"Could not write {path}: {e}"}
+
+        try:
+            size = os.path.getsize(path)
+        except OSError:
+            size = int(values.nbytes)
+        return {
+            "name": name,
+            "path": path,
+            "shape": list(values.shape),
+            "dtype": str(values.dtype),
+            "count": int(values.size),
+            "size_bytes": size,
+            "source": source,
+            "format": ext.lstrip(".") or "npy",
+        }
+
+    # Formats the exporter can actually write. Anything else is rejected up
+    # front rather than half-written (the dialog used to offer GGUF and ONNX,
+    # which this backend has no writer for, and "pt" — a name model_loader does
+    # not accept, so PyTorch export failed with "Unsupported save format: pt").
+    EXPORT_FORMAT_ALIASES = {
+        "safetensors": "safetensors",
+        "pt": "pytorch",
+        "pytorch": "pytorch",
+        "bin": "pytorch",
+        "ckpt": "pytorch",
+    }
+
+    @staticmethod
+    def _verify_export(path: str) -> dict:
+        """Re-read a written checkpoint and prove it is complete.
+
+        The GGUF exporter streams tensors and writes a hand-built header, so a
+        truncated write is the failure mode worth catching — and the only way to
+        catch it is to read the file back. Only safetensors has a header we can
+        check this way; a torch checkpoint is opaque without unpickling, so it
+        is reported as unverified instead of failed.
+        """
+        import json as _json
+
+        try:
+            size = os.path.getsize(path)
+        except OSError as e:
+            return {"ok": False, "error": f"{path} is not readable: {e}"}
+
+        if not path.lower().endswith(".safetensors"):
+            return {"ok": True, "skipped": True, "size_bytes": size, "note": "header verification is safetensors-only"}
+
+        try:
+            with open(path, "rb") as fh:
+                raw = fh.read(8)
+                if len(raw) < 8:
+                    return {"ok": False, "error": "file is shorter than a safetensors header"}
+                header_len = int.from_bytes(raw, "little")
+                if header_len <= 0 or header_len > 100 * 1024 * 1024:
+                    return {"ok": False, "error": f"implausible header length ({header_len}) — not a safetensors file"}
+                header = _json.loads(fh.read(header_len))
+            data_start = 8 + header_len
+            tensors = {k: v for k, v in header.items() if k != "__metadata__"}
+            if not tensors:
+                return {"ok": False, "error": "no tensors in the written file"}
+            # Every tensor's declared offsets must fit inside the file.
+            worst = max(t.get("data_offsets", [0, 0])[1] for t in tensors.values())
+            if data_start + worst > size:
+                return {
+                    "ok": False,
+                    "error": f"truncated: header promises {data_start + worst} bytes but the file is {size}",
+                }
+            return {"ok": True, "tensor_count": len(tensors), "size_bytes": size}
+        except Exception as e:
+            return {"ok": False, "error": f"{type(e).__name__}: {e}"}
+
+    def _tensor_export(self, path: str = None, dtype: str = "float16", verify: bool = False) -> dict:
         """
         Write the model (with pending edits applied) to a new checkpoint.
 
         For a quantized GGUF this is the bridge to full gradient-based
         unlearning: the exported Safetensors model can be reloaded and trained.
+        With `verify` the file is read back so a truncated write is reported
+        instead of silently producing an unloadable checkpoint.
         """
         if path is None or not isinstance(path, str):
             return {"error": "No export path provided."}
@@ -320,6 +478,13 @@ class Backend:
                     f"Exported {result['tensor_count']} tensors to Safetensors. "
                     f"Reload this file to run gradient-based unlearning."
                 )
+                if verify:
+                    check = self._verify_export(path)
+                    result["verification"] = check
+                    if not check.get("ok"):
+                        result["error"] = f"Export written but failed verification: {check.get('error')}"
+                        return result
+                    result["message"] += f" Verified: {check['tensor_count']} tensors readable."
                 return result
             except ValueError as e:
                 return {"error": str(e)}
@@ -501,15 +666,76 @@ class Backend:
 
     # ── Export ──
 
-    def _model_export(self, path: str, format: str = "safetensors") -> dict:
-        """Export the current (possibly modified) model to disk."""
+    def _model_export(self, path: str, format: str = "safetensors", verify: bool = False) -> dict:
+        """Export the current (possibly modified) model to disk.
+
+        `format` accepts the dialog's friendly names ("pt", "bin", "ckpt") as
+        well as the internal ones, so choosing "PyTorch Checkpoint" works
+        instead of failing with "Unsupported save format: pt".
+        """
         if self.model_loader is None:
             return self._missing_dep_error("export models")
-        if self.current_model is None:
-            return {"error": "No model loaded"}
-        return self.model_loader.save(self.current_model, self.current_metadata, path, format)
+        # Check the format before the model: an unsupported format is knowable
+        # without a loaded model, and reporting "No model loaded" for a format
+        # that could never work sends the user down the wrong path.
+        internal = self.EXPORT_FORMAT_ALIASES.get(str(format).lower())
+        if internal is None:
+            return {
+                "error": (
+                    f"This build can write Safetensors and PyTorch checkpoints, not \"{format}\". "
+                    "Export Safetensors and convert it with the target format's own tooling."
+                ),
+                "unsupported_format": True,
+            }
+        result = self.model_loader.save(self.current_model, self.current_metadata, path, internal)
+        if isinstance(result, dict) and verify and not result.get("error"):
+            check = self._verify_export(path)
+            result["verification"] = check
+            if not check.get("ok"):
+                result["error"] = f"Export written but failed verification: {check.get('error')}"
+        return result
 
     # ── Info ──
+
+    # Deleting model files is deliberately narrow: only inside the folder the
+    # app itself downloads into. A generic delete RPC would be a loaded gun.
+    APP_DOWNLOAD_SUBDIR = os.path.join("Downloads", "remap-studio-models")
+
+    def _file_delete(self, path: str = None) -> dict:
+        """Delete one model file from the app's own downloads folder."""
+        if not path or not isinstance(path, str):
+            return {"error": "No path provided."}
+
+        home = os.path.expanduser("~")
+        allowed_root = os.path.realpath(os.path.join(home, self.APP_DOWNLOAD_SUBDIR))
+        target = os.path.realpath(os.path.abspath(os.path.expanduser(path)))
+
+        # `commonpath` (not startswith) so /models-evil cannot masquerade as
+        # /models, and the realpath call resolves symlinks first.
+        try:
+            inside = os.path.commonpath([allowed_root, target]) == allowed_root
+        except ValueError:
+            inside = False
+        if not inside or target == allowed_root:
+            return {
+                "error": (
+                    "Only files inside " + allowed_root + " can be deleted from the app. "
+                    "Remove other files in Finder."
+                ),
+                "outside_downloads": True,
+            }
+        if not os.path.isfile(target):
+            return {"error": f"Not a file: {target}"}
+
+        try:
+            freed = os.path.getsize(target)
+        except OSError:
+            freed = 0
+        try:
+            os.remove(target)
+        except OSError as e:
+            return {"error": f"Could not delete {target}: {e}"}
+        return {"ok": True, "path": target, "freed_bytes": freed}
 
     def _system_info(self) -> dict:
         """Get system info: Python version, torch version, available memory, etc."""
