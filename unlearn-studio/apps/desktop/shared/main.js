@@ -26,6 +26,52 @@ let backendScriptPath = null;  // server.py that was launched
 let backendLastError = null;   // last startup/exit error, surfaced in UI
 const queueWaiters = new Map(); // id → { timer, resolve, reject } while backend is starting
 
+// ── External link policy ──
+// Only real web links may leave the app. Without this, a renderer that can
+// craft a URL reaches file://, smb://, and any OS protocol handler.
+const SAFE_EXTERNAL_PROTOCOLS = new Set(["http:", "https:"]);
+
+function safeExternalUrl(raw) {
+  if (typeof raw !== "string" || raw.length > 2048) return null;
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f\u007f]/.test(raw)) return null;
+  let parsed;
+  try {
+    parsed = new URL(raw);
+  } catch (e) {
+    return null;
+  }
+  return SAFE_EXTERNAL_PROTOCOLS.has(parsed.protocol) ? parsed.toString() : null;
+}
+
+function openExternalSafely(raw) {
+  const url = safeExternalUrl(raw);
+  if (!url) {
+    console.warn("[Security] Refused to open external URL:", String(raw).slice(0, 120));
+    return false;
+  }
+  shell.openExternal(url);
+  return true;
+}
+
+// ── In-window navigation policy ──
+// The preload bridge is attached to this webContents, so a navigation to an
+// arbitrary origin would hand electronAPI to that page. Only the bundled app
+// and the Firebase/Google/Razorpay hops needed by sign-in may load here.
+const NAVIGATION_ALLOWLIST = [
+  /^https?:\/\/localhost(:\d+)?(\/|$)/i,
+  /^https?:\/\/127\.0\.0\.1(:\d+)?(\/|$)/i,
+  /^https:\/\/remapstudios-5b9b0\.firebaseapp\.com(\/|$)/i,
+  /^https:\/\/accounts\.google\.com(\/|$)/i,
+  /^https:\/\/apis\.google\.com(\/|$)/i,
+  /^https:\/\/checkout\.razorpay\.com(\/|$)/i,
+];
+
+function isAllowedNavigation(raw) {
+  if (typeof raw !== "string") return false;
+  return NAVIGATION_ALLOWLIST.some((re) => re.test(raw));
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
@@ -34,23 +80,69 @@ function createWindow() {
     minHeight: 700,
     titleBarStyle: "hiddenInset",
     trafficLightPosition: { x: 12, y: 10 },
-    backgroundColor: "#0a0a0a",
+    backgroundColor: "#1f1f1f",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
-      // Required for Firebase Auth (which checks location.protocol)
-      // Firebase needs http/https, but Electron loads via file:// by default
-      webSecurity: false,
+      // Same-origin is enforced. Firebase only needs an http(s) origin, which
+      // the local server below provides; disabling webSecurity for that was
+      // wrong and handed any injected script the whole IPC surface.
+      webSecurity: true,
+      webviewTag: false,
+      spellcheck: false,
       // Dev verification drives the UI over CDP while the window is occluded;
       // never background-throttle the page in development.
       ...(process.env.NODE_ENV === "development" ? { backgroundThrottling: false } : {}),
     },
-  });  // Block all window.open from renderer — auth is handled via IPC now
+  });
+
+  // window.open never creates a window inside the app; web links go to the
+  // system browser through the scheme allowlist above.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    require("electron").shell.openExternal(url);
+    openExternalSafely(url);
     return { action: "deny" };
   });
+
+  // Pin the window to the bundled app. Sign-in redirects pass through the
+  // Firebase/Google origins; anything else is refused, not followed.
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (isAllowedNavigation(url)) return;
+    event.preventDefault();
+    console.warn("[Security] Blocked in-app navigation:", String(url).slice(0, 160));
+    openExternalSafely(url);
+  });
+
+  mainWindow.webContents.on("will-redirect", (event, url) => {
+    if (isAllowedNavigation(url)) return;
+    event.preventDefault();
+    console.warn("[Security] Blocked cross-origin redirect:", String(url).slice(0, 160));
+  });
+
+  // The app needs no device permissions. Deny camera, microphone, geolocation,
+  // notifications and everything else rather than inheriting Chromium defaults.
+  mainWindow.webContents.session.setPermissionRequestHandler((_wc, _permission, callback) => {
+    callback(false);
+  });
+  mainWindow.webContents.session.setPermissionCheckHandler(() => false);
+
+  // Everything the renderer needs, and nothing else: the policy allows the
+  // Firebase SDK hosts, the Razorpay checkout redirect and the local backend,
+  // and forbids eval. Inline handlers/styles are still required by index.html.
+  const CONTENT_SECURITY_POLICY = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com",
+    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com http://13.204.245.212:3001",
+    "img-src 'self' data: blob: https:",
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self' data:",
+    "frame-src https://*.firebaseapp.com https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com",
+    "form-action 'self' https://api.razorpay.com",
+    "worker-src 'self' blob:",
+    "media-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+  ].join("; ");
 
   // Serve renderer via local HTTP server so Firebase Auth works
   // (Firebase requires http/https protocol, not file://)
@@ -62,15 +154,35 @@ function createWindow() {
     const urlPath = parsedUrl.pathname;
 
     // ── Static file serving ──
-    const filePath = path.join(__dirname, "renderer", urlPath === "/" ? "index.html" : urlPath);
+    // Resolve inside renderer/ and refuse anything that escapes it: encoded
+    // %2e%2e, Windows separators, or an absolute-looking path.
+    const rendererRoot = path.join(__dirname, "renderer");
+    let requested;
+    try {
+      requested = decodeURIComponent(urlPath === "/" ? "index.html" : urlPath);
+    } catch {
+      res.writeHead(400, { "Content-Type": "text/plain" });
+      res.end("Bad request");
+      return;
+    }
+    const filePath = path.resolve(rendererRoot, requested.replace(/^[\\/]+/, ""));
+    if (filePath !== rendererRoot && !filePath.startsWith(rendererRoot + path.sep)) {
+      res.writeHead(403, { "Content-Type": "text/plain" });
+      res.end("Forbidden");
+      return;
+    }
     const ext = path.extname(filePath).toLowerCase();
     const mimeTypes = {
       ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
       ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml",
       ".ico": "image/x-icon", ".woff": "font/woff", ".woff2": "font/woff2",
     };
-    const isStatic = filePath !== path.join(__dirname, "renderer", "index.html");
-    const headers = { "Content-Type": mimeTypes[ext] || "application/octet-stream" };
+    const isStatic = filePath !== path.join(rendererRoot, "index.html");
+    const headers = {
+      "Content-Type": mimeTypes[ext] || "application/octet-stream",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": CONTENT_SECURITY_POLICY,
+    };
     if (isStatic) {
       // In development a 5-minute cache means an edited app.js/nn3d.js keeps
       // being served from cache even after a reload, which is very confusing.
@@ -545,6 +657,11 @@ function pythonCandidates() {
     const list = [];
     if (picked) list.push({ cmd: picked, args: [] });
     if (process.env.PYTHON_PATH) list.push({ cmd: process.env.PYTHON_PATH, args: [] });
+    // The official installer only adds Python to PATH when "Add to PATH" is
+    // ticked, and `py` is missing on many machines. Enumerate the standard
+    // install roots before falling back to PATH, or a perfectly good 3.12
+    // install is invisible and the app blocks on its setup dialog.
+    for (const p of windowsPythonInstallPaths()) list.push({ cmd: p, args: [] });
     list.push({ cmd: "py", args: ["-3"] }, { cmd: "python", args: [] }, { cmd: "python3", args: [] });
     return list;
   }
@@ -556,6 +673,30 @@ function pythonCandidates() {
   }
   list.push({ cmd: "python3", args: [] });
   return list;
+}
+
+// python.exe locations for the common Windows installers, newest first.
+function windowsPythonInstallPaths() {
+  const found = [];
+  const add = (p) => {
+    try { if (p && fs.existsSync(p) && fs.statSync(p).isFile()) found.push(p); } catch (e) { /* ignore */ }
+  };
+  const versionOf = (name) => parseInt(String(name).replace(/^Python/i, ""), 10) || 0;
+  const scan = (root) => {
+    let entries = [];
+    try { entries = fs.readdirSync(root, { withFileTypes: true }); } catch (e) { return; }
+    entries
+      .filter((e) => e.isDirectory() && /^Python\d+/i.test(e.name))
+      .sort((a, b) => versionOf(b.name) - versionOf(a.name))
+      .forEach((e) => add(path.join(root, e.name, "python.exe")));
+  };
+  scan(path.join(process.env.LOCALAPPDATA || "", "Programs", "Python"));
+  scan(process.env.ProgramFiles || "C:\\Program Files");
+  scan(process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)");
+  scan("C:\\");
+  const storeAlias = path.join(process.env.LOCALAPPDATA || "", "Microsoft", "WindowsApps", "python.exe");
+  add(storeAlias);
+  return [...new Set(found)];
 }
 
 // Run the probe script inside one interpreter; resolves with a parsed report
@@ -1366,8 +1507,9 @@ ipcMain.handle("app:restartBackend", () => {
 ipcMain.handle("app:version", () => app.getVersion());
 
 // ── Open External URL ──
+// Scheme-checked: the renderer can ask for a web page, not a protocol handler.
 ipcMain.handle("app:openExternal", (_event, url) => {
-  shell.openExternal(url);
+  return { ok: openExternalSafely(url) };
 });
 
 // ── Auto-Update Check ──
@@ -1376,7 +1518,10 @@ ipcMain.handle("app:checkUpdates", async () => {
   const updateUrl = `http://13.204.245.212:3001/api/update/check?version=${app.getVersion()}&platform=${process.platform}&arch=${process.arch}`;
 
   return new Promise((resolve) => {
-    const req = httpModule.get(updateUrl, { rejectUnauthorized: false }, (res) => {
+    // Certificate verification stays on. This endpoint is plain HTTP today, so
+    // there is nothing to verify; turning it off here would silently keep
+    // verification disabled the day the server gets a certificate.
+    const req = httpModule.get(updateUrl, (res) => {
       let data = "";
       res.on("data", (chunk) => (data += chunk));
       res.on("end", () => {
@@ -1473,24 +1618,63 @@ const { app: appUtil } = require("electron");
 const downloadProgress = new Map();
 
 ipcMain.handle("model:download", async (_event, { url, filename }) => {
+  // The filename becomes a path under Downloads/remap-studio-models, so it is
+  // reduced to a single harmless segment: "../../evil.exe" must not escape.
+  const requested = typeof filename === "string" ? filename : "";
+  const safeName = path.basename(requested).trim();
+  const invalidName =
+    !safeName ||
+    safeName === "." ||
+    safeName === ".." ||
+    Buffer.byteLength(safeName, "utf8") > 180 ||
+    // eslint-disable-next-line no-control-regex
+    /[\u0000-\u001f<>:"|?*]/.test(safeName);
+  if (invalidName) {
+    throw new Error(`Refusing unsafe download filename: ${requested.slice(0, 80)}`);
+  }
+
+  const parseHttp = (raw) => {
+    let parsed;
+    try {
+      parsed = new URL(raw);
+    } catch (e) {
+      throw new Error("Download URL is not a valid URL.");
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new Error(`Refusing non-HTTP download scheme: ${parsed.protocol}`);
+    }
+    return parsed;
+  };
+  parseHttp(url);
+
   const downloadsDir = path.join(appUtil.getPath("home"), "Downloads", "remap-studio-models");
   fs.mkdirSync(downloadsDir, { recursive: true });
 
-  const destPath = path.join(downloadsDir, filename);
+  const destPath = path.join(downloadsDir, safeName);
   const downloadId = `dl_${Date.now()}`;
 
   return new Promise((resolve, reject) => {
-    const protocol = url.startsWith("https") ? https : http;
-
     const makeRequest = (requestUrl, redirectCount = 0) => {
       if (redirectCount > 5) {
         reject(new Error("Too many redirects"));
         return;
       }
 
-      protocol.get(requestUrl, (response) => {
+      // Re-resolve per hop: a redirect may change scheme, and the transport
+      // must follow the URL it is actually fetching.
+      let target;
+      try {
+        target = parseHttp(requestUrl);
+      } catch (err) {
+        reject(err);
+        return;
+      }
+      const protocol = target.protocol === "https:" ? https : http;
+
+      protocol.get(target, (response) => {
         if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-          makeRequest(response.headers.location, redirectCount + 1);
+          const next = new URL(response.headers.location, target).toString();
+          makeRequest(next, redirectCount + 1);
           return;
         }
 
@@ -1503,17 +1687,17 @@ ipcMain.handle("model:download", async (_event, { url, filename }) => {
         let downloadedBytes = 0;
         const fileStream = fs.createWriteStream(destPath);
 
-        downloadProgress.set(downloadId, { destPath, totalBytes, downloadedBytes, filename, status: "downloading" });
+        downloadProgress.set(downloadId, { destPath, totalBytes, downloadedBytes, filename: safeName, status: "downloading" });
 
         response.on("data", (chunk) => {
           downloadedBytes += chunk.length;
           const progress = totalBytes > 0 ? (downloadedBytes / totalBytes) * 100 : 0;
-          downloadProgress.set(downloadId, { destPath, totalBytes, downloadedBytes, filename, status: "downloading", progress });
+          downloadProgress.set(downloadId, { destPath, totalBytes, downloadedBytes, filename: safeName, status: "downloading", progress });
 
           if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send("model:download-progress", {
               id: downloadId,
-              filename,
+              filename: safeName,
               progress,
               downloadedBytes,
               totalBytes,
@@ -1525,9 +1709,9 @@ ipcMain.handle("model:download", async (_event, { url, filename }) => {
 
         fileStream.on("finish", () => {
           fileStream.close();
-          downloadProgress.set(downloadId, { destPath, totalBytes, downloadedBytes: totalBytes, filename, status: "completed", progress: 100 });
+          downloadProgress.set(downloadId, { destPath, totalBytes, downloadedBytes: totalBytes, filename: safeName, status: "completed", progress: 100 });
           if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send("model:download-progress", { id: downloadId, filename, progress: 100, downloadedBytes: totalBytes, totalBytes, status: "completed" });
+            mainWindow.webContents.send("model:download-progress", { id: downloadId, filename: safeName, progress: 100, downloadedBytes: totalBytes, totalBytes, status: "completed" });
           }
           resolve({ id: downloadId, path: destPath, size: totalBytes });
         });

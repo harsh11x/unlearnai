@@ -19,14 +19,21 @@
     {
       "from": "../backend",
       "to": "backend",
-      "filter": ["**/*.py", "requirements.txt"]
+      "filter": [
+        "**/*.py",
+        "requirements.txt"
+      ]
     }
   ],
+  "asar": true,
+  "afterPack": "afterPack.js",
   "win": {
     "target": [
       {
         "target": "nsis",
-        "arch": ["x64"]
+        "arch": [
+          "x64"
+        ]
       }
     ],
     "icon": "../win/build/icon.ico",

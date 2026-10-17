@@ -42,6 +42,7 @@ function scheduleLazySdkLoads() {
 // HTTP on purpose: the AWS server has no TLS cert yet (raw IP). If you add a
 // domain + SSL later, switch this back to https.
 const SERVER_URL = "http://13.204.245.212:3001";
+let insecureCloudWarned = false;
 
 function isGuest() {
   return !!(currentUser && currentUser.isGuest);
@@ -59,6 +60,18 @@ async function serverAPI(endpoint, options = {}) {
     try {
       const token = await user.getIdToken();
       headers["Authorization"] = `Bearer ${token}`;
+      // The AWS host has no TLS yet, so this bearer token crosses the network in
+      // cleartext. Say so once instead of letting it happen silently: the user
+      // can then decide whether to sign in on this network.
+      if (SERVER_URL.startsWith("http:") && !insecureCloudWarned) {
+        insecureCloudWarned = true;
+        console.warn("[ServerAPI] Sending an auth token over plaintext HTTP to", SERVER_URL);
+        toast(
+          "Cloud sync is unencrypted (HTTP). Your sign-in token can be read on this network.",
+          "warning",
+          9000
+        );
+      }
     } catch (e) {
       console.warn("[ServerAPI] Could not get token:", e.message);
     }
@@ -198,7 +211,13 @@ function initFirebase() {
 }
 
 function registerAuthListener() {
+  // The safety net below must be cancelled the moment Firebase answers —
+  // otherwise a legitimate signed-out session is force-upgraded to a guest
+  // account 5s later and the login screen can never be used.
+  let authFallback = null;
+
   firebaseAuth.onAuthStateChanged((user) => {
+    if (authFallback) { clearTimeout(authFallback); authFallback = null; }
     if (user) {
       currentUser = {
         uid: user.uid,
@@ -229,7 +248,9 @@ function registerAuthListener() {
   // Safety: show app after 5s if auth never resolves. Fall back to a guest
   // session rather than a no-user limbo — otherwise Settings shows "Not
   // signed in" and Sign Out silently does nothing, with no way back to login.
-  setTimeout(() => {
+  // Cleared as soon as onAuthStateChanged fires (see above).
+  authFallback = setTimeout(() => {
+    authFallback = null;
     if (!currentUser) {
       console.warn("[Auth] Timed out, falling back to guest");
       signInAsGuest();
@@ -450,6 +471,7 @@ const SETTINGS_SPEC = {
   pythonPath: { type: "string", def: "",             label: "Preferred interpreter" },
   device:     { type: "enum",   def: "auto",         label: "Compute device" },
   heatmapColor: { type: "enum", def: "grayscale",    label: "Heatmap colour scheme" },
+  accent:     { type: "enum",   def: "blue",         label: "Interface accent" },
   lastModelPath: { type: "string", def: "",          label: "Last model" },
   recentModels:  { type: "list",  def: [],            label: "Recent models" },
 };
@@ -489,7 +511,7 @@ function coerceSetting(key, value) {
   if (!spec) return undefined;
   if (spec.type === "bool") return value !== false && value !== "false" && value !== 0;
   if (spec.type === "enum") {
-    const allowed = { animSpeed: ["slow", "normal", "fast", "off"], defaultMethod: ["retain_aware", "gradient_forget"], device: ["auto", "cpu", "mps", "cuda"], heatmapColor: ["grayscale", "viridis", "magma", "inferno", "coolwarm"] }[key];
+    const allowed = { animSpeed: ["slow", "normal", "fast", "off"], defaultMethod: ["retain_aware", "gradient_forget"], device: ["auto", "cpu", "mps", "cuda"], heatmapColor: ["grayscale", "viridis", "magma", "inferno", "coolwarm"], accent: ACCENT_PRESETS }[key];
     if (allowed && !allowed.includes(value)) return spec.def;
     return value;
   }
@@ -590,6 +612,9 @@ function applySetting(key, value, opts = {}) {
     case "welcome":
       if (!value) hideWelcomeScreen();
       break;
+    case "accent":
+      applyAccent(value);
+      break;
     default:
       break;
   }
@@ -617,6 +642,7 @@ function syncSettingsControls() {
   bind("setting-default-method", s.defaultMethod, "value");
   bind("setting-autosave", s.autosave);
   bind("setting-heatmap-color", s.heatmapColor, "value");
+  bind("setting-accent", s.accent, "value");
   bind("setting-python", s.pythonPath, "value");
   bind("setting-device", s.device, "value");
 
@@ -630,6 +656,20 @@ function syncSettingsControls() {
   if (storePath) storePath.textContent = state.settingsPath || "userData/settings.json";
   const pyInput = document.getElementById("setting-python");
   if (pyInput && pyInput.value !== (s.pythonPath || "")) pyInput.value = s.pythonPath || "";
+}
+
+// Interface accents. The presets are defined in shell.css; this only writes the
+// attribute, so every surface that reads a CSS variable recolours at once.
+const ACCENT_PRESETS = ["blue", "teal", "violet", "graphite"];
+
+function applyAccent(value) {
+  document.documentElement.dataset.accent = ACCENT_PRESETS.includes(value) ? value : "blue";
+}
+
+function cycleAccent() {
+  const current = state.settings.accent || "blue";
+  const next = ACCENT_PRESETS[(ACCENT_PRESETS.indexOf(current) + 1) % ACCENT_PRESETS.length];
+  setSetting("accent", next);
 }
 
 function applyAnimationSpeed(value) {
@@ -975,6 +1015,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   await initSettingsStore();
 
   initTabs();
+  initFabric();
+  updateLaunchpad();
   initResizeHandles();
   initBottomPanel();
   initDragDrop();
@@ -1100,6 +1142,11 @@ function initBackendListeners() {
     document.getElementById("status-platform").textContent = info.degraded ? "backend degraded" : `${info.device}`;
     document.getElementById("status-device").textContent = info.ram_total_gb != null ? `${info.ram_total_gb}GB RAM` : "RAM ?";
     document.getElementById("status-ram").textContent = info.ram_available_gb != null ? `${info.ram_available_gb}GB free` : "RAM ?";
+    updateLaunchpad();
+    // The launchpad advertises the module count, so re-read the registry on
+    // every backend start (a restarted backend may be pointed at a different
+    // REMAP_MODULE_ROOT). It is a JSON read, not a model load.
+    loadFabric({ force: true });
   });
 
   API.onBackendStatus?.((status) => {
@@ -1410,6 +1457,7 @@ function switchTab(name) {
   if (name === "heatmap" && state.model) renderHeatmap();
   if (name === "visualization" && state.model) renderModelCanvas();
   if (name === "unlearn") { renderUnlearnCanvas(); updateUnlearnModeNote(); }
+  if (name === "fabric") loadFabric();
 }
 
 // ══════════════════════════════════════════
@@ -1607,6 +1655,9 @@ const COMMANDS = [
   { label: "Go to Heatmap", category: "Navigation", shortcut: "⌘3", action: () => switchTab("heatmap") },
   { label: "Go to Unlearn", category: "Navigation", shortcut: "⌘4", action: () => switchTab("unlearn") },
   { label: "Go to Model Catalog", category: "Navigation", shortcut: "⌘5", action: () => switchTab("models") },
+  { label: "Go to Capability Fabric", category: "Navigation", shortcut: "⌘6", action: () => switchTab("fabric") },
+  { label: "Refresh Capability Fabric", category: "Fabric", action: () => loadFabric({ force: true }) },
+  { label: "Cycle Interface Accent", category: "View", action: () => cycleAccent() },
   { label: "Show Keyboard Shortcuts", category: "Help", shortcut: "⌘/", action: () => toggleModal("shortcuts-overlay") },
   { label: "About Remap Studios", category: "Help", action: () => toggleModal("about-overlay") },
   { label: "Run Model Analysis", category: "Run", action: () => { switchTab("visualization"); if (state.model) log("Running analysis...", "info"); } },
@@ -2300,10 +2351,10 @@ function initKeyboardShortcuts() {
     if (mod && e.shiftKey && key === "r") { e.preventDefault(); startUnlearn(); return; }
     // Cmd+/: Shortcuts
     if (mod && key === "/") { e.preventDefault(); toggleModal("shortcuts-overlay"); return; }
-    // Cmd+1-5: Switch tabs
-    if (mod && ["1","2","3","4","5"].includes(key)) {
+    // Cmd+1-6: Switch tabs
+    if (mod && ["1","2","3","4","5","6"].includes(key)) {
       e.preventDefault();
-      const tabs = ["visualization", "weights", "heatmap", "unlearn", "models"];
+      const tabs = ["visualization", "weights", "heatmap", "unlearn", "models", "fabric"];
       switchTab(tabs[parseInt(key) - 1]);
       return;
     }
@@ -2669,6 +2720,7 @@ function wireSettingsControls() {
   select("setting-anim-speed", "animSpeed");
   select("setting-default-method", "defaultMethod");
   select("setting-device", "device");
+  select("setting-accent", "accent");
 
   // ── Preferred interpreter ──
   const pyInput = document.getElementById("setting-python");
@@ -5771,6 +5823,7 @@ function updateStatusBar() {
     viewEl.textContent = state.viewMode === "3d" ? "3D" : "2D";
     viewEl.classList.toggle("is-3d", state.viewMode === "3d");
   }
+  updateLaunchpad();
 }
 
 function updateModelTree() {
@@ -6905,4 +6958,325 @@ function handle3DShortcut(e) {
     case "e": slantView3D(true); return true;
     default: return false;
   }
+}
+
+// ══════════════════════════════════════════
+// LAUNCHPAD — live environment readout
+// ══════════════════════════════════════════
+
+const DEVICE_READOUT = { cpu: "CPU", cuda: "CUDA", mps: "APPLE GPU", unavailable: "OFFLINE" };
+
+// The launchpad is the first thing a new session sees, so every number in it is
+// real: backend state, compute device, memory and the module count.
+function updateLaunchpad() {
+  const info = state.backendInfo || {};
+  const ready = !!state.backendReady;
+  const degraded = !!info.degraded;
+
+  const statusEl = document.getElementById("lp-status");
+  if (statusEl) {
+    statusEl.textContent = !ready ? "System idle" : degraded ? "System degraded" : "System nominal";
+  }
+  const liveEl = document.getElementById("lp-live");
+  if (liveEl) {
+    liveEl.classList.toggle("is-idle", !ready);
+    liveEl.classList.toggle("is-degraded", ready && degraded);
+  }
+
+  const deviceKey = String(info.device || "").split(":")[0].toLowerCase();
+  setReadout("lp-device", ready ? (DEVICE_READOUT[deviceKey] || "UNKNOWN") : "—", ready && !degraded);
+
+  const memory = info.ram_total_gb != null
+    ? `${Number(info.ram_available_gb ?? 0).toFixed(0)} / ${Number(info.ram_total_gb).toFixed(0)} GB`
+    : "—";
+  setReadout("lp-memory", memory, false);
+  setReadout("lp-backend", !ready ? "STARTING" : degraded ? "DEGRADED" : "READY", ready && !degraded);
+  setReadout("lp-modules", FABRIC.loaded ? String(FABRIC.modules.length) : "—", FABRIC.loaded && FABRIC.modules.length > 0);
+}
+
+function setReadout(id, text, accent) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  el.classList.toggle("is-accent", !!accent);
+  el.classList.toggle("is-muted", !accent && (text === "—" || text === "STARTING" || text === "UNKNOWN"));
+}
+
+// ══════════════════════════════════════════
+// CAPABILITY FABRIC — module registry browser
+// ══════════════════════════════════════════
+
+const FABRIC = {
+  loading: false,
+  loaded: false,
+  exists: true,
+  corrupt: false,
+  root: "",
+  ok: true,
+  damaged: [],
+  modules: [],
+  selected: null,
+  error: null,
+};
+
+async function loadFabric(opts = {}) {
+  if (FABRIC.loading) return;
+  if (!state.backendReady) {
+    FABRIC.error = "The Python backend is not ready yet.";
+    renderFabric();
+    return;
+  }
+  if (FABRIC.loaded && !opts.force) { renderFabric(); return; }
+  FABRIC.loading = true;
+  FABRIC.error = null;
+  renderFabric();
+  try {
+    const res = await API.rpc("fabric_list", {});
+    if (res && res.error) {
+      FABRIC.error = res.error;
+    } else {
+      FABRIC.exists = res?.exists !== false;
+      FABRIC.corrupt = !!res?.corrupt;
+      FABRIC.root = res?.root || "";
+      FABRIC.ok = res?.ok !== false;
+      FABRIC.damaged = Array.isArray(res?.damaged) ? res.damaged : [];
+      FABRIC.modules = Array.isArray(res?.modules) ? res.modules : [];
+      FABRIC.loaded = true;
+      if (!FABRIC.modules.some((m) => m.id === FABRIC.selected)) {
+        FABRIC.selected = FABRIC.modules[0]?.id || null;
+      }
+    }
+  } catch (e) {
+    FABRIC.error = e.message;
+  }
+  FABRIC.loading = false;
+  renderFabric();
+  updateLaunchpad();
+}
+
+function initFabric() {
+  document.getElementById("btn-fabric-refresh")?.addEventListener("click", () => loadFabric({ force: true }));
+  document.getElementById("fabric-list")?.addEventListener("click", (e) => {
+    const card = e.target.closest("[data-fabric-id]");
+    if (!card) return;
+    FABRIC.selected = card.dataset.fabricId;
+    renderFabric();
+  });
+  renderFabric();
+}
+
+function renderFabric() {
+  const listEl = document.getElementById("fabric-list");
+  const detailEl = document.getElementById("fabric-detail");
+  if (!listEl || !detailEl) return;
+
+  const rootEl = document.getElementById("fabric-root");
+  if (rootEl) {
+    rootEl.textContent = shortenPath(FABRIC.root);
+    rootEl.title = FABRIC.root || "Module registry root";
+  }
+
+  const integrityEl = document.getElementById("fabric-integrity");
+  if (integrityEl) {
+    integrityEl.classList.remove("is-ok", "is-bad");
+    if (FABRIC.loading && !FABRIC.loaded) {
+      integrityEl.textContent = "reading";
+    } else if (FABRIC.error) {
+      integrityEl.textContent = "error";
+      integrityEl.classList.add("is-bad");
+    } else if (FABRIC.corrupt || !FABRIC.ok) {
+      integrityEl.textContent = "damaged";
+      integrityEl.classList.add("is-bad");
+    } else if (FABRIC.exists === false) {
+      integrityEl.textContent = "no registry";
+    } else if (!FABRIC.modules.length) {
+      integrityEl.textContent = "empty";
+      integrityEl.classList.add("is-ok");
+    } else {
+      integrityEl.textContent = `${FABRIC.modules.length} ok`;
+      integrityEl.classList.add("is-ok");
+    }
+  }
+
+  if (FABRIC.error) {
+    listEl.innerHTML = "";
+    detailEl.innerHTML = fabricMessage("REGISTRY UNREADABLE", "The module registry could not be read.", FABRIC.error);
+    return;
+  }
+
+  if (!FABRIC.modules.length) {
+    listEl.innerHTML = FABRIC.loading ? '<div class="fabric-empty-note" style="padding:12px">Reading registry…</div>' : "";
+    detailEl.innerHTML = FABRIC.loading ? fabricMessage("READING", "Reading the registry…", "Listing registered modules and checking their artifacts on disk.") : fabricEmptyMarkup();
+    return;
+  }
+
+  const modules = [...FABRIC.modules].sort(compareFabricModules);
+  listEl.innerHTML = modules.map(fabricCardMarkup).join("");
+  const selected = modules.find((m) => m.id === FABRIC.selected) || modules[0];
+  detailEl.innerHTML = fabricDetailMarkup(selected);
+}
+
+function fabricDelta(m) {
+  if (typeof m.delta === "number") return m.delta;
+  if (typeof m.score_before === "number" && typeof m.score_after === "number") {
+    return m.score_after - m.score_before;
+  }
+  return null;
+}
+
+function compareFabricModules(a, b) {
+  const cap = String(a.capability || "").localeCompare(String(b.capability || ""));
+  if (cap !== 0) return cap;
+  const da = fabricDelta(a) ?? -Infinity;
+  const db = fabricDelta(b) ?? -Infinity;
+  if (db !== da) return db - da;
+  return String(a.id).localeCompare(String(b.id));
+}
+
+function formatPp(value, signed) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+  const sign = signed && value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(1)}pp`;
+}
+
+const CAPABILITY_LABELS = {
+  python: "Python",
+  javascript: "JavaScript",
+  typescript: "TypeScript",
+  c_cpp: "C / C++",
+  code_review: "Code Review",
+  algorithms: "Algorithms",
+  reasoning: "Reasoning",
+  math: "Mathematics",
+};
+
+function prettyCapability(capability) {
+  const key = String(capability || "").trim().toLowerCase();
+  if (CAPABILITY_LABELS[key]) return CAPABILITY_LABELS[key];
+  const text = key.replace(/_/g, " ").trim();
+  return text ? text.replace(/\b\w/g, (ch) => ch.toUpperCase()) : "Unknown";
+}
+
+// Long absolute paths are unreadable in a 320px rail, and ellipsising the tail
+// hides the part that identifies the registry. Keep the last two segments.
+function shortenPath(path) {
+  const parts = String(path || "").split(/[\\/]+/).filter(Boolean);
+  if (parts.length <= 2) return parts.join("/") || "storage/modules";
+  return `…/${parts.slice(-2).join("/")}`;
+}
+
+function formatTimestamp(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+}
+
+function fabricCardMarkup(m) {
+  const damaged = FABRIC.damaged.some((d) => d.id === m.id);
+  const delta = fabricDelta(m);
+  const deltaClass = delta == null || delta === 0 ? "is-zero" : delta < 0 ? "is-bad" : "";
+  const flag = damaged
+    ? '<span class="fabric-flag is-damaged">damaged</span>'
+    : m.verified
+      ? '<span class="fabric-flag is-verified">verified</span>'
+      : '<span class="fabric-flag is-unverified">unverified</span>';
+  const id = escapeHtml(m.id);
+  return `
+    <button type="button" class="fabric-card${m.id === FABRIC.selected ? " active" : ""}${damaged ? " damaged" : ""}" data-fabric-id="${id}" title="${id}">
+      <div class="fabric-card-top">
+        <span class="fabric-cap">${escapeHtml(prettyCapability(m.capability))}</span>
+        <span class="fabric-delta ${deltaClass}">${formatPp(delta, true)}</span>
+      </div>
+      <div class="fabric-card-meta">${flag}<span class="fabric-id">${id}</span></div>
+    </button>`;
+}
+
+function fabricDetailMarkup(m) {
+  const damaged = FABRIC.damaged.find((d) => d.id === m.id);
+  const delta = fabricDelta(m);
+  const before = typeof m.score_before === "number" ? m.score_before.toFixed(1) : "—";
+  const after = typeof m.score_after === "number" ? m.score_after.toFixed(1) : "—";
+  const collateral = formatPp(m.collateral, false);
+  const adapter = (m.files && (m.files.adapter || m.files.adapter_model || m.files.weights)) || "adapter_model.safetensors";
+
+  const rows = [
+    ["Base model", m.base_model || "unrecorded", ""],
+    ["Base identity", m.base_identity || "—", ""],
+    ["Tokenizer", m.tokenizer_identity || "unrecorded", m.tokenizer_identity ? "" : "is-bad"],
+    ["Method", m.method || "lora", ""],
+    ["Probe suite", m.probe_suite || "unrecorded", m.probe_suite ? "" : "is-bad"],
+    ["Suite hash", m.probe_suite_hash ? String(m.probe_suite_hash).slice(0, 16) : "—", ""],
+    ["Trained", m.created_at ? formatTimestamp(m.created_at) : "unrecorded", ""],
+    ["Examples", m.examples ? String(m.examples) : "—", ""],
+    ["Adapter", adapter, ""],
+  ];
+
+  let verdictClass = "is-warn";
+  let verdictText = "No measured before/after. This delta exists, but it is not evidence of a capability.";
+  if (damaged) {
+    verdictClass = "is-bad";
+    verdictText = `Artifacts missing (${damaged.reason}). This module cannot be attached until they are restored.`;
+  } else if (m.verified) {
+    verdictClass = "is-ok";
+    verdictText = `Measured on ${m.probe_suite || "its probe suite"}: ${before}% → ${after}% (${formatPp(delta, true)}), ${collateral} collateral on retained capabilities.`;
+  }
+
+  return `
+    <div class="fabric-detail-head">
+      <div>
+        <div class="fabric-detail-kicker">${escapeHtml(m.verified ? "MEASURED CAPABILITY" : "UNMEASURED DELTA")}</div>
+        <div class="fabric-detail-title">${escapeHtml(prettyCapability(m.capability))}</div>
+        <div class="fabric-detail-id">${escapeHtml(m.id)}</div>
+      </div>
+    </div>
+    <div class="fabric-stats">
+      <div class="fabric-stat">
+        <span class="fabric-stat-key">Delta</span>
+        <span class="fabric-stat-val ${delta != null && delta < 0 ? "is-bad" : delta ? "is-accent" : ""}">${formatPp(delta, true)}</span>
+        <span class="fabric-stat-sub">${before}% → ${after}%</span>
+      </div>
+      <div class="fabric-stat">
+        <span class="fabric-stat-key">Collateral</span>
+        <span class="fabric-stat-val">${collateral}</span>
+        <span class="fabric-stat-sub">retained capability loss</span>
+      </div>
+      <div class="fabric-stat">
+        <span class="fabric-stat-key">Verdict</span>
+        <span class="fabric-stat-val">${escapeHtml(String(m.verdict || (m.verified ? "measured" : "unverified")))}</span>
+        <span class="fabric-stat-sub">${m.verified ? "evidence recorded" : "no evidence"}</span>
+      </div>
+    </div>
+    <div class="fabric-rows">
+      ${rows.map(([key, value, cls]) => `
+        <div class="fabric-row">
+          <span class="fabric-row-key">${escapeHtml(key)}</span>
+          <span class="fabric-row-val ${cls}">${escapeHtml(String(value))}</span>
+        </div>`).join("")}
+    </div>
+    <div class="fabric-verdict ${verdictClass}">${escapeHtml(verdictText)}</div>`;
+}
+
+function fabricEmptyMarkup() {
+  const intro = FABRIC.exists === false
+    ? `No registry directory exists at ${FABRIC.root} yet. Train a first module and it will appear here.`
+    : "A capability module is a LoRA delta scored against the same probes before and after training. This panel reads the registry straight off disk, so a module appears here the moment it lands.";
+  return `
+    <div class="fabric-empty">
+      <div class="fabric-empty-kicker">NO MODULES REGISTERED</div>
+      <div class="fabric-empty-title">Nothing trained yet.</div>
+      <p class="fabric-empty-desc">${escapeHtml(intro)}</p>
+      <div class="fabric-empty-code">python cli.py module train --model &lt;base&gt; \\
+    --capability python --out storage/modules
+python cli.py module list --validate</div>
+      <p class="fabric-empty-note">Modules bind to the base model and tokenizer they were fitted to — they do not move between architectures. A module with no measured before/after is listed as unverified, not as a capability.</p>
+    </div>`;
+}
+
+function fabricMessage(kicker, title, body) {
+  return `
+    <div class="fabric-empty">
+      <div class="fabric-empty-kicker">${escapeHtml(kicker)}</div>
+      <div class="fabric-empty-title">${escapeHtml(title)}</div>
+      <p class="fabric-empty-desc">${escapeHtml(body)}</p>
+    </div>`;
 }

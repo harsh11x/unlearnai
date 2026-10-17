@@ -1,297 +1,337 @@
 """
-Unlearn Engine — Real gradient-based model unlearning.
+Unlearn Engine — real, reversible weight surgery on a loaded state dict.
 
-Methods:
-1. Gradient Forgetting — Maximize loss on target capability
-2. Retain-Aware — Forget target while preserving non-target knowledge
+What this engine used to do
+---------------------------
+The previous implementation presented itself as gradient-based unlearning but
+never ran a forward pass: its "forget loss" was ``-||W|| * 0.001`` applied to raw
+weights, its "retain loss" was an L2 penalty, and its targets were selected by
+matching keywords in tensor *names*, falling back to "the first half of the
+tensors". Fake loss curves were then animated with ``time.sleep`` so the UI
+looked like training. None of that measures or changes a capability.
 
-All operations use real PyTorch autograd on the actual model weights.
+What it does now
+----------------
+The same primitive the quantized path already uses: exact tensor edits, applied
+to tensors the caller selected, recorded as real before/after statistics.
+
+    node_ablation    zero the targeted tensors
+    magnitude_prune  zero the smallest magnitudes (sparsify)
+    noise_injection  add calibrated gaussian noise
+    attenuate        scale the contribution down
+
+This is a legitimate and well-established family of editing operations. It is
+*not* gradient-based unlearning, and the engine says so in its own result rather
+than implying otherwise.
+
+Honesty rules enforced here
+---------------------------
+* No fabricated metrics. There is no loss curve because no training happens.
+* No arbitrary tensor selection. If the target cannot be matched to tensors, the
+  job fails with an explanation instead of quietly editing something unrelated.
+* Every change is reversible: originals of exactly the touched tensors are kept
+  and ``restore()`` puts them back in place.
 """
 
-import torch
-import torch.nn.functional as F
 import threading
 import time
 import uuid
-import copy
-import json
-import os
-from typing import Optional, Callable
+from typing import Any, Callable, Optional
+
+# Methods that are meaningful on a state dict with no autograd graph.
+SURGERY_METHODS = ("node_ablation", "magnitude_prune", "noise_injection", "attenuate")
+
+# Gradient methods are accepted from the UI but cannot be honoured here; they are
+# mapped onto the closest real operation and reported as such.
+GRADIENT_ALIASES = {
+    "gradient_forgetting": "node_ablation",
+    "gradient_baseline": "node_ablation",
+    "retain_aware": "attenuate",
+    "knowledge_distill": "attenuate",
+}
+
+METHOD_DESCRIPTIONS = {
+    "node_ablation": "zeroed",
+    "magnitude_prune": "pruned",
+    "noise_injection": "noised",
+    "attenuate": "attenuated",
+}
 
 
 class UnlearnEngine:
+    """
+    Applies reversible tensor surgery to a model's state dict.
+
+    ``original_state`` holds clones of only the tensors that were modified, which
+    is what ``restore()`` needs and is far smaller than a full model copy.
+    """
+
     def __init__(self):
-        self.jobs = {}  # job_id → job state
-        self.original_state = None
-        self.current_job = None
+        self.jobs: dict[str, dict] = {}
+        self.original_state: dict[str, Any] = {}
+        self.current_job: Optional[str] = None
+        self._model: Optional[dict] = None
+        self._lock = threading.Lock()
 
-    def start(self, model: dict, config: dict, device: torch.device, callback: Callable) -> str:
-        """Start an unlearning job in a background thread."""
-        job_id = str(uuid.uuid4())[:8]
+    # ── public API (unchanged names: server.py calls these) ──────────────
 
-        # Save original state for rollback
-        self.original_state = {k: v.clone() for k, v in model.items() if isinstance(v, torch.Tensor)}
+    def start(self, model: dict, config: dict, device, callback: Callable) -> str:
+        """
+        Run an edit job synchronously and return its id.
+
+        Surgery on an in-memory state dict is fast and deterministic, so there is
+        no worker thread to poll. The id is returned for the UI's polling loop,
+        which will immediately see the finished job.
+        """
+        job_id = uuid.uuid4().hex[:8]
+        config = dict(config or {})
 
         job = {
             "id": job_id,
+            "job_id": job_id,
             "config": config,
             "status": "running",
             "phase": "preparing",
             "progress": 0,
-            "total_steps": config.get("num_steps", 200),
-            "current_step": 0,
-            "metrics": {
-                "forget_loss": [],
-                "retain_loss": [],
-                "total_loss": [],
-                "learning_rate": [],
-            },
+            "metrics": {},
             "start_time": time.time(),
             "elapsed": 0,
             "nodes_erased": 0,
             "total_nodes": 0,
+            "tensors_modified": [],
+            "tensor_count": 0,
+            "params_modified": 0,
+            "failures": [],
             "cancelled": False,
         }
+        with self._lock:
+            self.jobs[job_id] = job
+            self.current_job = job_id
 
-        self.jobs[job_id] = job
-        self.current_job = job_id
+        try:
+            self._apply(model, config, job)
+        except Exception as exc:  # never leave the UI polling a dead job
+            job["status"] = "failed"
+            job["phase"] = "error"
+            job["error"] = str(exc)
+            job["progress"] = 100
+        job["elapsed"] = round(time.time() - job["start_time"], 2)
 
-        thread = threading.Thread(
-            target=self._run_unlearn,
-            args=(job_id, model, config, device, callback),
-            daemon=True,
-        )
-        thread.start()
-
+        if callback:
+            try:
+                callback(job_id, job)
+            except Exception:
+                pass
         return job_id
 
     def get_progress(self, job_id: str) -> dict:
-        """Get current progress of a job."""
-        if job_id not in self.jobs:
+        job = self.jobs.get(job_id)
+        if job is None:
             return {"error": "Job not found"}
-        job = self.jobs[job_id]
-        return {
-            "id": job["id"],
-            "status": job["status"],
-            "phase": job["phase"],
-            "progress": job["progress"],
-            "current_step": job["current_step"],
-            "total_steps": job["total_steps"],
-            "metrics": job["metrics"],
-            "elapsed": round(time.time() - job["start_time"], 1),
-            "nodes_erased": job["nodes_erased"],
-            "total_nodes": job["total_nodes"],
-        }
+        job["elapsed"] = round(time.time() - job["start_time"], 2)
+        return job
 
-    def cancel(self, job_id: str):
-        """Cancel a running job."""
-        if job_id in self.jobs:
-            self.jobs[job_id]["cancelled"] = True
+    def cancel(self, job_id: str) -> None:
+        job = self.jobs.get(job_id)
+        if job is not None:
+            job["cancelled"] = True
 
-    def stop(self):
-        """Stop the current job."""
-        if self.current_job and self.current_job in self.jobs:
-            self.jobs[self.current_job]["cancelled"] = True
+    def stop(self) -> None:
+        """Stop the current job and put the modified tensors back."""
+        self.restore()
 
-    def _run_unlearn(self, job_id: str, state_dict: dict, config: dict, device: torch.device, callback: Callable):
-        """Run the unlearning process in a background thread."""
-        job = self.jobs[job_id]
+    def restore(self) -> int:
+        """
+        Undo every recorded edit, in place.
 
-        try:
-            # ── Phase 1: Prepare ──
-            job["phase"] = "preparing"
-            job["progress"] = 0
-
-            target = config.get("target", "python")
-            method = config.get("method", "retain_aware")
-            num_steps = config.get("num_steps", 200)
-            lr = float(config.get("learning_rate", 1e-5))
-            retain_weight = float(config.get("retain_weight", 2.0))
-            batch_size = config.get("batch_size", 4)
-
-            # Identify target vs retain tensors
-            target_tensors, retain_tensors = self._classify_tensors(state_dict, target)
-
-            # Enable gradients on all tensors
-            for name in state_dict:
-                if isinstance(state_dict[name], torch.Tensor):
-                    state_dict[name].requires_grad_(True)
-
-            job["total_nodes"] = len(state_dict)
-            job["nodes_erased"] = 0
-
-            # Create dummy input for forward pass (we simulate the model's behavior)
-            # In a real scenario, this would be actual training data
-            dummy_inputs = self._create_dummy_batch(state_dict, batch_size, device)
-
-            time.sleep(0.5)  # Brief pause so UI can catch up
-
-            # ── Phase 2: Erase redundant neurons ──
-            job["phase"] = "erasing"
-
-            # Identify low-magnitude weights (likely dead/redundant neurons)
-            erase_count = 0
-            threshold = config.get("erase_threshold", 0.01)
-
-            for name in list(state_dict.keys()):
-                if job["cancelled"]:
-                    break
-
-                tensor = state_dict[name]
-                if not isinstance(tensor, torch.Tensor):
+        Returns the number of tensors restored. The base model is never
+        rewritten to disk, so this is exact rather than approximate.
+        """
+        restored = 0
+        with self._lock:
+            if self._model is None:
+                self.original_state = {}
+                return 0
+            for name, original in self.original_state.items():
+                tensor = self._model.get(name)
+                if tensor is None:
                     continue
-                if name not in target_tensors:
+                try:
+                    tensor.copy_(original)
+                    restored += 1
+                except Exception:
                     continue
+            self.original_state = {}
+        return restored
 
-                # Find neurons with very small weights (dead neurons)
-                if tensor.dim() >= 2:
-                    # For weight matrices, check per-neuron magnitude
-                    neuron_magnitudes = tensor.abs().mean(dim=-1)
-                    dead_mask = neuron_magnitudes < threshold
+    # ── implementation ──────────────────────────────────────────────────
 
-                    if dead_mask.any():
-                        dead_count = int(dead_mask.sum())
-                        # Zero out dead neurons
-                        with torch.no_grad():
-                            tensor[dead_mask] = 0.0
-                        erase_count += dead_count
-                        job["nodes_erased"] = erase_count
+    def _apply(self, model, config: dict, job: dict) -> None:
+        if not isinstance(model, dict) or not model:
+            raise ValueError("no model weights are loaded")
 
-                time.sleep(0.01)  # Yield for UI updates
+        import torch  # local import keeps this module importable without torch
 
-            job["progress"] = 20
+        self._model = model
+        job["total_nodes"] = len(model)
 
-            # ── Phase 3: Gradient-based unlearning ──
-            job["phase"] = "unlearning"
+        requested_method = str(config.get("method", "node_ablation"))
+        method = requested_method
+        remapped = False
+        if method not in SURGERY_METHODS:
+            method = GRADIENT_ALIASES.get(method, "node_ablation")
+            remapped = True
+        job["method"] = method
+        job["technique"] = "weight surgery on a loaded state dict"
+        if remapped:
+            job["method_remapped_from"] = requested_method
 
-            # Create optimizer
-            params_to_update = []
-            for name in state_dict:
-                if isinstance(state_dict[name], torch.Tensor) and state_dict[name].requires_grad:
-                    params_to_update.append(state_dict[name])
-
-            optimizer = torch.optim.Adam(params_to_update, lr=lr)
-
-            for step in range(num_steps):
-                if job["cancelled"]:
-                    break
-
-                optimizer.zero_grad()
-
-                # Simulate forward pass through the modified model
-                # Compute a "capability score" based on weight activations
-                forget_loss = self._compute_forget_loss(state_dict, target_tensors, device)
-                retain_loss = self._compute_retain_loss(state_dict, retain_tensors, device)
-
-                # Combine losses
-                if method == "retain_aware":
-                    total_loss = -forget_loss + retain_weight * retain_loss
-                else:
-                    total_loss = -forget_loss
-
-                total_loss.backward()
-
-                # Gradient clipping
-                torch.nn.utils.clip_grad_norm_(params_to_update, max_norm=1.0)
-
-                optimizer.step()
-
-                # Record metrics
-                job["metrics"]["forget_loss"].append(float(forget_loss.detach()))
-                job["metrics"]["retain_loss"].append(float(retain_loss.detach()))
-                job["metrics"]["total_loss"].append(float(total_loss.detach()))
-                job["metrics"]["learning_rate"].append(lr)
-
-                # Update progress
-                progress = 20 + (step / num_steps) * 70
-                job["progress"] = min(90, progress)
-                job["current_step"] = step + 1
-
-                time.sleep(0.02)  # Yield for UI updates
-
-            # ── Phase 4: Finalize ──
-            job["phase"] = "finalizing"
-            job["progress"] = 95
-
-            # Apply sparsification — zero out small weights
-            with torch.no_grad():
-                for name in state_dict:
-                    if isinstance(state_dict[name], torch.Tensor):
-                        tensor = state_dict[name]
-                        mask = tensor.abs() < 1e-6
-                        if mask.any():
-                            tensor[mask] = 0.0
-                            job["nodes_erased"] += int(mask.sum())
-
-            time.sleep(0.3)
-
-            # Done
-            job["progress"] = 100
-            job["phase"] = "done"
-            job["status"] = "completed"
-            job["elapsed"] = round(time.time() - job["start_time"], 1)
-
-        except Exception as e:
+        names, targeting = self._select_tensors(model, config, torch)
+        if not names:
+            target = str(config.get("target") or "(none)").strip()
+            available = [n for n in model if hasattr(model[n], "shape")]
+            sample = ", ".join(available[:8]) if available else "none"
             job["status"] = "failed"
             job["phase"] = "error"
-            job["error"] = str(e)
+            job["progress"] = 100
+            job["error"] = (
+                f"No tensors matched target '{target}'. This engine will not pick "
+                f"tensors arbitrarily, because editing unrelated weights would not "
+                f"do what the target implies. Pass explicit tensor names via "
+                f"config['nodes']. Available tensors include: {sample}"
+            )
+            return
+        job["targeting"] = targeting
 
-    def _classify_tensors(self, state_dict: dict, target: str) -> tuple:
-        """Classify tensors into target (to forget) and retain (to preserve) groups."""
-        target_keywords = {
-            "python": ["python", "py"],
-            "javascript": ["javascript", "js"],
-            "typescript": ["typescript", "ts"],
-            "c_cpp": ["cpp", "cxx", "c_proj"],
-            "algorithms": ["algo", "sort", "search"],
-            "reasoning": ["reason", "logic", "think"],
-        }
+        op, params = self._operation_for(method, config, torch)
 
-        keywords = target_keywords.get(target, [target])
-        target_tensors = set()
-        retain_tensors = set()
+        details = []
+        failures = []
+        params_modified = 0
 
-        for name in state_dict:
-            name_lower = name.lower()
-            if any(kw in name_lower for kw in keywords):
-                target_tensors.add(name)
-            else:
-                retain_tensors.add(name)
+        for index, name in enumerate(names):
+            tensor = model.get(name)
+            if tensor is None or not hasattr(tensor, "float"):
+                failures.append(f"{name}: not a tensor")
+                continue
+            try:
+                before = tensor.detach().float()
+                prior_zeros = int((before == 0).sum())
+                prior_abs_mean = float(before.abs().mean()) if before.numel() else 0.0
 
-        # If no tensors match the target, split by layer depth (first half = target, second half = retain)
-        if not target_tensors:
-            names = list(state_dict.keys())
-            mid = len(names) // 2
-            target_tensors = set(names[:mid])
-            retain_tensors = set(names[mid:])
+                if name not in self.original_state:
+                    self.original_state[name] = tensor.detach().clone()
 
-        return target_tensors, retain_tensors
+                with torch.no_grad():
+                    edited = op(before, params)
 
-    def _compute_forget_loss(self, state_dict: dict, target_tensors: set, device: torch.device) -> torch.Tensor:
-        """Compute loss that encourages forgetting (maximize activation of target weights)."""
-        total = torch.tensor(0.0, device=device)
+                tensor.copy_(edited.to(tensor.dtype))
 
-        for name in target_tensors:
-            if name in state_dict and isinstance(state_dict[name], torch.Tensor):
-                tensor = state_dict[name].to(device)
-                # Negative L2 norm encourages larger weights (destabilizing the representation)
-                total = total - tensor.norm() * 0.001
+                after = tensor.detach().float()
+                changed = int((after != before).sum())
+                zeros_after = int((after == 0).sum())
+                params_modified += changed
 
-        return total
+                details.append(
+                    {
+                        "tensor": name,
+                        "shape": list(tensor.shape),
+                        "params": int(before.numel()),
+                        "changed": changed,
+                        "zero_delta": zeros_after - prior_zeros,
+                        "abs_mean_before": round(prior_abs_mean, 6),
+                        "abs_mean_after": round(
+                            float(after.abs().mean()) if after.numel() else 0.0, 6
+                        ),
+                    }
+                )
+            except Exception as exc:
+                failures.append(f"{name}: {exc}")
 
-    def _compute_retain_loss(self, state_dict: dict, retain_tensors: set, device: torch.device) -> torch.Tensor:
-        """Compute loss that encourages retaining (penalize changes to retain weights)."""
-        total = torch.tensor(0.0, device=device)
+            job["progress"] = round((index + 1) / len(names) * 100, 1)
 
-        for name in retain_tensors:
-            if name in state_dict and isinstance(state_dict[name], torch.Tensor):
-                tensor = state_dict[name].to(device)
-                # L2 regularization encourages weights to stay small/stable
-                total = total + tensor.norm() ** 2 * 0.0001
+        if not details:
+            job["status"] = "failed"
+            job["phase"] = "error"
+            job["progress"] = 100
+            job["error"] = "None of the selected tensors could be modified."
+            job["failures"] = failures
+            return
 
-        return total
+        job["tensors_modified"] = [d["tensor"] for d in details]
+        job["tensor_count"] = len(details)
+        job["params_modified"] = int(params_modified)
+        job["nodes_erased"] = int(params_modified)
+        job["details"] = details
+        job["failures"] = failures
+        job["status"] = "completed"
+        job["phase"] = "completed"
+        job["progress"] = 100
 
-    def _create_dummy_batch(self, state_dict: dict, batch_size: int, device: torch.device) -> dict:
-        """Create dummy tensors matching the model's input shapes for forward pass simulation."""
-        # This is a simplified version — real implementation would use actual data
-        return {}
+        verb = METHOD_DESCRIPTIONS.get(method, "modified")
+        note = ""
+        if remapped:
+            note = (
+                f" (requested '{requested_method}', which needs gradients; applied "
+                f"'{method}' instead — this model was loaded as weights only)"
+            )
+        job["message"] = (
+            f"{verb} {len(details)} tensor(s), {int(params_modified):,} parameters "
+            f"changed{note}. Review the changes in Properties, then export to "
+            f"Safetensors. Edit → Restore undoes this exactly."
+        )
+
+    def _select_tensors(self, model: dict, config: dict, torch) -> tuple[list[str], str]:
+        """
+        Choose tensors from an explicit list or a name match. Never guesses.
+
+        Returns ``(names, how_the_selection_was_made)``.
+        """
+        nodes = [n for n in (config.get("nodes") or []) if n in model]
+        if nodes:
+            return nodes, "explicit tensor list"
+
+        target = str(config.get("target") or "").strip().lower()
+        if not target:
+            return [], "no target"
+
+        # Match on the tensor name only. A name containing "python" is a weak
+        # signal at best, so the result records that this is a heuristic.
+        matches = [name for name in model if target in name.lower()]
+        if matches:
+            return matches, f"heuristic name match on '{target}'"
+
+        return [], "no match"
+
+    def _operation_for(self, method: str, config: dict, torch):
+        """Return ``(callable, params)`` for one surgery method."""
+        if method == "node_ablation":
+            return (lambda values, _p: torch.zeros_like(values)), {}
+
+        if method == "attenuate":
+            factor = float(config.get("factor", config.get("retain_weight", 0.25) or 0.25))
+            factor = max(0.0, min(1.0, factor))
+            return (lambda values, p: values * p["factor"]), {"factor": factor}
+
+        if method == "noise_injection":
+            std = float(config.get("noise_std", 0.02))
+
+            def add_noise(values, p):
+                generator = torch.Generator(device="cpu").manual_seed(
+                    int(config.get("seed", 42))
+                )
+                noise = torch.randn(values.shape, generator=generator) * p["std"]
+                return values + noise.to(values.dtype)
+
+            return add_noise, {"std": std}
+
+        # magnitude_prune: keep the largest magnitudes, zero the rest.
+        fraction = float(config.get("fraction", 0.35))
+
+        def prune(values, p):
+            if values.numel() == 0:
+                return values
+            threshold = torch.quantile(values.abs().flatten().float(), p["fraction"])
+            return torch.where(values.abs() <= threshold, torch.zeros_like(values), values)
+
+        return prune, {"fraction": max(0.0, min(0.99, fraction))}

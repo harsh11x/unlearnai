@@ -23,15 +23,14 @@ import sys
 import time
 from pathlib import Path
 
-import torch
-
 from ml.config import AppConfig, ModelConfig, UnlearningConfig, EvaluationConfig
-from ml.models.adapter import HuggingFaceAdapter, create_adapter
-from ml.datasets.python_probes import build_python_probe_suite, build_python_forget_dataset
-from ml.datasets.retain_suite import build_retain_suite
-from ml.evaluation.engine import EvaluationEngine
-from ml.evaluation.report import ReportGenerator
-from ml.unlearning.engine import UnlearningEngine
+
+# torch, transformers and the model/eval stack are imported inside the commands
+# that need them. Registry inspection and offline analysis must stay runnable on
+# a machine with none of them installed - that is what makes a measurement
+# auditable somewhere other than the machine that produced it.
+
+DEFAULT_MODEL = "Salesforce/codegen-350M-multi"
 
 # Configure logging
 logging.basicConfig(
@@ -84,6 +83,15 @@ def progress_callback(entry: dict):
 
 def run_pipeline(args):
     """Run the complete unlearning pipeline."""
+    import torch
+
+    from ml.datasets.python_probes import build_python_forget_dataset, build_python_probe_suite
+    from ml.datasets.retain_suite import build_retain_suite
+    from ml.evaluation.engine import EvaluationEngine
+    from ml.evaluation.report import ReportGenerator
+    from ml.models.adapter import HuggingFaceAdapter
+    from ml.unlearning.engine import UnlearningEngine
+
     print_banner()
 
     # =========================================================================
@@ -336,9 +344,10 @@ def run_pipeline(args):
     print()
 
 
-def main():
+def build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser without importing or loading anything heavy."""
     parser = argparse.ArgumentParser(
-        description="NullMind CLI - AI Model Unlearning Platform",
+        description="NullMind CLI - AI Model Unlearning & Capability Fabric",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -377,26 +386,145 @@ Examples:
     # List methods command
     subparsers.add_parser("methods", help="List available unlearning methods")
 
-    args = parser.parse_args()
+    _add_fabric_parsers(subparsers)
+    return parser
+
+
+def _add_fabric_parsers(subparsers) -> None:
+    """Capability Fabric commands: module, compose, fuse, loop."""
+    from ml import commands
+
+    module_parser = subparsers.add_parser(
+        "module", help="Manage capability modules (train / apply / list / info)"
+    )
+    module_sub = module_parser.add_subparsers(dest="module_command")
+
+    train_parser = module_sub.add_parser("train", help="Fit a LoRA capability module")
+    train_parser.add_argument("--capability", default="python", help="Capability to fit (default: python)")
+    train_parser.add_argument("--model", default=DEFAULT_MODEL, help="Base model the delta binds to")
+    train_parser.add_argument("--steps", type=int, default=60)
+    train_parser.add_argument("--lr", type=float, default=2e-4)
+    train_parser.add_argument("--batch-size", type=int, default=2)
+    train_parser.add_argument("--max-length", type=int, default=256)
+    train_parser.add_argument("--lora-r", type=int, default=8)
+    train_parser.add_argument("--lora-alpha", type=int, default=16)
+    train_parser.add_argument("--retain-weight", type=float, default=1.0,
+                              help="Weight of the retention objective (relearn/heal)")
+    train_parser.add_argument("--output-root", default="storage/modules")
+    train_parser.add_argument("--examples-file", default=None,
+                              help="Newline-delimited training examples override")
+    train_parser.add_argument("--verify", action="store_true",
+                              help="Measure before/after with the probe suites")
+    train_parser.set_defaults(handler=commands.module_train)
+
+    apply_parser = module_sub.add_parser("apply", help="Attach or detach a module and measure")
+    apply_parser.add_argument("--id", required=True, help="Module id")
+    apply_parser.add_argument("--model", default=DEFAULT_MODEL)
+    apply_parser.add_argument("--detach", action="store_true", help="Remove the module instead")
+    apply_parser.add_argument("--output-root", default="storage/modules")
+    apply_parser.set_defaults(handler=commands.module_apply)
+
+    list_parser = module_sub.add_parser("list", help="List registered modules")
+    list_parser.add_argument("--output-root", default="storage/modules")
+    list_parser.add_argument("--validate", action="store_true", help="Check artifacts exist on disk")
+    list_parser.set_defaults(handler=commands.module_list)
+
+    info_parser = module_sub.add_parser("info", help="Show one module's manifest")
+    info_parser.add_argument("--id", required=True)
+    info_parser.add_argument("--output-root", default="storage/modules")
+    info_parser.set_defaults(handler=commands.module_info)
+
+    compose_parser = subparsers.add_parser(
+        "compose", help="Measure interference between modules"
+    )
+    compose_parser.add_argument("--modules", nargs="+", default=None)
+    compose_parser.add_argument("--model", default=DEFAULT_MODEL)
+    compose_parser.add_argument("--threshold", type=float, default=10.0,
+                               help="Damage in points that counts as a conflict")
+    compose_parser.add_argument("--plan", action="store_true", help="Also print an attach plan")
+    compose_parser.add_argument("--from-results", default=None,
+                               help="Analyse a JSON file of recorded scores (no torch needed)")
+    compose_parser.add_argument("--output-root", default="storage/modules")
+    compose_parser.set_defaults(handler=commands.compose)
+
+    fuse_parser = subparsers.add_parser(
+        "fuse", help="Distill a composition into one dense model, gated on fidelity"
+    )
+    fuse_parser.add_argument("--modules", nargs="+", default=None)
+    fuse_parser.add_argument("--model", default=DEFAULT_MODEL)
+    fuse_parser.add_argument("--student", default=None, help="Model to distil into (default: same base)")
+    fuse_parser.add_argument("--out", default="storage/fused")
+    fuse_parser.add_argument("--steps", type=int, default=40)
+    fuse_parser.add_argument("--max-new-tokens", type=int, default=96)
+    fuse_parser.add_argument("--prompts", type=int, default=40)
+    fuse_parser.add_argument("--tolerance", type=float, default=5.0,
+                            help="Allowed regression versus the composite, in points")
+    fuse_parser.add_argument("--from-results", default=None,
+                            help="Re-run only the fidelity gate on recorded scores")
+    fuse_parser.add_argument("--results-out", default=None)
+    fuse_parser.add_argument("--output-root", default="storage/modules")
+    fuse_parser.set_defaults(handler=commands.fuse)
+
+    loop_parser = subparsers.add_parser(
+        "loop", help="Run bounded self-directed capability acquisition"
+    )
+    loop_parser.add_argument("--model", default=DEFAULT_MODEL)
+    loop_parser.add_argument("--budget", type=int, default=3)
+    loop_parser.add_argument("--steps", type=int, default=60)
+    loop_parser.add_argument("--lr", type=float, default=2e-4)
+    loop_parser.add_argument("--batch-size", type=int, default=2)
+    loop_parser.add_argument("--retain-weight", type=float, default=1.0)
+    loop_parser.add_argument("--min-delta", type=float, default=30.0)
+    loop_parser.add_argument("--max-collateral", type=float, default=15.0)
+    loop_parser.add_argument("--held-out", default=None,
+                             help="Read-only held-out probe file used to verify each step")
+    loop_parser.add_argument("--log", default="storage/loop_audit.json")
+    loop_parser.add_argument("--output-root", default="storage/modules")
+    loop_parser.set_defaults(handler=commands.loop)
+
+
+def main(argv=None):
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     if args.command == "run":
         run_pipeline(args)
-    elif args.command == "inspect":
+        return 0
+
+    if args.command == "inspect":
+        from ml.models.adapter import HuggingFaceAdapter
+
         adapter = HuggingFaceAdapter()
         metadata = adapter.inspect(args.model)
         print(json.dumps(metadata.to_dict(), indent=2))
-    elif args.command == "methods":
+        return 0
+
+    if args.command == "methods":
+        from ml.unlearning.engine import UnlearningEngine
+
         engine = UnlearningEngine()
-        methods = engine.get_available_methods()
-        for m in methods:
-            print(f"\n  {m['name']}")
-            print(f"  ID: {m['id']}")
-            print(f"  {m['description']}")
-            print(f"  Pros: {', '.join(m['pros'])}")
-            print(f"  Cons: {', '.join(m['cons'])}")
-    else:
+        for method in engine.get_available_methods():
+            print(f"\n  {method['name']}")
+            print(f"  ID: {method['id']}")
+            print(f"  {method['description']}")
+            print(f"  Pros: {', '.join(method['pros'])}")
+            print(f"  Cons: {', '.join(method['cons'])}")
+        return 0
+
+    handler = getattr(args, "handler", None)
+    if handler is None:
         parser.print_help()
+        return 2
+
+    from ml.policy import PolicyViolation
+
+    try:
+        return handler(args)
+    except PolicyViolation as exc:
+        # Refusals are a result, not a crash: exit 2 and say why.
+        print(f"\n  REFUSED (policy): {exc}")
+        return 2
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

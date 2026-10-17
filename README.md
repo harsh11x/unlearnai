@@ -372,6 +372,29 @@ The `retain_weight` parameter controls how aggressively the model preserves non-
 
 ---
 
+## Capability Fabric (modules, composition, distillation)
+
+Beyond single-run editing, capabilities can be built, combined and removed as
+**modules** — a LoRA delta plus the measured evidence that it works — instead of
+being smeared into shared weights. The base model is never overwritten, so
+unlearn / relearn / retrain become attach and detach rather than destructive
+edits.
+
+```bash
+python cli.py module train --capability python --steps 60 --verify
+python cli.py module apply --id <module-id> --detach
+python cli.py compose --modules <a> <b> --plan     # measured interference
+python cli.py fuse --modules <a> <b> --out storage/fused   # gated on fidelity
+python cli.py loop --budget 3 --held-out probes.json
+```
+
+Two rules hold the system honest: a module only attaches to the base model it
+was fitted to, and no capability is claimed without a measured before/after.
+The self-direction loop may change modules but never its own held-out tests.
+
+See [Capability Fabric](docs/capability-fabric.md) for the architecture, the
+interference definition and the exact limits of what this claims.
+
 ## Project Structure
 
 ```

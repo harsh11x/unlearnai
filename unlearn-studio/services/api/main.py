@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from services.api.routes import models, jobs, evaluations, projects
+from services.api.routes import models, jobs, evaluations, projects, modules
 
 
 @asynccontextmanager
@@ -48,6 +48,7 @@ app.include_router(projects.router, prefix="/api/v1/projects", tags=["projects"]
 app.include_router(models.router, prefix="/api/v1/models", tags=["models"])
 app.include_router(jobs.router, prefix="/api/v1/jobs", tags=["jobs"])
 app.include_router(evaluations.router, prefix="/api/v1/evaluations", tags=["evaluations"])
+app.include_router(modules.router, prefix="/api/v1/modules", tags=["modules"])
 
 
 @app.get("/api/v1/health")

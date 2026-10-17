@@ -529,27 +529,28 @@ class Backend:
         target = (config.get("target") or "").strip()
 
         names = [n for n in nodes if self.weight_editor.supports(n)]
-        if not names:
+        targeting = "explicit tensor list" if names else ""
+        available = self.weight_editor.tensor_names()
+
+        if not names and target:
             # Fall back to matching the target string against tensor names.
-            available = self.weight_editor.tensor_names()
-            if target:
-                needle = target.lower()
-                names = [n for n in available if needle in n.lower() and self.weight_editor.supports(n)]
-            if not names:
-                # Last resort: the largest readable tensors, so the action is
-                # never a silent no-op.
-                usable = [n for n in available if self.weight_editor.supports(n)]
-                usable.sort(
-                    key=lambda n: self.weight_editor._info(n).get("byte_count", 0),
-                    reverse=True,
-                )
-                names = usable[:8]
+            needle = target.lower()
+            names = [n for n in available if needle in n.lower() and self.weight_editor.supports(n)]
+            if names:
+                targeting = f"heuristic name match on '{target}'"
 
         if not names:
+            # Deliberately no "largest tensors" fallback. Editing arbitrary
+            # weights would produce a result labelled with the requested target
+            # that has nothing to do with it. Refuse, and name the candidates.
+            usable = [n for n in available if self.weight_editor.supports(n)]
+            sample = ", ".join(usable[:8]) if usable else "none"
             return {
                 "error": (
-                    "No editable tensors matched. This model's quantized formats are "
-                    "not readable yet — see Settings → Backend for the supported list."
+                    f"No editable tensors matched target '{target}'. Tensors are not "
+                    f"selected arbitrarily, because changing unrelated weights would "
+                    f"not do what the target implies. Select nodes in the graph, or "
+                    f"choose from: {sample}"
                 )
             }
 
@@ -584,6 +585,7 @@ class Backend:
             "job_id": job_id,
             "method": method,
             "technique": "weight surgery (quantized model)",
+            "targeting": targeting,
             "tensors_modified": applied,
             "tensor_count": len(applied),
             "failures": failed,
@@ -643,11 +645,16 @@ class Backend:
         return {"status": "cancelled"}
 
     def _unlearn_stop(self) -> dict:
-        """Stop the current unlearning job and revert to the original model."""
-        self.unlearn_engine.stop()
-        if self.current_model is not None and self.unlearn_engine.original_state is not None:
-            self.current_model.load_state_dict(self.unlearn_engine.original_state)
-        return {"status": "stopped"}
+        """
+        Stop the current edit job and put the touched tensors back.
+
+        The engine holds clones of exactly the tensors it modified, so restore
+        is exact and does not need a full copy of the model.
+        """
+        if self.unlearn_engine is None:
+            return self._missing_dep_error("revert edits")
+        restored = self.unlearn_engine.restore()
+        return {"status": "stopped", "restored_tensors": restored}
 
     def _unlearn_progress_callback(self, job_id: str, data: dict):
         """Called from the unlearn thread to update progress."""
@@ -694,6 +701,89 @@ class Backend:
             if not check.get("ok"):
                 result["error"] = f"Export written but failed verification: {check.get('error')}"
         return result
+
+    # ── Capability Fabric ──
+
+    # The registry is plain JSON plus adapter files, so this is readable on a
+    # machine with no torch — the same promise `cli.py module list` makes.
+    def _repo_root(self) -> str:
+        """The unlearn-studio checkout this backend ships inside.
+
+        server.py lives at <repo>/apps/desktop/backend/server.py, so four
+        parents up is the repository root. Resolved from the file rather than
+        the process cwd, which Electron does not guarantee.
+        """
+        here = os.path.abspath(__file__)
+        return os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(here))))
+
+    def _fabric_root(self) -> str:
+        """Where capability modules live.
+
+        Matches the CLI default (`storage/modules` relative to the repo root)
+        and honours REMAP_MODULE_ROOT so a user who trains modules elsewhere
+        sees them here without moving files.
+        """
+        override = os.environ.get("REMAP_MODULE_ROOT")
+        if override:
+            return os.path.abspath(os.path.expanduser(override))
+        return os.path.join(self._repo_root(), "storage", "modules")
+
+    def _fabric_list(self) -> dict:
+        """List registered capability modules with an integrity report.
+
+        Read-only on purpose: registering, replacing or deleting a module is a
+        deliberate CLI action, not something a UI click should do by accident.
+        """
+        root = self._fabric_root()
+        if not os.path.isdir(root):
+            return {
+                "root": root,
+                "exists": False,
+                "count": 0,
+                "ok": True,
+                "damaged": [],
+                "modules": [],
+            }
+
+        repo = self._repo_root()
+        if repo not in sys.path:
+            sys.path.insert(0, repo)
+        try:
+            from ml.registry import CapabilityRegistry, RegistryCorrupt
+        except Exception as e:  # pragma: no cover - only on a broken checkout
+            return {
+                "root": root,
+                "error": f"The capability registry could not be imported: {e}",
+                "unavailable": True,
+                "modules": [],
+            }
+
+        try:
+            registry = CapabilityRegistry(root)
+            report = registry.validate()
+            modules = [m.to_dict() for m in registry.all()]
+        except RegistryCorrupt as e:
+            # A corrupt index is a damaged registry, not a missing feature.
+            return {
+                "root": root,
+                "exists": True,
+                "corrupt": True,
+                "ok": False,
+                "count": 0,
+                "damaged": [{"id": "registry.json", "reason": str(e)}],
+                "modules": [],
+            }
+        except Exception as e:
+            return {"root": root, "error": f"Could not read {root}: {e}", "modules": []}
+
+        return {
+            "root": root,
+            "exists": True,
+            "count": len(modules),
+            "ok": bool(report.get("ok")),
+            "damaged": report.get("damaged", []),
+            "modules": modules,
+        }
 
     # ── Info ──
 

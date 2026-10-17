@@ -7,6 +7,7 @@ desktop/
 ├── shared/          # Core Electron app (shared across all platforms)
 │   ├── main.js      # Electron main process (IPC, file dialogs, model parsing)
 │   ├── preload.js   # Secure context bridge
+│   ├── afterPack.js # Build hook: flips Electron fuses on the shipped binary
 │   ├── package.json
 │   └── renderer/    # Frontend (HTML/CSS/JS — no framework, zero deps)
 │       ├── index.html
@@ -22,8 +23,8 @@ desktop/
 │
 ├── win/             # Windows-specific build config
 │   ├── electron-builder.json
-│   ├── installer.nsh
-│   ├── build/icon.ico
+│   ├── build/installer.nsh
+│   ├── build/icon.ico   # 16–256 px, generated from renderer/logo.png
 │   └── README.md
 │
 └── linux/           # Linux-specific build config
@@ -42,6 +43,23 @@ npm run dev
 
 ## Build for Your Platform
 
+Builds run on **Electron 44** with **electron-builder 26**. The Windows target
+produces an NSIS installer in `desktop/dist/win/`:
+
+```bash
+cd shared
+npm install
+npm run build:win     # -> ../dist/win/Remap Studios-<version>-x64.exe
+```
+
+`afterPack.js` hardens the built executable with Electron fuses (Node runtime
+modes off, ASAR integrity validation on). The installer is currently **not
+code-signed**, so SmartScreen warns on first run — set `CSC_LINK` /
+`WIN_CSC_LINK` before distributing it.
+
+Security controls and their verified behaviour are documented in
+[`docs/security.md`](../../docs/security.md).
+
 | Platform | Command | Output |
 |----------|---------|--------|
 | macOS | `npm run build:mac` | `.dmg` (universal x64+arm64) |
@@ -52,9 +70,20 @@ npm run dev
 
 ### IDE Layout
 - **Left sidebar** — Model Explorer (file tree of loaded model layers)
-- **Center** — Tabbed workspace (Visualization, Weight Explorer, Heatmap, Unlearn)
+- **Center** — Tabbed workspace (Visualization, Weight Explorer, Heatmap, Unlearn, Models, Fabric)
 - **Right panel** — Properties inspector (click any node to see details)
 - **Bottom** — Output terminal (logs, status messages)
+
+The shell uses a single accent token. `Settings → Visualization → Interface accent`
+switches the whole app between Blue, Teal, Violet and Graphite; the choice
+persists with the rest of the preferences.
+
+### Capability Fabric
+- Reads the module registry (`storage/modules`, or `REMAP_MODULE_ROOT`) directly
+- Shows each module's capability, measured delta, collateral damage and verdict
+- Flags unverified deltas and damaged artifacts instead of hiding them
+- Read-only by design: training and registering modules stay a CLI action
+- Needs no PyTorch — the backend imports only `ml.registry`, which is plain JSON
 
 ### Visualization Engine
 - Canvas-rendered neural network with layer grouping
