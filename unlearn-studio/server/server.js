@@ -9,6 +9,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
+const { verifyFirebaseIdToken } = require("./firebase_auth");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -65,24 +66,26 @@ function getRazorpay() {
 //  FIREBASE TOKEN VERIFICATION
 // ══════════════════════════════════════════
 
+// The token is a Firebase ID token (RS256). Its signature is verified against
+// Google's published certificates — decoding the payload and trusting it let
+// anyone forge a token for any uid.
 async function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Missing authorization header" });
   }
 
-  const token = header.slice(7);
   try {
-    const payload = JSON.parse(
-      Buffer.from(token.split(".")[1], "base64url").toString("utf-8")
-    );
+    const payload = await verifyFirebaseIdToken(header.slice(7));
     req.user = {
-      uid: payload.user_id || payload.sub,
+      uid: payload.sub || payload.user_id,
       email: payload.email || null,
       name: payload.name || payload.display_name || null,
     };
     next();
   } catch (e) {
+    // Fail closed: an unverifiable token is not a weak token, it is not a user.
+    console.warn(`[auth] rejected token: ${e.message}`);
     return res.status(401).json({ error: "Invalid token" });
   }
 }

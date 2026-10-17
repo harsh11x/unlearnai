@@ -32,9 +32,21 @@ All uploaded model files are treated as **untrusted**. An uploaded model could c
 
 ### 4. Authentication & Authorization
 
-- API key authentication (planned)
-- Project-level access control (planned)
-- Role-based permissions (planned)
+**Cloud API (`server/server.js`).** Endpoints behind `authMiddleware` require a
+Firebase ID token in `Authorization: Bearer <token>`. The token's RS256
+signature is verified against Google's published signing certificates
+(`server/firebase_auth.js`), and `iss`, `aud`, `exp`, `iat` and `sub` are
+checked before any handler runs. `aud` must equal `FIREBASE_PROJECT_ID`, and
+`user_id` must agree with `sub`. Verification fails closed: an unreachable
+certificate endpoint rejects the request rather than trusting it.
+
+> This replaced a payload-only decode that accepted any well-formed JWT — a
+> forged token for an arbitrary uid was accepted, so every authenticated
+> endpoint was effectively unauthenticated. Verified after the fix: forged
+tokens are rejected with `401` both on the host and from the public internet.
+
+**Still planned:** API keys for machine-to-machine callers, project-level access
+control, role-based permissions.
 
 ### 5. Audit Logging
 
@@ -107,8 +119,11 @@ Checked against a packaged `win-unpacked` build via the Chromium DevTools protoc
 - Worker isolation is not fully implemented in V1
 - No network-level isolation between workers
 - No cryptographic signing of artifacts
-- Authentication is not yet implemented
 - Audit logs are not tamper-proof
+- Cloud API authentication trusts Firebase as the identity provider; there is
+  no revocation list beyond token expiry (~1 hour)
+- The cloud API is served over plain HTTP, so bearer tokens are readable on the
+  network path (see the desktop section below)
 
 ## Recommendations
 
